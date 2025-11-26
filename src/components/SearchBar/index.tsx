@@ -1,65 +1,108 @@
 'use client'
 
-import styles from './SearchBar.module.css'
-import { Search } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation' // 👈 For navigation
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { Search, ChevronRight } from 'lucide-react';
+import { searchChannels } from '@/actions/search'; // Import the new action
+import styles from './SearchBar.module.css'; // Assuming this path is correct
 
-const SUGGESTIONS = [
-  "Search channels...",
-  "Try 'Next.js Tips'...",
-  "Find 'Healthy Recipes'...",
-  "Look for 'Tech News'...",
-  "Discover 'React Tricks'..."
-]
+interface SearchResult {
+    id: string;
+    name: string;
+    slug: string;
+}
 
 export function SearchBar() {
-  const router = useRouter()
-  const [query, setQuery] = useState("")
-  const [placeholder, setPlaceholder] = useState("Search channels...")
+    const [query, setQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+    const [results, setResults] = useState<SearchResult[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
 
-  // Placeholder Animation
-  useEffect(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-        index = (index + 1) % SUGGESTIONS.length;
-        setPlaceholder(SUGGESTIONS[index]);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    // 1. Debounce Logic (Waits 300ms after user stops typing)
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedQuery(query);
+        }, 300);
 
-  // 🚀 NAVIGATION LOGIC
-  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && query.trim()) {
-      // 1. Convert text to slug (e.g. "Tech News" -> "tech-news")
-      const slug = query
-        .trim()
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '') // Remove special chars
-        .replace(/\s+/g, '-')     // Replace spaces with dashes
-        .replace(/-+/g, '-');     // Remove duplicate dashes
+        // Cleanup: Clear the timeout if the user types again
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [query]);
 
-      // 2. Navigate
-      // Note: If we had a dedicated search page, we'd go to /search?q=...
-      // But for now, we treat this as a "Jump to Channel" bar.
-      router.push(`/channels/${slug}`);
-      
-      // Optional: Clear bar after search
-      // setQuery(""); 
-    }
-  }
+    // 2. Fetching Logic (Triggers only when debouncedQuery changes)
+    useEffect(() => {
+        const fetchResults = async () => {
+            if (debouncedQuery.length < 2) {
+                setResults([]);
+                setIsLoading(false);
+                return;
+            }
 
-  return (
-    <div className={styles.container}>
-      <Search className={styles.icon} size={24} />
-      <input 
-        type="text" 
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleSearch} // 👈 Listen for Enter key
-        placeholder={placeholder}
-        className={styles.input}
-      />
-    </div>
-  )
+            setIsLoading(true);
+            const channelResults = await searchChannels(debouncedQuery);
+            setResults(channelResults);
+            setIsLoading(false);
+        };
+
+        fetchResults();
+    }, [debouncedQuery]);
+    
+    // 3. Close results on outside click
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setResults([]);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className={styles.searchContainer} ref={searchRef}>
+            <div className={styles.inputWrapper}>
+                <Search size={24} className={styles.searchIcon} />
+                <input
+                    type="text"
+                    placeholder="Search channels, topics, or hashes..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className={styles.searchInput}
+                />
+            </div>
+            
+            {/* Display Results */}
+            {(isLoading || results.length > 0) && (
+                <div className={styles.resultsDropdown}>
+                    {isLoading && (
+                        <div className={styles.resultItem}>
+                            Searching...
+                        </div>
+                    )}
+                    
+                    {results.map((channel) => (
+                        <Link 
+                            key={channel.id} 
+                            href={`/channels/${channel.slug}`}
+                            onClick={() => setResults([])} // Close dropdown on click
+                            className={styles.resultItem}
+                        >
+                            <span className={styles.channelName}>{channel.name}</span>
+                            <span className={styles.channelSlug}>#{channel.slug}</span>
+                            <ChevronRight size={18} />
+                        </Link>
+                    ))}
+                    
+                    {/* Fallback for no results found */}
+                    {(!isLoading && results.length === 0 && query.length >= 2) && (
+                        <div className={styles.resultItem}>
+                            No channels found for "{query}"
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 }

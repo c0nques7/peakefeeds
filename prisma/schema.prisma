@@ -24,8 +24,8 @@ model User {
   image         String?
   passwordHash  String?
   
-  // 🛡️ Web3 Identity (Optional for now)
-  walletAddress String?   @unique 
+  // 🛡️ Web3 Identity
+  walletAddress String?   @unique
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -37,11 +37,11 @@ model User {
   // Content Creation
   channelsCreated Channel[]      @relation("CreatedChannels")
   posts           Post[]
-  comments        Comment[]      // 👈 Fixes "Unknown field comments" on User
+  comments        Comment[]
   
   // Engagement
-  subscriptions   Subscription[] 
-  likes           Like[]         // 👈 Fixes "Unknown field likes" on User
+  subscriptions   Subscription[]
+  likes           Like[]
 }
 
 model Channel {
@@ -49,7 +49,7 @@ model Channel {
   name        String
   slug        String   @unique
   description String?
-  tags        String[] 
+  tags        String[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -74,36 +74,43 @@ model Subscription {
   joinedAt  DateTime @default(now())
 
   @@id([userId, channelId])
-  @@index([userId]) 
+  @@index([userId])
 }
 
-// 1. Define the Types
+// --------------------------------------
+// 3. Post and Media Models
+// --------------------------------------
+
 enum PostType {
-  TEXT
-  IMAGE
-  VIDEO
-  LINK
+  TEXT        // Simple, short-form text post
+  LONGFORM    // Detailed articles or essays
+  IMAGE       // Content centered around an image
+  VIDEO       // Content centered around a video
+  LINK        // External link shared
+  QUOTE       // Short, attributed quote or reference
+  POLL        // Community consensus/voting mechanism
+  REPOST      // Shared or re-published content
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  title     String?  
-  content   String   @db.Text 
+  id            String    @id @default(cuid())
+  title         String?
+  content       String    @db.Text
   
-  // 2. New Fields for Media Handling
-  type        PostType @default(TEXT)
-  mediaUrl    String?  // The explicit URL (e.g. S3 link or YouTube)
-  mediaHash   String?  // The Hash of the file itself (The "Truth" anchor)
+  // Media Handling
+  type          PostType  @default(TEXT)
+  mediaUrl      String?   
+  mediaHash     String?
   
-  // 🛡️ Verification Fields
-  isVerified    Boolean  @default(false)
-  contentHash   String?
-  signature     String?
+  // 🛡️ Verification Fields (The Truth Engine)
+  isVerified    Boolean   @default(false)
+  contentHash   String?   // Hash of the content text
+  signature     String?   // Author's cryptographic signature
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // ... relations (channel, author, comments, likes) ...
+  // Relations
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
   authorId  String
@@ -111,12 +118,12 @@ model Post {
   comments  Comment[]
   likes     Like[]
 
-  @@index([channelId, createdAt(sort: Desc)]) 
+  @@index([channelId, createdAt(sort: Desc)])
   @@index([authorId])
 }
 
 // --------------------------------------
-// 3. Engagement Models
+// 4. Engagement Models
 // --------------------------------------
 
 model Comment {
@@ -140,7 +147,7 @@ model Comment {
   replies   Comment[] @relation("CommentReplies")
 
   @@index([postId])
-  @@index([parentId]) 
+  @@index([parentId])
 }
 
 model Like {
@@ -153,12 +160,12 @@ model Like {
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, postId]) // One like per post per user
-  @@index([postId]) 
+  @@unique([userId, postId])
+  @@index([postId])
 }
 
 // --------------------------------------
-// 4. NextAuth Boilerplate
+// 5. NextAuth Boilerplate
 // --------------------------------------
 
 model Account {
@@ -195,4 +202,3 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
-

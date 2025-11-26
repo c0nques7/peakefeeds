@@ -1,133 +1,185 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, PostType } from '@prisma/client';
+import { faker } from '@faker-js/faker'; // Note: Ensure this import works in your environment
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
-// --- Data Generators ---
-const USERS_TO_CREATE = 40
-const CHANNELS_TO_CREATE = 50
-const POSTS_TO_CREATE = 100
-const COMMENTS_TO_CREATE = 300
+// --- Configuration ---
+const USER_COUNT = 200;
+const POST_COUNT = 1000;
+const COMMENT_COUNT = 1500;
+const THEMED_CHANNELS = [
+  { name: 'Optimism News', slug: 'optimism-news', theme: 'Optimism L2, blockchain governance, fast transactions.', types: ['TEXT', 'LINK'] },
+  { name: 'Deepfake Watch', slug: 'deepfake-watch', theme: 'AI deepfakes, content forensics, verification protocols.', types: ['VIDEO', 'LINK'] },
+  { name: 'Tech Insights', slug: 'tech-insights', theme: 'Software development, Next.js, TypeScript, new gadgets.', types: ['TEXT', 'IMAGE'] },
+  { name: 'Crypto Memes', slug: 'crypto-memes', theme: 'Doge, trading, NFTs, decentralized finance.', types: ['IMAGE', 'TEXT'] },
+  { name: 'Healthy Recipes', slug: 'healthy-recipes', theme: 'Nutrition, cooking, protein, diet plans.', types: ['IMAGE'] },
+  { name: 'Site Feedback', slug: 'site-feedback', theme: 'Bugs, suggestions, feature requests for PeakeFeeds.', types: ['TEXT'] },
+];
 
-// Helper to pick random item
-const random = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+// Define Post type for the posts array (to fix 'any' error)
+type PostWithComments = {
+    id: string;
+    content: string;
+    createdAt: Date;
+    comments: { id: string }[];
+}
 
-// Content Assets
-const ADJECTIVES = ['Ancient', 'Modern', 'Creative', 'Hidden', 'Future', 'Broken', 'Electric', 'Silent', 'Rolling', 'Flying']
-const NOUNS = ['Machine', 'Garden', 'City', 'Code', 'Dream', 'Forest', 'Ocean', 'Sky', 'Algorithm', 'Network']
-const TOPICS = ['React', 'NextJS', 'TypeScript', 'Cooking', 'Gaming', 'Hiking', 'Space', 'Politics', 'Design', 'Music']
+// --- Helpers ---
 
-const generateName = () => `${random(ADJECTIVES)} ${random(NOUNS)}`
-const generateSlug = (name: string) => name.toLowerCase().replace(/ /g, '-') + '-' + Math.floor(Math.random() * 1000)
-const generateText = () => `This is a randomly generated post about ${random(TOPICS)}. We are discussing the importance of ${random(ADJECTIVES).toLowerCase()} ${random(NOUNS).toLowerCase()}s.`
+function getRandomPostType(allowedTypes: string[]): PostType {
+  const typeName = faker.helpers.arrayElement(allowedTypes);
+  return PostType[typeName as keyof typeof PostType];
+}
+
+function getMockMediaUrl(type: PostType): string | null {
+  if (type === PostType.IMAGE) {
+    return faker.image.url({ width: 640, height: 480 }); 
+  }
+  if (type === PostType.VIDEO) {
+    const youtubeIds = ['dQw4w9WgXcQ', 'oHg5SJYRHA0', 'k4Xx8-lFh6w']; 
+    return `https://www.youtube.com/watch?v=${faker.helpers.arrayElement(youtubeIds)}`;
+  }
+  return null;
+}
+
+// --- Main Seeder Function ---
 
 async function main() {
-  console.log('🌱 Starting massive seed...')
+  console.log('--- Starting Database Seeder ---');
+  
+  // ⚠️ Cleanup: Delete existing data
+  await prisma.subscription.deleteMany();
+  await prisma.comment.deleteMany();
+  await prisma.post.deleteMany();
+  await prisma.channel.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.account.deleteMany(); 
+  
+  console.log(`Cleaned up old data.`);
 
-  // 1. Cleanup
-  console.log('🧹 Cleaning database...')
-  await prisma.comment.deleteMany()
-  await prisma.subscription.deleteMany()
-  await prisma.post.deleteMany()
-  await prisma.channel.deleteMany()
-  await prisma.account.deleteMany()
-  await prisma.session.deleteMany()
-  await prisma.user.deleteMany()
+  // --- 1. CREATE USERS ---
+  const userData = Array.from({ length: USER_COUNT }).map(() => {
+    return {
+        email: faker.internet.email(),
+        name: faker.person.fullName(),
+        username: faker.internet.username().toLowerCase(),
+        passwordHash: 'mock-argon2-hash',
+        id: faker.string.uuid(),
+    };
+  });
+  // ✅ FIX 1: Use createManyAndReturn with raw data objects
+  const users = await prisma.user.createManyAndReturn({ data: userData });
+  console.log(`Created ${users.length} Users.`);
 
-  // 2. Create Users
-  console.log(`👤 Creating ${USERS_TO_CREATE} users...`)
-  const users = []
-  // We use the same password hash for everyone: "s3cret"
-  const passwordHash = '$argon2id$v=19$m=65536,t=3,p=4$M3M3M3M3M3M3M3M3$t7+J/'
+  // --- 2. CREATE CHANNELS ---
+  const channels = await Promise.all(
+    THEMED_CHANNELS.map(async (data) => {
+      const creator = faker.helpers.arrayElement(users); 
 
-  for (let i = 0; i < USERS_TO_CREATE; i++) {
-    const firstName = random(['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank', 'Grace', 'Hannah'])
-    const lastName = random(['Smith', 'Jones', 'Taylor', 'Brown', 'Williams', 'Davis', 'Miller', 'Wilson'])
-    const username = `${firstName}${lastName}${i}`.toLowerCase()
-    
-    users.push(await prisma.user.create({
-      data: {
-        name: `${firstName} ${lastName}`,
-        username: username,
-        email: `${username}@example.com`,
-        passwordHash,
-      }
-    }))
-  }
-
-  // 3. Create Channels
-  console.log(`📺 Creating ${CHANNELS_TO_CREATE} channels...`)
-  const channels = []
-  for (let i = 0; i < CHANNELS_TO_CREATE; i++) {
-    const name = generateName()
-    const topic = random(TOPICS)
-    
-    channels.push(await prisma.channel.create({
-      data: {
-        name: name,
-        slug: generateSlug(name),
-        description: `The number one place to discuss ${topic} and ${random(NOUNS)}s.`,
-        tags: [topic.toLowerCase(), random(ADJECTIVES).toLowerCase()],
-        creatorId: random(users).id
-      }
-    }))
-  }
-
-  // 4. Create Subscriptions (Randomly subscribe users to channels)
-  console.log('🔔 Generating subscriptions...')
-  for (const user of users) {
-    // Each user follows 1-5 random channels
-    const subCount = Math.floor(Math.random() * 5) + 1
-    for (let i = 0; i < subCount; i++) {
-      const channel = random(channels)
-      // Use upsert to avoid unique constraint errors if random picks same channel twice
-      await prisma.subscription.upsert({
-        where: { userId_channelId: { userId: user.id, channelId: channel.id }},
-        update: {},
-        create: { userId: user.id, channelId: channel.id }
-      })
-    }
-  }
-
-  // 5. Create Posts
-  console.log(`📝 Creating ${POSTS_TO_CREATE} posts...`)
-  const posts = []
-  for (let i = 0; i < POSTS_TO_CREATE; i++) {
-    const channel = random(channels)
-    const author = random(users)
-    
-    posts.push(await prisma.post.create({
-      data: {
-        title: `${random(ADJECTIVES)} ${random(TOPICS)} Guide`,
-        content: generateText() + " " + generateText(),
-        channelId: channel.id,
-        authorId: author.id,
-      }
-    }))
-  }
-
-  // 6. Create Comments
-  console.log(`💬 Creating ${COMMENTS_TO_CREATE} comments...`)
-  for (let i = 0; i < COMMENTS_TO_CREATE; i++) {
-    const post = random(posts)
-    const author = random(users)
-
-    await prisma.comment.create({
-      data: {
-        content: `I totally agree with this! The ${random(NOUNS)} is amazing.`,
-        postId: post.id,
-        authorId: author.id
-      }
+      return prisma.channel.create({
+        data: {
+          name: data.name,
+          slug: data.slug,
+          description: faker.lorem.sentence(),
+          creatorId: creator.id,
+          tags: data.name.split(' '),
+        },
+      });
     })
-  }
+  );
+  console.log(`Created ${channels.length} Themed Channels.`);
 
-  console.log('✅ Seed complete!')
+  // --- 3. CREATE SUBSCRIPTIONS ---
+  const subscriptionPromises = [];
+  for (let i = 0; i < 2000; i++) {
+    const user = faker.helpers.arrayElement(users);
+    const channel = faker.helpers.arrayElement(channels);
+    subscriptionPromises.push(
+      prisma.subscription.create({
+        data: {
+          userId: user.id,
+          channelId: channel.id,
+        },
+      }).catch(() => null) 
+    );
+  }
+  await Promise.all(subscriptionPromises);
+  console.log(`Created 2000 Mock Subscriptions.`);
+
+  // --- 4. CREATE POSTS (1000 Total) ---
+  // ✅ FIX 2: Explicitly define the type of the posts array
+  const posts: PostWithComments[] = [];
+  
+  for (let i = 0; i < POST_COUNT; i++) {
+    const channel = faker.helpers.arrayElement(channels);
+    const channelConfig = THEMED_CHANNELS.find(c => c.slug === channel.slug)!;
+    
+    const postType = getRandomPostType(channelConfig.types);
+    const mediaUrl = getMockMediaUrl(postType);
+    
+    let content = `${channelConfig.theme.split(',')[0].trim()}. ${faker.lorem.paragraphs(1, '\n')}`;
+    if (mediaUrl) content = `${content}\n${mediaUrl}`;
+
+    const post = await prisma.post.create({
+        data: {
+            title: faker.datatype.boolean(0.6) ? faker.lorem.sentence(3) : null,
+            content: content,
+            authorId: faker.helpers.arrayElement(users).id,
+            channelId: channel.id,
+            createdAt: faker.date.recent({ days: 30 }),
+            type: postType,
+            mediaUrl: mediaUrl,
+            isVerified: faker.datatype.boolean(0.5), 
+            contentHash: faker.string.hexadecimal({ length: 64, prefix: '0x' }), 
+        },
+        // We only fetch ID and content for the subsequent comment loop
+        select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            comments: { select: { id: true } }
+        }
+    });
+    // @ts-ignore
+    posts.push(post); 
+  }
+  console.log(`Created ${posts.length} Themed Posts.`);
+
+  // --- 5. CREATE COMMENTS (1500 Total) ---
+  const commentPromises = [];
+  for (let i = 0; i < COMMENT_COUNT; i++) {
+    const post = faker.helpers.arrayElement(posts);
+    const author = faker.helpers.arrayElement(users);
+
+    // ✅ FIX 3: Robust Parent ID check
+    const parentComment = faker.datatype.boolean(0.2) && post.comments.length > 0
+        ? faker.helpers.arrayElement(post.comments)
+        : null;
+
+    commentPromises.push(
+      prisma.comment.create({
+          data: {
+              content: faker.lorem.sentence(),
+              postId: post.id,
+              authorId: author.id,
+              parentId: parentComment ? parentComment.id : null,
+              createdAt: faker.date.between({ from: post.createdAt, to: new Date() }),
+          }
+      }).catch(() => null)
+    );
+  }
+  await Promise.all(commentPromises);
+  console.log(`Created ${COMMENT_COUNT} Mock Comments.`);
+
+
+  console.log('--- Seeding Complete! ---');
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

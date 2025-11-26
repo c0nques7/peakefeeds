@@ -115,6 +115,7 @@
   margin-bottom: 1.5rem;
   position: relative;
   cursor: pointer; 
+  min-height: 60px; /* Ensure it never collapses to 0 */
 }
 
 .title {
@@ -126,7 +127,8 @@
 }
 
 .content {
-  color: var(--text-secondary);
+  /* Force color to match the theme's primary text for maximum contrast */
+  color: var(--text-primary); 
   font-size: 0.95rem;
   line-height: 1.6;
 }
@@ -137,7 +139,10 @@
   -webkit-line-clamp: 4; 
   -webkit-box-orient: vertical;
   overflow: hidden;
+  
+  /* Standard & Webkit Mask for cross-browser fade */
   mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
 }
 
 /* Expanded State (View Mode) */

@@ -1,161 +1,71 @@
-/* src/app/(dashboard)/dashboard.module.css */
+/* src/app/home/dashboard.module.css */
 
-/* --- 1. THE STAGE (Base Layer) --- */
+/* --- 1. BASE LAYOUT --- */
 .layoutContainer {
   display: flex;
   min-height: 100vh;
-  /* ✅ FIX: Use theme variable for dynamic light/dark mode */
   background: var(--bg-app); 
   position: relative;
   overflow-x: hidden; 
-  max-width: 1920px; 
-  margin: 0 auto;
 }
 
-/* --- 2. AMBIENT GLOW ORBS (Fine to keep, they are fixed colors) --- */
-
-/* Left Orb (Indigo/Blue) */
-.layoutContainer::before {
-  content: "";
-  position: fixed;
-  top: -10%;
-  left: -10%;
-  width: 50vw;
-  height: 50vw;
-  background: radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, rgba(0,0,0,0) 70%);
-  filter: blur(60px);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Right Orb (Purple/Pink) */
-.layoutContainer::after {
-  content: "";
-  position: fixed;
-  bottom: -10%;
-  right: -10%;
-  width: 50vw;
-  height: 50vw;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(0,0,0,0) 70%);
-  filter: blur(60px);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* --- 3. COLUMN 1: LEFT SIDEBAR (The "Control Center") --- */
+/* --- 2. LEFT SIDEBAR (Layout Only) --- */
 .desktopSidebar {
   width: 275px;
   flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  height: 100vh;
   z-index: 40;
+  position: fixed; 
+  top: 0;
+  left: 0;
+  height: 100vh;
+  display: none; /* Hidden on mobile */
+  /* Ensure these are CLEAN so the component handles the look */
+  background: transparent; 
+  box-shadow: none;
+  border: none;
+  backdrop-filter: none;
   
-  /* ✅ GLASS ENHANCEMENT */
-  background: var(--glass-card); 
-  backdrop-filter: blur(40px); /* Increased blur intensity */
-  -webkit-backdrop-filter: blur(40px);
-  
-  /* Added Shadow to lift the panel */
-  box-shadow: 5px 0 20px rgba(0, 0, 0, 0.4); 
-
-  /* Right Border Only */
-  border-right: 1px solid rgba(255, 255, 255, 0.15); /* Stronger border */
-  
-  /* Subtle Gradient Tint */
-  background-image: linear-gradient(
-    to bottom, 
-    rgba(255, 255, 255, 0.05) 0%, 
-    rgba(0, 0, 0, 0) 30%
-  );
+  /* Remove padding here, let the component handle margins */
+  padding: 0;
 }
 
-/* --- COLUMN 2: CENTER FEED (The "Stage") --- */
+/* --- 3. MAIN CONTENT --- */
 .mainContent {
   flex: 1;
-  min-width: 0;
+  width: 100%; 
   z-index: 10; 
-  
-  /* Keep background theme-aware, but ensure strong framing borders */
-  background: var(--glass-card); 
-  
-  /* Stronger borders to frame the content */
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
-  
-  padding-bottom: 100px; 
+  padding-bottom: 100px;
 }
 
-/* --- COLUMN 3: RIGHT SIDEBAR (The "Context") --- */
-.rightSidebar {
-  display: none;
-  z-index: 40;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  /* ✅ GLASS ENHANCEMENT */
-  background: var(--glass-card);
-  backdrop-filter: blur(40px); /* Increased blur intensity */
-  -webkit-backdrop-filter: blur(40px);
-  
-  /* Added Shadow to lift the panel (directional shadow opposite to left) */
-  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.4); 
-
-  /* Left Border Only */
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
-  
-  /* Subtle Gradient Tint */
-  background-image: linear-gradient(
-    to top, 
-    rgba(168, 85, 247, 0.05) 0%, 
-    rgba(0, 0, 0, 0) 30%
-  );
+/* --- 4. POSTS GRID --- */
+.postsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+  gap: 1.5rem;
+  width: 100%;
 }
 
-/* --- RESPONSIVE BREAKPOINTS --- */
-/* LARGE TABLET / DESKTOP (Show Left Sidebar) */
-@media (min-width: 1024px) {
+/* --- 5. MOBILE NAV WRAPPER --- */
+.mobileNavWrapper {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+/* --- 6. RESPONSIVE RULES --- */
+@media (min-width: 768px) {
+  .desktopSidebar { display: block; }
   .mobileNavWrapper { display: none !important; }
   .mainContent { 
-    padding-bottom: 0; 
-    /* ✅ FIX: Push content over by sidebar width */
     margin-left: 275px; 
-    /* Set left margin to the exact width of the sidebar */
-  }
-
-  /* Make Sidebar fixed and full height */
-  .desktopSidebar {
-    position: fixed; 
-    top: 0;
-    left: 0;
-    height: 100vh;
+    padding-bottom: 0; 
+    padding-top: 2rem;
   }
 }
 
-/* XL DESKTOP (Show Right Sidebar) */
-@media (min-width: 1280px) {
-  .rightSidebar {
-    display: block;
-    width: 350px; /* Fixed Width */
-    flex-shrink: 0;
-    /* ✅ FIX: Make Right Sidebar fixed */
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
-  }
-  
-  .mainContent {
-    /* ✅ ADJUSTMENT: Add margin for the Right Sidebar */
-    margin-right: 350px; 
-  }
-}
-
-/* MOBILE (max-width: 1023px) */
-@media (max-width: 1023px) {
-  .desktopSidebar { display: none !important; }
-  .mainContent { 
-    border: none; 
-    background: transparent; 
-  } 
+@media (max-width: 767px) {
+  .postsGrid { display: flex; flex-direction: column; }
 }

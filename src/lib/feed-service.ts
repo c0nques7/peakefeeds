@@ -1,48 +1,137 @@
 import { prisma } from "@/lib/db"
+import { Prisma } from "@prisma/client"
 
-export async function getGlobalFeed() {
-  return await prisma.post.findMany({
-    take: 20,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      // 1. Get Author Details (Must include ID for delete permission)
-      author: {
-        select: {
-          id: true, // 👈 WAS MISSING
-          name: true,
-          username: true,
-          image: true,
-        }
-      },
-      
-      // 2. Get Channel Details (Must include creatorId for mod permission)
-      channel: {
-        select: {
-          id: true, // Good to have
-          name: true,
-          slug: true,
-          creatorId: true // 👈 WAS MISSING
-        }
-      },
+// -------------------------------------------------------------
+// 1. Define the Relational Fields (The 'Includes')
+// -------------------------------------------------------------
 
-      // 3. Get Counts
-      _count: {
+// This object holds only the necessary relational fields and their nested selections.
+const postRelations = {
+    author: {
         select: {
-          comments: true,
-          likes: true
+            id: true,
+            name: true,
+            username: true,
+            image: true,
         }
-      },
-
-      // 4. Get Comments for the Drawer
-      comments: {
-        orderBy: { createdAt: 'desc' },
-        take: 3, // Optimization: Only fetch a few for the preview
-        include: {
+    },
+    channel: {
+        select: {
+            id: true,
+            name: true,
+            slug: true,
+            creatorId: true
+        }
+    },
+    _count: {
+        select: {
+            comments: true,
+            likes: true
+        }
+    },
+    comments: {
+        orderBy: { createdAt: 'desc' as const }, 
+        take: 3,
+        select: {
+            id: true,
+            content: true,
+            createdAt: true,
             author: {
                 select: { username: true }
             }
         }
-      }
     }
-  })
+};
+
+// The final TypeScript type derived from the query structure.
+export type GlobalFeedPost = Prisma.PostGetPayload<{ 
+    select: typeof postRelations & { 
+        id: true; 
+        title: true; 
+        content: true;
+        createdAt: true;
+        updatedAt: true;
+        
+        // Web3 and Media fields
+        type: true;
+        isVerified: true;
+        contentHash: true;
+        signature: true;
+    } 
+}>;
+
+
+// -------------------------------------------------------------
+// 2. Data Fetching Logic (Global Feed)
+// -------------------------------------------------------------
+
+export async function getGlobalFeed(): Promise<GlobalFeedPost[]> {
+  
+    const posts = await prisma.post.findMany({
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+        
+        select: {
+           id: true,
+            title: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
+    
+    
+            type: true,
+            mediaUrl: true,
+            mediaHash: true,
+            isVerified: true,
+            contentHash: true,
+            signature: true,
+            
+            // Relational Fields
+            ...postRelations
+        }
+    });
+  
+    return posts as GlobalFeedPost[];
+}
+
+
+// -------------------------------------------------------------
+// 3. Data Fetching Logic (Personalized Feed)
+// -------------------------------------------------------------
+
+/**
+ * Fetches posts ONLY from channels the given userId is actively subscribed to.
+ */
+export async function getPersonalizedFeed(userId: string): Promise<GlobalFeedPost[]> {
+    
+    const posts = await prisma.post.findMany({
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+        
+        // 💡 CRITICAL: Filters posts based on the Subscription model
+        where: { 
+           channel: { 
+             subscribers: { 
+               some: { userId: userId } // Requires at least one matching subscription
+             } 
+           } 
+        },
+        
+        select: {
+            id: true,
+            title: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
+            type: true,
+            mediaUrl: true,
+            mediaHash: true,
+            isVerified: true,
+            contentHash: true,
+            signature: true,
+            ...postRelations
+        }
+    });
+
+    return posts as GlobalFeedPost[];
 }

@@ -1,31 +1,37 @@
-import { Sidebar } from "@/components/layout/Sidebar"; 
-import { RightSidebar } from "@/components/layout/RightSidebar"; // 👈 NEW
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth.config";
+import { Sidebar } from "@/components/layout/Sidebar"; // ✅ FIXED IMPORT PATH
+import { RightSidebar } from "@/components/layout/RightSidebar"; 
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import styles from "./dashboard.module.css"; 
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // 1. Fetch User Data Here (So we can pass it to the Sidebar)
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
+
   return (
     <div className={styles.layoutContainer}>
       
-      {/* 1. LEFT SIDEBAR (Desktop Only) */}
+      {/* 2. LEFT SIDEBAR (Desktop Only) */}
       <aside className={styles.desktopSidebar}>
-        <Sidebar /> 
+        {/* Pass the user data down */}
+        <Sidebar user={user} /> 
       </aside>
 
-      {/* 2. MAIN CONTENT (Scrollable) */}
+      {/* 3. MAIN CONTENT (Scrollable) */}
       <main className={styles.mainContent}>
-        {/* We wrap children in a max-width container to prevent "Mega-Wide" posts */}
         <div className={styles.feedWrapper}>
             {children}
         </div>
       </main>
 
-      {/* 3. RIGHT SIDEBAR (Desktop Only - New!) */}
+      {/* 4. RIGHT SIDEBAR (Desktop Only) */}
       <aside className={styles.rightSidebar}>
         <RightSidebar />
       </aside>
 
-      {/* 4. BOTTOM NAV (Mobile Only) */}
+      {/* 5. BOTTOM NAV (Mobile Only) */}
       <div className={styles.mobileNavWrapper}>
         <MobileBottomNav />
       </div>

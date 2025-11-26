@@ -1,29 +1,42 @@
 import Link from "next/link"
-import styles from "./landing.module.css" // Ensure this path matches your folder structure
-import { ShieldCheck, Database, Fingerprint, ArrowRight, Hexagon, Layers } from "lucide-react"
-import { PostCard } from "@/components/PostCard" // Import the real component
+import styles from "./landing.module.css" // Ensure this path is correct relative to your file
+import { ArrowRight, Hexagon, Fingerprint, Layers } from "lucide-react"
+import { PostCard } from "@/components/PostCard"
 
 export default function LandingPage() {
   
-  // --- MOCK DATA FOR THE DEMO CARD ---
+  // --- MOCK DATA (UPDATED TO MATCH SCHEMA) ---
   const demoPost = {
     id: "demo-hero-1",
     title: "Deepfakes are over.",
-    content: "This is what a verified thought looks like. Cryptographically signed, anchored on Ethereum via Optimism, and impossible to fake. The truth engine is live. Time to join the athenticity revolution.",
+    content: "This is what a verified thought looks like. Cryptographically signed, anchored on Optimism, and impossible to fake. The truth engine is live.",
     createdAt: new Date(),
+    
+    // ✅ FIX 1: Add the missing Media Fields
+    type: "TEXT" as const, // Cast to const so TS knows it's a valid Enum value
+    mediaUrl: null,
+    mediaHash: null,
+
+    // ✅ FIX 2: Add missing 'id' to Author (Required by PostCard type)
     author: { 
+        id: "official-peake-id",
         name: "PeakeFeeds", 
-        username: "peake_official" 
+        username: "peake_official",
+        image: null // Explicitly null if no image
     },
+
+    // ✅ FIX 3: Add missing 'id' and 'creatorId' to Channel
     channel: { 
+        id: "official-channel-id",
         name: "Announcements", 
-        slug: "official-news" 
+        slug: "official-news",
+        creatorId: "official-peake-id"
     },
+
     _count: { 
         comments: 128, 
         likes: 4096 
     },
-    // We pass empty comments for the demo to prevent the drawer from breaking the layout if opened
     comments: [] 
   }
 
@@ -36,7 +49,6 @@ export default function LandingPage() {
           PeakeFeeds
         </div>
         
-        {/* We hide the extra buttons on mobile to prevent overlap with Theme Toggle */}
         <div className={styles.navLinksContainer}> 
           <Link href="/login" className={styles.navLink}>
             Login
@@ -81,16 +93,15 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Right: The Actual Product Demo */}
+        {/* Right: Product Demo */}
         <div className={styles.heroVisual}>
           <div className={styles.demoCardWrapper}>
-            {/* The Real Component! */}
+            {/* The Real Component with Valid Mock Data */}
             <PostCard post={demoPost} />
             
-            {/* A floating label to explain it */}
             <div className={styles.demoLabel}>
                 <ArrowRight className="inline mr-1" size={14} />
-                Try interacting with this card!
+                Try tapping the card!
             </div>
           </div>
         </div>
@@ -136,4 +147,3 @@ export default function LandingPage() {
     </div>
   )
 }
-

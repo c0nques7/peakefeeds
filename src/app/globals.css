@@ -15,7 +15,7 @@ body {
   padding: 0;
 }
 
-/* --- Keyframes for Background Animation --- */
+/* --- 🎥 BACKGROUND ANIMATION --- */
 @keyframes backgroundShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -23,81 +23,75 @@ body {
 }
 
 :root {
-  /* --- ☀️ LIGHT MODE: "Radioactive Mint" --- */
+  /* --- ☀️ LIGHT MODE: "Pearlescent Hologram" --- */
+  /* We bumped the saturation so you can actually see the colors shifting */
   
-  /* Backgrounds */
   --bg-color-solid: #f0fdf4; 
-  --bg-gradient-start: #ffffff;
-  --bg-gradient-middle: #dcfce7; /* Mint */
-  --bg-gradient-end: #bbf7d0;    /* Green-200 */
+  
+  /* Distinct color stops: White -> Lavender -> Aqua */
+  --bg-gradient-start: #ffffff;   
+  --bg-gradient-middle: #d8b4fe;  /* Violet-300 (Visible Purple) */
+  --bg-gradient-end: #6ee7b7;     /* Emerald-300 (Visible Green) */
   
   /* Glass Surfaces */
-  --glass-panel: rgba(255, 255, 255, 0.9); 
-  --glass-card: rgba(255, 255, 255, 0.95); 
+  --glass-panel: rgba(255, 255, 255, 0.6); 
+  --glass-card: rgba(255, 255, 255, 0.7); 
   --glass-card-hover: #ffffff;
   
-  /* 🟢 THE GLOW: Strong Green Borders & Shadows */
-  --glass-border: rgba(22, 163, 74, 0.4); /* Much darker green border */
-  
-  /* The Glow Shadow: Green halo instead of gray shadow */
-  --shadow-glass: 0 8px 30px rgba(22, 163, 74, 0.2);
-  --shadow-card: 0 0 15px rgba(34, 197, 94, 0.25), 0 4px 6px rgba(22, 163, 74, 0.1);
+  /* 🟢 THE GLOW */
+  --glass-border: rgba(79, 70, 229, 0.2); 
+  --shadow-glass: 0 8px 30px rgba(79, 70, 229, 0.1);
+  --shadow-card: 0 4px 6px rgba(79, 70, 229, 0.15);
   
   /* Text */
-  --text-primary: #022c22;   
-  --text-secondary: #15803d; 
-  --text-muted: #16a34a;     
+  --text-primary: #0f172a;   
+  --text-secondary: #334155; 
+  --text-muted: #64748b;     
   
   /* Accents */
-  --accent-primary: #16a34a;   
-  --accent-secondary: #84cc16; 
-  --accent-glow: rgba(22, 163, 74, 0.3);
+  --accent-primary: #4f46e5;   
+  --accent-secondary: #10b981; 
+  --accent-glow: rgba(79, 70, 229, 0.3);
   
   /* Inputs */
-  --input-bg: #ffffff; 
-  --input-border: rgba(22, 163, 74, 0.5);
+  --input-bg: rgba(255, 255, 255, 0.8); 
+  --input-border: rgba(79, 70, 229, 0.3);
 }
 
 [data-theme='dark'] {
-  /* --- 🌙 DARK MODE: "Cyberpunk Void" --- */
+  /* --- 🌙 DARK MODE: "Deep Nebula" --- */
+  /* Pitch Black blending into rich, saturated darks */
   
-  /* Backgrounds: Pitch Black to allow the glow to pop */
-  --bg-color-solid: #000000; 
-  --bg-gradient-start: #000000;   
-  --bg-gradient-middle: #0f0518;  
-  --bg-gradient-end: #1a0b2e;     
+  --bg-color-solid: #020617; 
   
-  /* Glass Surfaces: Darker, more opaque to hide the background mess */
-  --glass-panel: rgba(15, 15, 20, 0.7); 
-  --glass-card: rgba(20, 20, 25, 0.7);
-  --glass-card-hover: rgba(40, 30, 60, 0.8);
+  /* Distinct color stops: Void -> Deep Purple -> Deep Teal */
+  --bg-gradient-start: #020617;   /* Slate-950 */
+  --bg-gradient-middle: #4c1d95;  /* Violet-900 (Rich Purple) */
+  --bg-gradient-end: #064e3b;     /* Emerald-900 (Rich Green) */    
   
-  /* 🟣 THE GLOW: Neon Purple Borders & Shadows */
-  /* This is the key fix for "hard to see" - a bright border */
-  --glass-border: rgba(168, 85, 247, 0.5); 
+  /* Glass Surfaces */
+  --glass-panel: rgba(15, 23, 42, 0.6); 
+  --glass-card: rgba(30, 41, 59, 0.4);
+  --glass-card-hover: rgba(51, 65, 85, 0.6);
   
-  /* The Glow Shadow: Purple outer glow + Black drop shadow */
-  --shadow-glass: 0 0 20px rgba(147, 51, 234, 0.3); 
-  
-  /* This double-shadow creates the "Neon Sign" effect */
-  --shadow-card: 
-    0 0 0 1px rgba(168, 85, 247, 0.1), /* Inner rim */
-    0 0 15px rgba(147, 51, 234, 0.4),  /* The Glow */
-    0 10px 30px rgba(0, 0, 0, 0.8);    /* The Depth */
+  /* 🟣 THE GLOW */
+  --glass-border: rgba(139, 92, 246, 0.3); 
+  --shadow-glass: 0 0 30px rgba(124, 58, 237, 0.2); 
+  --shadow-card: 0 0 0 1px rgba(139, 92, 246, 0.1), 0 10px 40px rgba(0, 0, 0, 0.7); 
   
   /* Text */
-  --text-primary: #ffffff;
-  --text-secondary: #e9d5ff; 
-  --text-muted: #a855f7;     
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1; 
+  --text-muted: #64748b;     
   
   /* Accents */
-  --accent-primary: #d8b4fe;   
-  --accent-secondary: #f0abfc; 
-  --accent-glow: rgba(192, 132, 252, 0.5);
+  --accent-primary: #a78bfa;   
+  --accent-secondary: #34d399; 
+  --accent-glow: rgba(139, 92, 246, 0.5);
   
   /* Inputs */
-  --input-bg: rgba(0, 0, 0, 0.6); 
-  --input-border: rgba(168, 85, 247, 0.6);
+  --input-bg: rgba(15, 23, 42, 0.8); 
+  --input-border: rgba(139, 92, 246, 0.4);
 }
 
 html {
@@ -105,30 +99,22 @@ html {
 }
 
 body {
-  /* Apply the large, moving gradient background */
+  /* 🚀 HIGH SATURATION GRADIENT */
   background: linear-gradient(
-    -45deg, 
+    135deg, 
     var(--bg-gradient-start), 
     var(--bg-gradient-middle), 
     var(--bg-gradient-end)
   );
   
-  background-size: 400% 400%; 
-  animation: backgroundShift 30s ease infinite; 
+  /* Zoomed in 200% (instead of 300%) to make color patches tighter and more visible */
+  background-size: 200% 200%; 
+  
+  /* Faster animation (15s) to see the movement */
+  animation: backgroundShift 15s ease infinite; 
   background-attachment: fixed; 
 
   color: var(--text-primary);
   min-height: 100vh;
-  transition: color 0.5s ease, background 0.5s ease;
-}
-
-/* --- 🔧 UTILITY: Force Icons to Match Theme --- */
-button svg, 
-a svg {
-  /* This tells the icon: "Use the text color of your parent" */
-  color: var(--text-primary); 
-  
-  /* These ensure standard SVG icons (like Lucide/Heroicons) obey the color */
-  fill: currentColor;   /* For solid icons */
-  stroke: currentColor; /* For outline icons */
+  transition: color 0.5s ease;
 }

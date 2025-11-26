@@ -25,7 +25,15 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
+          // 💡 FIX: Explicitly request the passwordHash field
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            username: true,
+            passwordHash: true, // ✅ CRITICAL FIX: Ensure the hash is retrieved
+          }
         })
 
         // 1. Check if user exists
