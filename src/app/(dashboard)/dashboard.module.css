@@ -69,3 +69,27 @@
 @media (max-width: 767px) {
   .postsGrid { display: flex; flex-direction: column; }
 }
+
+/* Base: Single column for mobile */
+.postsGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem; /* Consistent spacing */
+    margin-top: 2rem; /* Add some space below the header */
+}
+
+/* Tablet/Small Desktop (>= 768px): Two columns */
+@media (min-width: 768px) { 
+    .postsGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+}
+
+/* Large Desktop (>= 1280px): Three columns */
+@media (min-width: 1280px) { 
+    .postsGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2.5rem 1.5rem; /* Slightly more vertical gap than horizontal */
+    }
+}

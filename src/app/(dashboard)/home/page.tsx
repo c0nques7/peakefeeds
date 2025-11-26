@@ -17,7 +17,7 @@ export default async function HomePage() {
 
         <section>
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Fresh Content</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Live Content From Across the Peake</h2>
                 <div className="text-xs font-mono px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
                     Live
                 </div>

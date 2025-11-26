@@ -41,7 +41,7 @@ model User {
   
   // Engagement
   subscriptions   Subscription[]
-  likes           Like[]
+  likes           Reaction[] // 👈 UPDATED: Points to new Reaction model
 }
 
 model Channel {
@@ -82,14 +82,19 @@ model Subscription {
 // --------------------------------------
 
 enum PostType {
-  TEXT        // Simple, short-form text post
-  LONGFORM    // Detailed articles or essays
-  IMAGE       // Content centered around an image
-  VIDEO       // Content centered around a video
-  LINK        // External link shared
-  QUOTE       // Short, attributed quote or reference
-  POLL        // Community consensus/voting mechanism
-  REPOST      // Shared or re-published content
+  TEXT
+  LONGFORM
+  IMAGE
+  VIDEO
+  LINK
+  QUOTE
+  POLL
+  REPOST
+}
+
+enum ReactionType {
+  LIKE
+  DISLIKE
 }
 
 model Post {
@@ -99,13 +104,14 @@ model Post {
   
   // Media Handling
   type          PostType  @default(TEXT)
-  mediaUrl      String?   
+  mediaUrl      String?
+  embedUrl      String?   // 👈 CRITICAL: The required field for video rendering
   mediaHash     String?
   
   // 🛡️ Verification Fields (The Truth Engine)
   isVerified    Boolean   @default(false)
-  contentHash   String?   // Hash of the content text
-  signature     String?   // Author's cryptographic signature
+  contentHash   String?
+  signature     String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,7 +122,7 @@ model Post {
   authorId  String
   author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
-  likes     Like[]
+  likes     Reaction[] // 👈 UPDATED: Points to new Reaction model
 
   @@index([channelId, createdAt(sort: Desc)])
   @@index([authorId])
@@ -150,16 +156,18 @@ model Comment {
   @@index([parentId])
 }
 
-model Like {
+model Reaction { // 👈 RENAMED FROM 'Like'
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
+  type      ReactionType @default(LIKE) 
+  
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-
+  
   @@unique([userId, postId])
   @@index([postId])
 }
