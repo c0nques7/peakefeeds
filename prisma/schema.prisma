@@ -99,7 +99,8 @@ model Post {
   
   // Media Handling
   type          PostType  @default(TEXT)
-  mediaUrl      String?   
+  mediaUrl      String?
+  embedUrl      String?
   mediaHash     String?
   
   // 🛡️ Verification Fields (The Truth Engine)

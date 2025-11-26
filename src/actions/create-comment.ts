@@ -7,45 +7,45 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 const CreateCommentSchema = z.object({
-  content: z.string().min(1).max(500),
-  postId: z.string(),
-  parentId: z.string().optional(), // 👈 NEW: Optional Parent ID for replies
+  content: z.string().min(1, "Comment cannot be empty").max(500, "Comment too long"),
+  postId: z.string().cuid("Invalid Post ID"),
+  channelSlug: z.string(), 
 });
 
 export async function createComment(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return { error: "Unauthorized" };
+  
+  // Return standard error format
+  if (!session?.user?.id) return { success: false, message: "Unauthorized" };
 
   const validated = CreateCommentSchema.safeParse({
     content: formData.get('content'),
     postId: formData.get('postId'),
-    parentId: formData.get('parentId') || undefined, // Handle empty string as undefined
+    channelSlug: formData.get('channelSlug'),
   });
 
-  if (!validated.success) return { error: "Invalid input." };
+  if (!validated.success) return { success: false, message: "Invalid input" };
 
-  const { content, postId, parentId } = validated.data;
+  const { content, postId, channelSlug } = validated.data;
 
   try {
     await prisma.comment.create({
       data: {
         content,
         postId,
-        parentId, // 👈 Link the reply
         authorId: session.user.id,
-      },
+      }
     });
 
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-      include: { channel: true }
-    });
+    // Revalidate paths
+    revalidatePath(`/channels/${channelSlug}`);
+    revalidatePath('/home'); 
 
-    if (post) revalidatePath(`/channels/${post.channel.slug}`);
-    
-    return { success: true };
+    return { success: true, message: "Comment added" };
+
   } catch (error) {
-    console.error(error);
-    return { error: "Failed to post." };
+    console.error("Comment Error:", error);
+    return { success: false, message: "Database Error" };
   }
 }
+

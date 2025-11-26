@@ -2,135 +2,105 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { MessageCircle, Heart, Repeat, ShieldCheck, Share2, X, Send, ChevronDown, ChevronUp, Play, ExternalLink } from 'lucide-react'
+import { MessageCircle, Heart, Repeat, ShieldCheck, Share2, X, Send, ChevronDown, ChevronUp } from 'lucide-react'
+import { createComment } from '@/actions/create-comment'
 import styles from './PostCard.module.css'
 import clsx from 'clsx'
+
+// 1. Interfaces (Synchronized with Schema)
+interface Comment {
+    id?: string;
+    author?: { username: string | null };
+    content?: string;
+}
 
 interface PostProps {
   post: {
     id: string
     title: string | null
     content: string
-    type: "TEXT" | "IMAGE" | "VIDEO" | "LINK" | "QUOTE" | "POLL" | "REPOST"
-    mediaUrl: string | null
+    type: string;
+    
+    // ✅ NEW: Fields added to the schema
+    mediaUrl?: string | null;
+    embedUrl?: string | null; // <--- ADDED
+    contentHash?: string | null;
+    isVerified?: boolean;
+    signature?: string | null;
+    
     createdAt: Date
-    author: { name: string | null; username: string | null }
-    channel: { name: string; slug: string }
-    comments?: { id?: string; author?: { username: string }; content?: string }[]
+    author: { id: string; name: string | null; username: string | null; image?: string | null; }
+    channel: { id: string; name: string; slug: string; creatorId: string; }
+    comments?: any[] 
     _count?: { comments: number, likes: number }
   }
 }
-
-// 🧠 HELPER: Simplified, reliable detection
-function detectMedia(text: string | null) {
-  if (!text) return null;
-
-  // 1. YouTube (Standard Links)
-  // Matches: https://www.youtube.com/watch?v=ID and https://youtu.be/ID
-  const ytMatch = text.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (ytMatch) return { type: 'YOUTUBE', url: ytMatch[1] }; 
-
-  // 2. Direct Video (.mp4, .webm)
-  const vidMatch = text.match(/(https?:\/\/\S+\.(?:mp4|webm|ogg))/i);
-  if (vidMatch) return { type: 'VIDEO', url: vidMatch[0] };
-
-  // 3. Images
-  const imgMatch = text.match(/(https?:\/\/\S+(?:png|jpg|jpeg|gif|webp)|https?:\/\/(?:source\.unsplash\.com|picsum\.photos)\/\S+)/i);
-  if (imgMatch) return { type: 'IMAGE', url: imgMatch[0] };
-
-  return null;
-}
-
-// 🖼️ MEDIA RENDERER
-function MediaPreview({ type, url }: { type: string, url: string | null }) {
+// 2. Helper: Robustly extract YouTube ID for Embed URL (Moved from Server Action)
+function getYouTubeEmbedUrl(url: string) {
     if (!url) return null;
+    
+    let videoId = '';
 
-    // --- YOUTUBE EMBED ---
-    if (type === 'YOUTUBE') {
-        return (
-            <div className="relative w-full aspect-video mb-4 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-lg z-10">
-                <iframe 
-                    src={`https://www.youtube.com/embed/${url}?rel=0&modestbranding=1`}
-                    className="w-full h-full"
-                    title="YouTube video player"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    loading="lazy"
-                />
-            </div>
-        );
+    if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    } 
+    else if (url.includes('v=')) {
+        videoId = url.split('v=')[1]?.split('&')[0];
+    }
+    else if (url.includes('embed/')) {
+        videoId = url.split('embed/')[1]?.split('?')[0];
     }
 
-    // --- NATIVE VIDEO ---
-    if (type === 'VIDEO') {
-        return (
-            <div className="relative w-full mb-4 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-lg z-10">
-                <video 
-                    src={url} 
-                    controls 
-                    playsInline
-                    className="w-full max-h-[500px]" 
-                    preload="metadata"
-                />
-            </div>
-        );
+    if (videoId && videoId.length === 11) {
+        // Adds necessary security parameters for iframe to load
+        return `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0&modestbranding=1`;
     }
-
-    // --- IMAGE ---
-    if (type === 'IMAGE') {
-        return (
-            <div className="relative w-full h-72 mb-4 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-white/10 group shadow-sm z-10">
-                <img 
-                    src={url} 
-                    alt="Post Content" 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    loading="lazy"
-                />
-            </div>
-        );
-    }
-
     return null;
 }
 
 export function PostCard({ post }: PostProps) {
+  // --- States ---
   const [isFlipped, setIsFlipped] = useState(false) 
   const [showComments, setShowComments] = useState(false) 
   const [isExpanded, setIsExpanded] = useState(false) 
   const [isLiked, setIsLiked] = useState(false)
+  const [commentText, setCommentText] = useState("")
+  const [isSending, setIsSending] = useState(false)
 
-  // 1. Detect from explicit Media URL
-  let mediaInfo = detectMedia(post.mediaUrl);
+  // Determine Embed URL (Uses the clean URL saved by the Server Action)
+  const embedUrl = (post.type === 'VIDEO' && post.embedUrl) // Check against the new embedUrl field
+    ? post.embedUrl
+    : null;
 
-  // 2. Fallback: Detect from Content Text
-  if (!mediaInfo) {
-      mediaInfo = detectMedia(post.content);
-  }
+  // --- Handlers ---
+  const handleLike = (e: React.MouseEvent) => { e.stopPropagation(); setIsLiked(!isLiked) }
+  const handleComments = (e: React.MouseEvent) => { e.stopPropagation(); setShowComments(true) }
+  const handleVerifyFlip = (e: React.MouseEvent) => { e.stopPropagation(); if (!showComments) setIsFlipped(!isFlipped) }
+  const handleTextExpand = (e: React.MouseEvent) => { e.stopPropagation(); setIsExpanded(!isExpanded) }
 
-  const displayType = mediaInfo?.type || post.type;
-  const displayUrl = mediaInfo?.url || post.mediaUrl;
+  // 🚀 Comment Submission Logic
+  async function handleSendComment() {
+    if (!commentText.trim()) return;
+    setIsSending(true);
+    try {
+        const formData = new FormData();
+        formData.append('content', commentText);
+        formData.append('postId', post.id);
+        formData.append('channelSlug', post.channel.slug);
 
-  // Clean content logic (Optional: remove the link if it's being displayed)
-  const cleanContent = post.content; 
-
-  const handleLike = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsLiked(!isLiked)
-  }
-
-  const handleComments = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setShowComments(true) 
-  }
-
-  const handleVerifyFlip = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!showComments) setIsFlipped(!isFlipped)
-  }
-
-  const handleTextExpand = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsExpanded(!isExpanded)
+        const result = await createComment(formData);
+        
+        if (result.success) {
+            setCommentText(""); // Clear on success
+        } else {
+             // Basic UI alert for comment failure
+             alert("Failed to post comment: " + result.message);
+        }
+    } catch (err) {
+        console.error(err);
+    } finally {
+        setIsSending(false);
+    }
   }
 
   return (
@@ -140,156 +110,133 @@ export function PostCard({ post }: PostProps) {
         {/* === FRONT FACE === */}
         <div className={styles.cardFront}>
           
-          {/* Header */}
           <div className={styles.header}>
             <div className={styles.authorInfo}>
-              <div className={styles.avatar}>
-                {post.author.username?.[0]?.toUpperCase() || "U"}
-              </div>
+              <div className={styles.avatar}>{post.author.username?.[0]?.toUpperCase() || "U"}</div>
               <div>
                 <span className={styles.authorName}>{post.author.username}</span>
-                <div className="flex items-center gap-2 text-[10px] opacity-60">
-                    <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                    {displayType === 'YOUTUBE' && <span className="text-red-500 font-bold flex items-center gap-1">● YouTube</span>}
-                </div>
+                <p className="text-[10px] text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
-
-            <Link 
-              href={`/channels/${post.channel.slug}`} 
-              className={styles.channelTag}
-              onClick={(e) => e.stopPropagation()}
-            >
+            <Link href={`/channels/${post.channel.slug}`} className={styles.channelTag} onClick={(e) => e.stopPropagation()}>
               #{post.channel.slug}
             </Link>
           </div>
 
-          {/* 🎥 MEDIA PREVIEW */}
-          <div onClick={(e) => e.stopPropagation()}>
-             <MediaPreview type={displayType} url={displayUrl} />
-          </div>
-
-          {/* Text Content */}
-          <div 
-            className={clsx(styles.contentWrapper, { 
-                [styles.expanded]: isExpanded, 
-                [styles.clamped]: !isExpanded 
-            })}
-            onClick={handleTextExpand}
-          >
+          {/* Content Area */}
+          <div className={styles.contentWrapper} onClick={handleTextExpand}>
             {post.title && <h3 className={styles.title}>{post.title}</h3>}
-            
-            <p className={`${styles.content} whitespace-pre-wrap break-words text-gray-800 dark:text-gray-200 leading-relaxed`}>
-                {cleanContent}
+            <p className={clsx(styles.content, { 
+                'line-clamp-3': !isExpanded && post.mediaUrl, 
+                'line-clamp-6': !isExpanded && !post.mediaUrl 
+            })}>
+                {post.content}
             </p>
+
+            {/* 🖼️ MEDIA PLAYER */}
+            {post.mediaUrl && (
+    <div className="mt-4 rounded-xl overflow-hidden border border-white/10 bg-black relative shadow-sm">
+        
+        {/* IMAGE Rendering */}
+        {post.type === 'IMAGE' && (
+            <img src={post.mediaUrl} alt="Post content" className="w-full h-auto max-h-[500px] object-cover" loading="lazy" />
+        )}
+
+        {/* VIDEO Rendering */}
+        {post.type === 'VIDEO' && (
+            <div className="relative w-full aspect-video bg-black">
+                {post.embedUrl ? ( // Use the PRE-CALCULATED embedUrl
+                    <iframe
+                        src={post.embedUrl}
+                        className="absolute top-0 left-0 w-full h-full"
+                        title="YouTube video player"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    />
+                ) : (
+                    // Fallback for raw MP4 file links (uses original mediaUrl)
+                    <video src={post.mediaUrl} className="w-full h-full object-contain" controls />
+                )}
+            </div>
+        )}
+        
+        {/* LINK Rendering */}
+        {post.type === 'LINK' && (
+            <a href={post.mediaUrl} target="_blank" className="block p-4 bg-white/5 hover:bg-white/10 text-indigo-400 text-sm truncate">
+                {post.mediaUrl}
+            </a>
+        )}
+    </div>
+)}
             
-            {!isExpanded && (
-                <div className={styles.readMoreHint}>
-                    Read More <ChevronDown size={12} className="inline" />
-                </div>
-            )}
-             {isExpanded && (
-                <div className={styles.readMoreHint}>
-                    Show Less <ChevronUp size={12} className="inline" />
-                </div>
+            {!isExpanded && (post.content.length > 150) && (
+                <div className={styles.readMoreHint}><ChevronDown size={12} className="inline" /> Read More</div>
             )}
           </div>
           
-          {/* Action Bar */}
           <div className={styles.actionBar}>
-            <button 
-                className={clsx(styles.actionBtn, { "text-red-500": isLiked })}
-                onClick={handleLike}
-            >
+            <button className={clsx(styles.actionBtn, { "text-red-500": isLiked })} onClick={handleLike}>
               <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
               <span>{post._count?.likes || 0}</span>
             </button>
-
             <button className={styles.actionBtn} onClick={handleComments}>
               <MessageCircle size={18} />
-              <span>{post._count?.comments || 0}</span>
+              <span>{post.comments?.length || post._count?.comments || 0}</span>
             </button>
-
-            <button className={styles.actionBtn}>
-              <Repeat size={18} />
-            </button>
-            
-            <button className={styles.verifyChip} onClick={handleVerifyFlip}>
-                 <ShieldCheck size={14} />
-                 Verified on Eth
-            </button>
+            <button className={styles.actionBtn}><Repeat size={18} /></button>
+            <button className={styles.verifyChip} onClick={handleVerifyFlip}><ShieldCheck size={14} /> Verified on Eth</button>
           </div>
 
-          {/* === COMMENT DRAWER === */}
+          {/* Comments Drawer */}
           <div className={clsx(styles.commentsPanel, { [styles.commentsOpen]: showComments })}>
               <div className={styles.panelHeader}>
                   <span className="font-bold text-sm">Comments</span>
-                  <button className={styles.closeBtn} onClick={(e) => { e.stopPropagation(); setShowComments(false); }}>
-                      <X size={18} />
-                  </button>
+                  <button className={styles.closeBtn} onClick={(e) => { e.stopPropagation(); setShowComments(false); }}><X size={18} /></button>
               </div>
-
               <div className={styles.commentsList}>
                  {post.comments && post.comments.length > 0 ? (
-                    post.comments.map((comment, i) => (
+                    post.comments.map((comment: any, i: number) => (
                         <div key={i} className={styles.commentItem}>
-                            <div className="flex justify-between mb-1">
-                                <span className="text-indigo-500 dark:text-indigo-400 text-xs font-bold">@{comment.author?.username || 'user'}</span>
-                            </div>
-                            <p className="text-sm text-gray-700 dark:text-gray-300">{comment.content}</p>
+                            <span className="text-indigo-400 text-xs font-bold block mb-1">@{comment.author?.username || 'user'}</span>
+                            <p className="text-sm opacity-90">{comment.content}</p>
                         </div>
                     ))
                  ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm">
-                        <MessageCircle size={24} className="mb-2 opacity-50" />
-                        No comments yet.
+                        <MessageCircle size={24} className="mb-2 opacity-50" /> No comments yet.
                     </div>
                  )}
               </div>
-
               <div className={styles.inputArea}>
                   <input 
-                    type="text" 
-                    placeholder="Add a comment..." 
-                    className={styles.commentInput}
-                    onClick={(e) => e.stopPropagation()} 
+                    type="text" placeholder="Add a comment..." className={styles.commentInput}
+                    value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
+                    onClick={(e) => e.stopPropagation()} disabled={isSending}
                   />
-                  <button className="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-500">
-                      <Send size={16} />
+                  <button onClick={(e) => { e.stopPropagation(); handleSendComment(); }} disabled={isSending} className="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-500 disabled:opacity-50">
+                      {isSending ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={16} />}
                   </button>
               </div>
           </div>
         </div>
 
-        {/* === BACK FACE === */}
+        {/* Back Face */}
         <div className={styles.cardBack}>
-             <button 
-                className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                onClick={handleVerifyFlip}
-             >
-                <X size={20} />
-             </button>
-
+             <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={handleVerifyFlip}><X size={20} /></button>
              <div className={styles.verificationContainer}>
                 <ShieldCheck size={48} className="text-emerald-500 mb-2" />
-                <h3 className="text-lg font-bold text-white mb-1">Verified on Optimism</h3>
-                <p className="text-xs text-gray-400 mb-4 px-6">
-                    Cryptographically secured proof of origin.
-                </p>
-
+                <h3 className={styles.verifyTitle}>Verified on Optimism</h3>
+                <p className={styles.verifyText}>Cryptographically secured proof of origin.</p>
                 <div className={styles.hashBox}>
                     <span className={styles.hashLabel}>CONTENT HASH</span>
-                    <span className={styles.hashValue}>0x7f83...a9c2</span>
+                    <span className={styles.hashValue}>{post.contentHash?.slice(0,30)}...</span>
                     <span className={`${styles.hashLabel} mt-3`}>SIGNATURE</span>
                     <span className={styles.hashValue}>0x129d...f8e2</span>
                 </div>
-
-                <a href="#" className={styles.etherscanLink}>
-                    View Transaction ↗
-                </a>
+                <a href="#" className={styles.etherscanLink}>View Transaction ↗</a>
              </div>
         </div>
-
       </div>
     </div>
   )

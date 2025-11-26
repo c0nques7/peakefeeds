@@ -1,8 +1,6 @@
 import { getGlobalFeed } from "@/lib/feed-service"
 import { PostCard } from "@/components/PostCard"
 import { SearchBar } from "@/components/SearchBar"
-// 🛑 REMOVED: MobileBottomNav (Handled by Layout)
-// 🛑 REMOVED: Sidebar (Handled by Layout)
 import styles from "../dashboard.module.css"
 
 export default async function HomePage() {
@@ -26,7 +24,6 @@ export default async function HomePage() {
             <div className={styles.postsGrid}>
                 {posts.length > 0 ? (
                     posts.map((post) => (
-                        // @ts-expect-error - MediaURL fix pending
                         <PostCard key={post.id} post={{...post, mediaUrl: null}} />
                     ))
                 ) : (
