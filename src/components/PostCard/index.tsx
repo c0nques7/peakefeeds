@@ -42,7 +42,7 @@ function detectMedia(text: string | null): any {
     if (ytMatch) return { type: 'YOUTUBE', url: ytMatch[0] }; 
 
     // 2. Images (Matches the full link)
-    const imgMatch = text.match(/(https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp))/i);
+     const imgMatch = text.match(/(https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp)|https?:\/\/(?:i\.imgur\.com|storage\.googleapis\.com|cdn\.\S+)\/\S+)/i);
     if (imgMatch) return { type: 'IMAGE', url: imgMatch[0] };
 
     // 3. Direct Video (Matches the full link)
