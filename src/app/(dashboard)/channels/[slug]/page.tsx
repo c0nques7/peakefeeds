@@ -11,14 +11,10 @@ interface ChannelPageProps {
 }
 
 export default async function ChannelPage({ params }: ChannelPageProps) {
-  // 1. Unwrap Params (Next.js 15+ style)
   const { slug } = await params; 
-  
-  // 2. Get Session/User ID (Server Side)
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id || '';
 
-  // 3. Fetch Channel Data with Subscription Status & Posts
   const channel = await prisma.channel.findUnique({
     where: { slug: slug },
     include: {
@@ -28,8 +24,6 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           author: true,
           channel: true, 
           _count: { select: { comments: true, likes: true } },
-          // Note: In a real app, you'd select comments here too for the drawer,
-          // or fetch them on-demand via API.
           comments: {
             take: 3,
             orderBy: { createdAt: 'desc' },
@@ -37,7 +31,6 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           }
         }
       },
-      // Check if the CURRENT USER has a subscription record
       subscribers: {
         where: { userId: currentUserId },
         select: { userId: true }, 
@@ -53,16 +46,15 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     notFound();
   }
 
-  // 4. Determine UI States
   const isSubscribedInitial = channel.subscribers.length > 0;
   const isCreator = channel.creatorId === currentUserId;
 
   return (
-    // Layout: Min height + Padding for fixed header/nav
-    <div className="min-h-screen pb-24 pt-24">
+    <div className="min-h-screen pb-24 pt-4"> 
       
-      {/* --- CHANNEL HEADER (Glass Card) --- */}
-      <div className="max-w-5xl mx-auto px-4 mb-8">
+      {/* --- CHANNEL HEADER (Glass Card: Allows Background Gradient Show-Through) --- */}
+      <div className="max-w-5xl mx-auto px-4 mb-12"> 
+        {/* NEW COLOR: bg-white/40 (Light) | dark:bg-black/40 (Dark) - Returning to lighter transparency for better gradient viewing */}
         <div className="bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] p-8 text-center shadow-xl">
           
           <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-2">
@@ -72,12 +64,12 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
              
-             {/* Stat Badge */}
-             <div className="px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-sm font-semibold">
+             {/* Stat Badge - Uses ACCENT PRIMARY (Fuchsia/Pink) for theme consistency */}
+             <div className="px-4 py-1.5 rounded-full bg-pink-600/10 border border-pink-600/20 text-pink-600 dark:text-pink-400 text-sm font-semibold">
                 {channel._count.subscribers} Verifiers
              </div>
 
-             {/* Action Button */}
+             {/* Action Button - Uses ACCENT PRIMARY (Fuchsia/Pink) for theme consistency */}
              {currentUserId && !isCreator && (
                 <SubscribeButton
                     channelId={channel.id}
@@ -98,8 +90,12 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
       {/* --- MAIN FEED --- */}
       <main className="max-w-5xl mx-auto px-4">
         
-        {/* Composer (Only visible if logged in) */}
-        {currentUserId && <CreatePostForm channelId={channel.id} />}
+        {/* Composer - Uses a light, visible accent color (CYAN/Secondary) for distinction */}
+        {currentUserId && 
+            <div className="mb-12 bg-cyan-100/70 dark:bg-cyan-900/50 rounded-2xl p-4 shadow-lg">
+                <CreatePostForm channelId={channel.id} />
+            </div>
+        }
 
         {/* Post Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -110,7 +106,6 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                 </div>
             ) : (
                 channel.posts.map(post => (
-                    // Using spread to handle potential type mismatch with mediaUrl until DB syncs
                     <PostCard 
                         key={post.id} 
                         post={{...post, mediaUrl: null, mediaHash: null}} 
@@ -122,4 +117,3 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     </div>
   );
 }
-

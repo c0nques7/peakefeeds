@@ -19,12 +19,13 @@ interface PostProps {
     id: string
     title: string | null
     content: string
-    type: "TEXT" | "IMAGE" | "VIDEO" | "LINK" | "QUOTE" | "POLL" | "REPOST"
+    type: "TEXT" | "LONGFORM" | "IMAGE" | "VIDEO" | "LINK" | "QUOTE" | "POLL" | "REPOST"
     mediaUrl: string | null
     embedUrl?: string | null;
     contentHash?: string | null;
     isVerified?: boolean; 
     signature?: string | null;
+    mediaHash?: string | null;
     createdAt: Date
     author: { id: string; name: string | null; username: string | null; image?: string | null; }
     channel: { id: string; name: string; slug: string; creatorId: string; }

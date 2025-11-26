@@ -18,14 +18,11 @@
   top: 0;
   left: 0;
   height: 100vh;
-  display: none; /* Hidden on mobile */
-  /* Ensure these are CLEAN so the component handles the look */
+  display: none; 
   background: transparent; 
   box-shadow: none;
   border: none;
   backdrop-filter: none;
-  
-  /* Remove padding here, let the component handle margins */
   padding: 0;
 }
 
@@ -34,15 +31,16 @@
   flex: 1;
   width: 100%; 
   z-index: 10; 
-  padding-bottom: 100px;
+  padding-bottom: 100px; /* Space for the fixed mobile nav */
 }
 
-/* --- 4. POSTS GRID --- */
+/* --- 4. POSTS GRID (Responsive Definition) --- */
+/* Base: Single column for mobile */
 .postsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-  gap: 1.5rem;
-  width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem; /* Consistent spacing */
+    margin-top: 2rem;
 }
 
 /* --- 5. MOBILE NAV WRAPPER --- */
@@ -64,32 +62,19 @@
     padding-bottom: 0; 
     padding-top: 2rem;
   }
+  
+  /* Tablet/Small Desktop (>= 768px): Two columns */
+  .postsGrid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+  }
 }
 
-@media (max-width: 767px) {
-  .postsGrid { display: flex; flex-direction: column; }
-}
-
-/* Base: Single column for mobile */
-.postsGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem; /* Consistent spacing */
-    margin-top: 2rem; /* Add some space below the header */
-}
-
-/* Tablet/Small Desktop (>= 768px): Two columns */
-@media (min-width: 768px) { 
-    .postsGrid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2rem;
-    }
-}
-
-/* Large Desktop (>= 1280px): Three columns */
 @media (min-width: 1280px) { 
+    /* Large Desktop (>= 1280px): Three columns */
     .postsGrid {
         grid-template-columns: repeat(3, 1fr);
-        gap: 2.5rem 1.5rem; /* Slightly more vertical gap than horizontal */
+        gap: 2.5rem 1.5rem; 
     }
 }
+

@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // 👈 1. Import this
+import { useRouter } from 'next/navigation';
 import { createPost } from '@/actions/create-post';
 import { Send, Loader2 } from 'lucide-react';
 import { generateContentHash } from '@/lib/verification'; 
 import { VerificationModal } from './VerificationModal'; 
 
 export default function CreatePostForm({ channelId }: { channelId: string }) {
-  const router = useRouter(); // 👈 2. Initialize hook
+  const router = useRouter(); 
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [content, setContent] = useState("");
@@ -45,7 +45,6 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
     // Call the Server Action
     await createPost({} as any, formData);
     
-    // 🚀 3. THE FIX: Force the UI to fetch the new list immediately
     router.refresh(); 
     
     // Reset UI
@@ -57,36 +56,80 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
 
   return (
     <div className="mb-6">
-      <form onSubmit={handleInitialSubmit} className={`relative bg-white/5 border border-white/10 rounded-2xl p-4 transition-all duration-300 ${isExpanded ? 'shadow-lg ring-1 ring-indigo-500/30' : 'hover:bg-white/10'}`}>
+        {/* --- NEW HEADING FOR CLARITY --- */}
+        <h2 style={{ color: 'var(--text-primary)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+            New Truth Submission
+        </h2>
+
+      <form onSubmit={handleInitialSubmit} 
+        className={`relative rounded-2xl p-4 transition-all duration-300`}
+        // CRITICAL FIX: Use CSS Variables for standard styles
+        style={{ 
+            background: 'var(--glass-card)', 
+            border: '1px solid var(--glass-border)',
+            boxShadow: 'var(--shadow-card)'
+        }}
+      >
         
         <div className="flex gap-4">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex-shrink-0" />
+            {/* Avatar Placeholder: Uses primary accent color */}
+            <div className="h-10 w-10 rounded-full flex-shrink-0"
+                 style={{ background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                U
+            </div>
+            
             <div className="flex-1">
                 <textarea 
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows={isExpanded ? 3 : 1}
-                    placeholder="What's the truth today?" 
-                    className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none p-2 text-lg"
+                    // 🛑 FINAL FIX: Corrected Placeholder Text
+                    placeholder="Share your truth, paste an image/video URL, or drop a long thought..." 
+                    
+                    // 🛑 FINAL FIX: Use Tailwind classes for focus/placeholder styling
+                    // We rely on global/theme CSS to map colors (e.g., text-gray-400 maps to var(--text-muted))
+                    className="w-full border-none focus:ring-0 resize-none p-2 text-lg 
+                                bg-transparent text-gray-800 dark:text-white placeholder-gray-500"
+                    
+                    style={{ 
+                        // Set text color explicitly from var for readability, ensuring background is clear
+                        color: 'var(--text-primary)',
+                        background: 'transparent',
+                    }}
                     onClick={() => setIsExpanded(true)}
                 />
+
+                {/* NEW: Guidance text for media links */}
+                {isExpanded && (
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                        * URLs for images or videos will generate a preview after posting.
+                    </p>
+                )}
             </div>
         </div>
 
         {isExpanded && (
-            <div className="flex justify-end items-center mt-3 pt-3 border-t border-white/5">
+            <div className="flex justify-end items-center mt-3 pt-3"
+                 style={{ borderTop: '1px solid var(--glass-border)' }}>
                 <button 
                     type="button"
                     onClick={() => setIsExpanded(false)}
-                    className="mr-3 text-sm text-gray-400 hover:text-white px-3 py-2"
+                    className="mr-3 text-sm px-3 py-2 text-gray-400 hover:text-gray-100" // Use Tailwind hover utility
                 >
                     Cancel
                 </button>
 
                 <button
                     type="submit"
-                    disabled={isPosting}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all"
+                    disabled={isPosting || !content.trim()}
+                    className="px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all"
+                    // CRITICAL FIX: Use standard CSS for background/opacity control
+                    style={{ 
+                        background: 'var(--accent-primary)', 
+                        color: 'white',
+                        opacity: (isPosting || !content.trim()) ? 0.6 : 1,
+                        cursor: (isPosting || !content.trim()) ? 'not-allowed' : 'pointer',
+                    }}
                 >
                     {isPosting ? <Loader2 className="animate-spin" /> : <>Post <Send size={14} /></>}
                 </button>
@@ -104,4 +147,3 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
     </div>
   );
 }
-
