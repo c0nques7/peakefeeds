@@ -1,0 +1,35 @@
+/* src/components/navigation/MobileBottomNav.module.css */
+
+/* The Container is handled mostly by inline styles for the slide effect, 
+   but we keep base styles here */
+.navContainer {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-secondary); /* Gray by default */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1; /* Distribute space evenly */
+  height: 100%;
+}
+
+.navItem:active {
+  transform: scale(0.9);
+}
+
+.active {
+  color: var(--accent-primary); /* Active Color (Green/Purple) */
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
+.active svg {
+  fill: rgba(255,255,255,0.1); /* Subtle fill on active icon */
+}

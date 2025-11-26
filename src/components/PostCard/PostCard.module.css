@@ -1,0 +1,383 @@
+/* --- Base Container --- */
+.cardContainer {
+  perspective: 1000px;
+  width: 100%;
+  min-height: 220px; /* Ensure enough height for content */
+  position: relative;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent; 
+}
+
+/* --- 3D Inner Wrapper --- */
+.cardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+/* State: Flipped */
+.flipped {
+  transform: rotateY(180deg);
+}
+
+/* --- Faces (Front & Back) --- */
+.cardFront, .cardBack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden; 
+  backface-visibility: hidden;
+  
+  /* Glassmorphism Base */
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; 
+}
+
+/* --- Front Specifics --- */
+.cardFront {
+  z-index: 2;
+}
+
+/* --- Back Specifics (Verification Layer) --- */
+.cardBack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotateY(180deg);
+  /* Dark gradient for secure feel */
+  background: linear-gradient(145deg, rgba(10, 10, 10, 0.95), rgba(20, 20, 20, 0.98));
+  border: 1px solid var(--accent-primary); 
+}
+
+/* --- Typography & Elements --- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary), #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.authorName {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.channelTag {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  background: var(--glass-card-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.channelTag:active {
+  transform: scale(0.95);
+}
+
+/* --- Content Reading Logic --- */
+.contentWrapper {
+  flex: 1;
+  margin-bottom: 1.5rem;
+  position: relative;
+  cursor: pointer; 
+}
+
+.title {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.content {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Clamped State (Default) */
+.clamped .content {
+  display: -webkit-box;
+  -webkit-line-clamp: 4; 
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+/* Expanded State (View Mode) */
+.expanded .content {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  mask-image: none;
+}
+
+.readMoreHint {
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+/* --- Footer Actions --- */
+.actionBar {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--glass-border);
+  margin-top: auto;
+  flex-wrap: wrap; 
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.actionBtn:active {
+  transform: scale(0.9);
+}
+
+.actionBtn:hover {
+  color: var(--text-primary);
+}
+
+/* --- NEW: Verified Chip Style --- */
+.verifyChip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 99px;
+    
+    /* Green Outline Scheme */
+    border: 1px solid var(--accent-primary);
+    color: var(--accent-primary);
+    background: var(--glass-card-hover);
+    
+    cursor: pointer;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    
+    /* Pushes to right side */
+    margin-left: auto; 
+    transition: all 0.2s ease;
+}
+
+.verifyChip:hover {
+    background: var(--accent-primary);
+    color: white; 
+    box-shadow: 0 0 15px var(--accent-glow);
+    border-color: transparent;
+}
+
+/* --- Comments Slide-Up Panel (Frosted Glass) --- */
+.commentsPanel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  /* Frosted Glass Effect */
+  background: var(--glass-card); 
+  backdrop-filter: blur(24px);   
+  -webkit-backdrop-filter: blur(24px); 
+  
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1); 
+  
+  z-index: 20; 
+  transform: translateY(100%); 
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+  display: flex;
+  flex-direction: column;
+  border-radius: 1.5rem;
+}
+
+.commentsOpen {
+  transform: translateY(0); 
+}
+
+.panelHeader {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.commentsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
+}
+
+.commentItem {
+  background: var(--glass-card-hover);
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(5px);
+}
+
+.inputArea {
+  padding: 1rem;
+  border-top: 1px solid var(--glass-border);
+  background: transparent;
+  display: flex;
+  gap: 0.5rem;
+  border-bottom-left-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+}
+
+.commentInput {
+  flex: 1;
+  background: var(--glass-card-hover); 
+  border: 1px solid var(--glass-border);
+  border-radius: 99px;
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.commentInput:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  background: var(--bg-app); 
+}
+
+.commentInput::placeholder {
+  color: var(--text-muted);
+}
+
+/* --- Back Face Verification Styles --- */
+.verificationContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.verifyTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.verifyText {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.hashBox {
+  width: 100%;
+  background: rgba(0,0,0,0.5);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--glass-border);
+  font-family: monospace;
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.hashLabel {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.hashValue {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--accent-primary);
+  word-break: break-all;
+}
+
+.etherscanLink {
+  color: #6366f1;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  z-index: 10;
+}
+
+/* Shared Close Button Style */
+.closeBtn {
+  background: var(--glass-card-hover);
+  border-radius: 50%;
+  padding: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s;
+}
+.closeBtn:hover {
+  background: var(--accent-glow);
+  color: var(--accent-primary);
+}
+
+.commentsPanel span, .commentsPanel p, .commentsPanel h3 {
+    color: var(--text-primary);
+}
+

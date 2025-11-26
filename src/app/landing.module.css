@@ -1,0 +1,306 @@
+/* --- Layout --- */
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background: var(--bg-app); 
+  color: var(--text-primary);
+}
+
+.nav {
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  z-index: 50;
+}
+
+.brandText {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.navLinksContainer {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    /* 📱 MOBILE FIX: Push away from right edge so it doesn't hit Theme Toggle */
+    margin-right: 3rem; 
+}
+
+/* 📱 MOBILE FIX: Hide the big "Start Verifying" button on small screens */
+@media (max-width: 640px) {
+  .navLinksContainer {
+    display: none; 
+  }
+}
+
+.navLink {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+}
+
+.ctaNavButton {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--glass-border);
+    border-radius: 9999px;
+    background: var(--glass-card-hover);
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+
+/* --- Hero Section --- */
+.hero {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 4rem;
+  position: relative;
+}
+
+/* 📱 MOBILE FIX: Stack content vertically */
+@media (max-width: 1024px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    gap: 3rem;
+    padding-top: 2rem;
+  }
+}
+
+/* Background Gradients */
+.glowOrb {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+.heroContent {
+  flex: 1;
+  max-width: 600px;
+  z-index: 10;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 📱 MOBILE FIX: Center alignment */
+@media (max-width: 1024px) {
+  .heroContent {
+    align-items: center;
+  }
+}
+
+.title {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, var(--text-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+.ctaButtonContainer {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .ctaButtonContainer {
+    justify-content: center;
+  }
+}
+
+/* --- Hero Visual (The Demo Card) --- */
+.heroVisual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  z-index: 10;
+}
+
+.demoCardWrapper {
+    width: 100%;
+    max-width: 380px; /* Limit width so it looks like a phone card */
+    position: relative;
+    /* Add a tilt effect for style */
+    transform: rotate(2deg);
+    transition: transform 0.3s;
+}
+
+.demoCardWrapper:hover {
+    transform: rotate(0deg) scale(1.02);
+}
+
+.demoLabel {
+    position: absolute;
+    bottom: -30px;
+    right: 0;
+    color: var(--accent-primary);
+    font-size: 0.8rem;
+    font-family: monospace;
+    opacity: 0.8;
+}
+
+/* --- Feature Grid --- */
+.features {
+  display: grid;
+  /* 📱 MOBILE FIX: Force 1 column on small screens to prevent cut-off */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 4rem 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.featureCard {
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  padding: 1.5rem;
+  border-radius: 20px;
+  transition: all 0.3s;
+  color: var(--text-primary);
+  backdrop-filter: blur(10px); 
+}
+
+.featureCard:hover {
+  background: var(--glass-card-hover);
+  transform: translateY(-5px);
+  border-color: var(--accent-primary);
+}
+
+.featureIcon {
+    margin-bottom: 1rem;
+    color: var(--accent-secondary);
+    width: 2rem;
+    height: 2rem;
+}
+
+.featureTitle {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.featureText {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* --- Buttons --- */
+.ctaButton {
+  background: var(--accent-primary);
+  color: var(--text-primary); 
+  padding: 1rem 2rem;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.ctaButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.secondaryButton {
+  padding: 1rem 2rem;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.secondaryButton:hover {
+  background: var(--glass-card-hover);
+}
+
+/* --- Footer --- */
+.footer {
+    padding: 3rem 1rem;
+    text-align: center;
+    border-top: 1px solid var(--glass-border);
+    margin-top: auto;
+}
+
+.footerText {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.footerHighlight { color: var(--text-primary); font-weight: 600; }
+.footerHighlightRed { color: var(--accent-secondary); font-weight: 600; }
+
+/* --- Badge --- */
+.optimismBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 4, 32, 0.1); 
+  border: 1px solid rgba(255, 4, 32, 0.2);
+  border-radius: 99px;
+  color: #ff0420; 
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(5px);
+  width: fit-content; /* Ensure it doesn't stretch */
+}
+
+.pingEffect { position: relative; display: flex; height: 8px; width: 8px; }
+.pingDot { position: absolute; display: inline-flex; height: 100%; width: 100%; border-radius: 50%; background-color: #ff0420; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.dot { position: relative; display: inline-flex; border-radius: 50%; height: 8px; width: 8px; background-color: #ff0420; }
+@keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+
