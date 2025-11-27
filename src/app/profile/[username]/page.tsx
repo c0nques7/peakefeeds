@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { PostCard } from "@/components/PostCard"; // Assuming PostCard is here
 
 interface ProfilePageProps {
-    params: { username: string };
-    searchParams: { tab?: 'posts' | 'channels' }; // Get tab from URL
+    params: PRomise<{ username: string }>;
+    searchParams: Promise<{ tab?: 'posts' | 'channels' }>; // Get tab from URL
 }
 
 // Helper component for stat badges
@@ -62,10 +62,10 @@ const ProfileTabs = ({ activeTab, username, postCount, channelCount }:
 }
 
 export default async function ProfilePage({ params, searchParams }: ProfilePageProps) {
-    const { username } = params;
+    const { username } = await params;
     
     // Determine the active tab from the URL query parameter, default to 'posts'
-    const activeTab: ActiveTabType = searchParams.tab === 'channels' ? 'channels' : 'posts';
+    const activeTab: ActiveTabType = await searchParams.tab === 'channels' ? 'channels' : 'posts';
     
     const profile = await getProfileData(username);
 

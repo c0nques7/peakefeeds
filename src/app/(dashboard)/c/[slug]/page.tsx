@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
-import { getServerSession } from "next-auth"; // 👈 NextAuth v4
-import { authOptions } from "@/lib/auth.config"; // 👈 Your config
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth.config";
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm";
-import { SubscribeButton } from "@/components/SubscribeButton"; // 👈 NEW IMPORT
+import { SubscribeButton } from "@/components/SubscribeButton";
 
 interface ChannelPageProps {
   params: Promise<{ slug: string }>;
@@ -12,12 +12,9 @@ interface ChannelPageProps {
 
 export default async function ChannelPage({ params }: ChannelPageProps) {
   const { slug } = await params; 
-  
-  // 1. Get Session/User ID (Server Side)
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id || '';
 
-  // 2. Fetch Channel Data with Subscription Status Check
   const channel = await prisma.channel.findUnique({
     where: { slug: slug },
     include: {
@@ -26,13 +23,17 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
         include: {
           author: true,
           channel: true, 
-          _count: { select: { comments: true, likes: true } }
+          _count: { select: { comments: true, likes: true } },
+          comments: {
+            take: 3,
+            orderBy: { createdAt: 'desc' },
+            include: { author: { select: { username: true } } }
+          }
         }
       },
-      // 💡 Check if the CURRENT USER has a subscription record
       subscribers: {
         where: { userId: currentUserId },
-        select: { userId: true }, // Only need to check if a record exists
+        select: { userId: true }, 
         take: 1, 
       },
       _count: {
@@ -45,27 +46,30 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     notFound();
   }
 
-  // 3. Determine Initial State
   const isSubscribedInitial = channel.subscribers.length > 0;
   const isCreator = channel.creatorId === currentUserId;
 
   return (
-    <div className="min-h-screen bg-black text-white pb-24">
+    <div className="min-h-screen pb-24 pt-4"> 
       
-      {/* Channel Header */}
-      <div className="bg-white/5 border-b border-white/10 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            #{channel.name}
-          </h1>
-          <p className="mt-2 text-lg text-gray-400">{channel.description}</p>
+      {/* --- CHANNEL HEADER (Glass Card: Allows Background Gradient Show-Through) --- */}
+      <div className="max-w-5xl mx-auto px-4 mb-12"> 
+        {/* NEW COLOR: bg-white/40 (Light) | dark:bg-black/40 (Dark) - Returning to lighter transparency for better gradient viewing */}
+        <div className="bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] p-8 text-center shadow-xl">
           
-          <div className="mt-4 inline-flex items-center gap-4">
-             <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm">
-                <span>{channel._count.subscribers} Verifiers</span>
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-2">
+            {channel.name}
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">{channel.description}</p>
+          
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+             
+             {/* Stat Badge - Uses ACCENT PRIMARY (Fuchsia/Pink) for theme consistency */}
+             <div className="px-4 py-1.5 rounded-full bg-pink-600/10 border border-pink-600/20 text-pink-600 dark:text-pink-400 text-sm font-semibold">
+                {channel._count.subscribers} Verifiers
              </div>
 
-             {/* 👇 RENDER THE BUTTON HERE (Only if logged in and not the creator) */}
+             {/* Action Button - Uses ACCENT PRIMARY (Fuchsia/Pink) for theme consistency */}
              {currentUserId && !isCreator && (
                 <SubscribeButton
                     channelId={channel.id}
@@ -75,7 +79,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
              )}
              
              {isCreator && (
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
+                <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm font-bold">
                     You are the Creator
                 </span>
              )}
@@ -83,21 +87,29 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
         </div>
       </div>
 
-      {/* Main Feed Area */}
-      <main className="max-w-2xl mx-auto py-8 px-4">
+      {/* --- MAIN FEED --- */}
+      <main className="max-w-5xl mx-auto px-4">
         
-        {/* Only show the composer if the user is logged in */}
-        {currentUserId && <CreatePostForm channelId={channel.id} />}
+        {/* Composer - Uses a light, visible accent color (CYAN/Secondary) for distinction */}
+        {currentUserId && 
+            <div className="mb-12 bg-cyan-100/70 dark:bg-cyan-900/50 rounded-2xl p-4 shadow-lg">
+                <CreatePostForm channelId={channel.id} />
+            </div>
+        }
 
-        {/* Post List */}
-        <div className="space-y-6">
+        {/* Post Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {channel.posts.length === 0 ? (
-                <div className="p-12 border border-dashed border-gray-800 rounded-2xl text-center text-gray-500">
-                  <p>No verified truth here yet.</p>
+                <div className="col-span-full p-16 border-2 border-dashed border-gray-400/30 rounded-3xl text-center text-gray-500 bg-white/20 dark:bg-white/5">
+                  <p className="text-lg font-medium">No verified truth here yet.</p>
+                  <p className="text-sm opacity-70">Be the first to post.</p>
                 </div>
             ) : (
                 channel.posts.map(post => (
-                    <PostCard key={post.id} post={post} />
+                    <PostCard 
+                        key={post.id} 
+                        post={{...post, mediaUrl: null, mediaHash: null}} 
+                    />
                 ))
             )}
         </div>

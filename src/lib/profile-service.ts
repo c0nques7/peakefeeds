@@ -26,10 +26,14 @@ export type ProfileData = {
             comments: number;
             likes: number;
         };
-        channel: {
-            slug: string;
+    channel: {
+        id: string;
+        name: string;
+        slug: string;
+        creatorId: string;
         };
     }[];
+
 
     // Data for the 'My Channels' Tab
     channelsCreated: {
@@ -48,7 +52,7 @@ export type ProfileData = {
  */
 export async function getProfileData(username: string): Promise<ProfileData> {
     
-    // 🛑 FIX: Check if username is valid before querying Prisma.
+    
     if (!username || typeof username !== 'string') {
         // Log the error for server-side debugging
         console.error("Attempted to call getProfileData with invalid username:", username);
@@ -82,9 +86,13 @@ export async function getProfileData(username: string): Promise<ProfileData> {
                     content: true,
                     createdAt: true,
                     isVerified: true,
-                    channel: { select: { slug: true } },
+                    
+
+
+                    channel: { select: { id: true, name: true, slug: true, creatorId: true} },
+
                     _count: { select: { comments: true, likes: true } },
-                }
+        }
             },
 
             // 3. Channels Created
