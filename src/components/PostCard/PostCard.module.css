@@ -2,7 +2,7 @@
 .cardContainer {
   perspective: 1000px;
   width: 100%;
-  min-height: 220px; /* Ensure enough height for content */
+  min-height: 220px;
   z-index: 10;
   position: relative;
   cursor: default;
@@ -69,7 +69,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .authorInfo {
@@ -106,6 +106,8 @@
   border: 1px solid var(--glass-border);
   transition: all 0.2s;
   z-index: 10;
+  margin-bottom: 1.25rem;
+  display: inline-block;
 }
 
 .channelTag:active {
@@ -118,13 +120,12 @@
   margin-bottom: 1.5rem;
   position: relative;
   cursor: pointer; 
-  min-height: 60px; /* Ensure it never collapses to 0 */
+  min-height: 60px;
 }
 
 .videoWrapper {
     position: relative;
     width: 100%;
-    /* 16:9 Aspect Ratio */
     padding-top: 56.25%; 
     height: 0;
 }
@@ -146,25 +147,20 @@
 }
 
 .content {
-  /* Force color to match the theme's primary text for maximum contrast */
   color: var(--text-primary); 
   font-size: 0.95rem;
   line-height: 1.6;
 }
 
-/* Clamped State (Default) */
 .clamped .content {
   display: -webkit-box;
   -webkit-line-clamp: 4; 
   -webkit-box-orient: vertical;
   overflow: hidden;
-  
-  /* Standard & Webkit Mask for cross-browser fade */
   mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
 }
 
-/* Expanded State (View Mode) */
 .expanded .content {
   display: block;
   -webkit-line-clamp: unset;
@@ -211,7 +207,28 @@
   color: var(--text-primary);
 }
 
-/* --- NEW: Verified Chip Style --- */
+/* --- Reaction Interactions --- */
+.actionBtn svg {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s ease;
+}
+
+.actionBtn.liked { color: #ef4444; }
+.actionBtn.liked svg {
+  fill: #ef4444;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+  transform: scale(1.1);
+}
+
+.actionBtn.disliked { color: #a855f7; }
+.actionBtn.disliked svg {
+  fill: #a855f7;
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.5));
+  transform: scale(1.1);
+}
+
+.actionBtn:active svg { transform: scale(0.8); }
+
+/* --- Verified Chip Style --- */
 .verifyChip {
     display: flex;
     align-items: center;
@@ -220,20 +237,13 @@
     padding: 0.35rem 0.85rem;
     border-radius: 99px;
     transition: all 0.2s ease;
-    
-    /* Green Outline Scheme */
     border: 1px solid var(--accent-primary);
     color: var(--accent-primary);
     background: var(--glass-card-hover);
-    
     cursor: pointer;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    
-    /* Pushes to right side */
-    margin-left: auto; 
-    transition: all 0.2s ease;
 }
 
 .verifyChip.unverified {
@@ -241,7 +251,7 @@
     color: var(--text-muted);
     background: none; 
     box-shadow: none;
-    cursor: default; /* Make it look less clickable */
+    cursor: default; 
 }
 
 .verifyChip.unverified:hover {
@@ -249,7 +259,7 @@
     color: var(--text-primary);
     box-shadow: none;
     border-color: var(--text-muted);
-    transform: none; /* Prevent the hover scale defined on the base .verifyChip */
+    transform: none; 
 }
 
 .verifyChip:hover {
@@ -259,7 +269,7 @@
     border-color: transparent;
 }
 
-/* --- Comments Slide-Up Panel (Frosted Glass) --- */
+/* --- Comments Slide-Up Panel (Structure Only) --- */
 .commentsPanel {
   position: absolute;
   top: 0;
@@ -267,13 +277,13 @@
   width: 100%;
   height: 100%;
   
-  /* Frosted Glass Effect */
-  background: var(--glass-card); 
-  backdrop-filter: blur(24px);   
-  -webkit-backdrop-filter: blur(24px); 
+  /* ❌ BACKGROUND REMOVED: Handled by Tailwind in TSX now */
+  
+  backdrop-filter: blur(20px);   
+  -webkit-backdrop-filter: blur(20px); 
   
   border: 1px solid var(--glass-border);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1); 
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2); 
   
   z-index: 20; 
   transform: translateY(100%); 
@@ -282,6 +292,8 @@
   flex-direction: column;
   border-radius: 1.5rem;
 }
+
+/* ❌ DARK MODE OVERRIDE REMOVED: Handled by Tailwind now */
 
 .commentsOpen {
   transform: translateY(0); 
@@ -293,7 +305,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.02);
+  background: inherit; 
+  border-top-left-radius: 1.5rem;
+  border-top-right-radius: 1.5rem;
 }
 
 .commentsList {
@@ -307,22 +321,18 @@
   scrollbar-color: var(--glass-border) transparent;
 }
 
-.commentItem {
-  background: var(--glass-card-hover);
-  padding: 0.75rem;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(5px);
-}
-
+/* --- Input Area --- */
 .inputArea {
   padding: 1rem;
   border-top: 1px solid var(--glass-border);
-  background: transparent;
+  
+  /* Background handled by Tailwind in TSX */
+  
   display: flex;
   gap: 0.5rem;
   border-bottom-left-radius: 1.5rem;
   border-bottom-right-radius: 1.5rem;
+  z-index: 30; 
 }
 
 .commentInput {
@@ -421,4 +431,3 @@
 .commentsPanel span, .commentsPanel p, .commentsPanel h3 {
     color: var(--text-primary);
 }
-

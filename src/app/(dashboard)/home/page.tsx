@@ -26,7 +26,7 @@ export default async function HomePage() {
             <div className={styles.postsGrid}>
                 {posts.length > 0 ? (
                     posts.map((post) => (
-                        // @ts-expect-error - MediaURL fix pending
+                        
                         <PostCard key={post.id} post={{...post, mediaUrl: null}} />
                     ))
                 ) : (

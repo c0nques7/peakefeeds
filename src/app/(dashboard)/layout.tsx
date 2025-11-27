@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { Sidebar } from "@/components/layout/Sidebar"; // ✅ FIXED IMPORT PATH
 import { RightSidebar } from "@/components/layout/RightSidebar"; 
+import { Providers } from "@/components/Providers";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import styles from "./dashboard.module.css"; 
 
@@ -22,7 +23,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* 3. MAIN CONTENT (Scrollable) */}
       <main className={styles.mainContent}>
         <div className={styles.feedWrapper}>
+          <Providers>
             {children}
+          </Providers>
         </div>
       </main>
 

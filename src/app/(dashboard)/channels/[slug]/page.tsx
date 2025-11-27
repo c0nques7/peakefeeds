@@ -108,7 +108,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                 channel.posts.map(post => (
                     <PostCard 
                         key={post.id} 
-                        post={{...post, mediaUrl: null, mediaHash: null}} 
+                        post={{...post, mediaUrl: post.mediaUrl || null}} 
                     />
                 ))
             )}
