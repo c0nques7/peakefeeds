@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import ThemeToggle  from '@/components/ThemeToggle'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [hasMounted, setHasMounted] = useState(false)

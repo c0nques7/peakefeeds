@@ -25,9 +25,16 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           channel: true, 
           _count: { select: { comments: true, likes: true } },
           comments: {
-            take: 3,
-            orderBy: { createdAt: 'desc' },
-            include: { author: { select: { username: true } } }
+            take: 50, // Increase limit so threads don't break
+            orderBy: { createdAt: 'asc' }, // Oldest first is better for threading
+            include: { 
+                author: { 
+                    select: { 
+                        id: true, // 👈 ADDED: Required by PostCard interface
+                        username: true 
+                    } 
+                } 
+            }
           }
         }
       },

@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '@/lib/ThemeContext'
-import ClientLayout from '@/components/ClientLayout'
+// 👇 Import the wrapper we created for next-themes
+import { ThemeProvider } from '@/components/ThemeProvider'
+// Keep ClientLayout if it handles auth/sessions, otherwise it might be redundant
+import ClientLayout from '@/components/ClientLayout' 
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,27 +19,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
+    /* suppressHydrationWarning is vital for next-themes */
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* CRITICAL HYDRATION FIX: Sets the theme on the <html> tag before CSS loads */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const savedTheme = localStorage.getItem('peake-theme');
-                  const theme = savedTheme === 'dark' ? 'dark' : 'light';
-                  document.documentElement.setAttribute('data-theme', theme);
-                } catch (e) {
-                  document.documentElement.setAttribute('data-theme', 'light');
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
       <body className={inter.className}>
-        <ThemeProvider>
+        {/* 👇 THEME PROVIDER MUST WRAP EVERYTHING */}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/* Keep your ClientLayout if it provides SessionProvider */}
           <ClientLayout>
             {children}
           </ClientLayout>
@@ -46,3 +38,4 @@ export default function RootLayout({
     </html>
   )
 }
+

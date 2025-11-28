@@ -65,33 +65,29 @@ export type GlobalFeedPost = Prisma.PostGetPayload<{
 // 2. Data Fetching Logic (Global Feed)
 // -------------------------------------------------------------
 
-export async function getGlobalFeed(): Promise<GlobalFeedPost[]> {
-  
-    const posts = await prisma.post.findMany({
-        take: 20,
-        orderBy: { createdAt: 'desc' },
-        
-        select: {
-           id: true,
-            title: true,
-            content: true,
-            createdAt: true,
-            updatedAt: true,
-    
-    
-            type: true,
-            mediaUrl: true,
-            mediaHash: true,
-            isVerified: true,
-            contentHash: true,
-            signature: true,
-            
-            // Relational Fields
-            ...postRelations
+export async function getGlobalFeed() {
+  const posts = await prisma.post.findMany({
+    take: 20,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      author: true,
+      channel: true,
+      _count: { select: { comments: true, likes: true } },
+      
+      // 🛑 FIX: Fetch comments properly for threading
+      comments: {
+        orderBy: { createdAt: 'asc' }, // Oldest first helps the tree structure logic visually
+        // Remove 'take: 3' temporarily to ensure parents load, 
+        // or increase it significantly (e.g., take: 50)
+        include: {
+            author: { select: { id: true, username: true } }
+            // Note: 'parentId' is automatically included because we are using 'include'
         }
-    });
+      }
+    }
+  });
   
-    return posts as GlobalFeedPost[];
+  return posts;
 }
 
 

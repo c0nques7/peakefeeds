@@ -1,5 +1,3 @@
-/* src/app/home/dashboard.module.css */
-
 /* --- 1. BASE LAYOUT --- */
 .layoutContainer {
   display: flex;
@@ -9,7 +7,7 @@
   overflow-x: hidden; 
 }
 
-/* --- 2. LEFT SIDEBAR (Layout Only) --- */
+/* --- 2. LEFT SIDEBAR (Desktop Navigation) --- */
 .desktopSidebar {
   width: 275px;
   flex-shrink: 0;
@@ -18,29 +16,43 @@
   top: 0;
   left: 0;
   height: 100vh;
-  display: none; 
-  background: transparent; 
-  box-shadow: none;
-  border: none;
-  backdrop-filter: none;
+  display: none; /* Hidden on mobile */
   padding: 0;
+  /* Clean slate for component styling */
+  background: transparent;
+  border: none;
 }
 
-/* --- 3. MAIN CONTENT --- */
+/* --- 3. RIGHT SIDEBAR (Search/Trending) --- */
+.rightSidebar {
+  width: 350px;
+  flex-shrink: 0;
+  z-index: 40;
+  position: fixed; 
+  top: 0;
+  right: 0;
+  height: 100vh;
+  display: none; /* Hidden on mobile & tablet */
+  
+  /* Optional: Add a subtle border or background if desired */
+  border-left: 1px solid var(--glass-border);
+  padding: 1.5rem;
+}
+
+/* --- 4. MAIN CONTENT AREA --- */
 .mainContent {
   flex: 1;
   width: 100%; 
   z-index: 10; 
-  padding-bottom: 100px; /* Space for the fixed mobile nav */
+  padding-bottom: 2rem; /* Standard spacing */
+  padding-right: 70px;
 }
 
-/* --- 4. POSTS GRID (Responsive Definition) --- */
-/* Base: Single column for mobile */
-.postsGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem; /* Consistent spacing */
-    margin-top: 2rem;
+/* Wrapper to constrain feed width on large screens */
+.feedWrapper {
+  max-width: 600px; 
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* --- 5. MOBILE NAV WRAPPER --- */
@@ -53,28 +65,51 @@
   z-index: 50;
 }
 
-/* --- 6. RESPONSIVE RULES --- */
+/* --- 6. POSTS GRID (For Home Page/Channel Page Grids) --- */
+/* Mobile: 1 Column */
+.postsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* --- 7. RESPONSIVE BREAKPOINTS --- */
+
+/* TABLET / SMALL LAPTOP (>= 768px) */
+/* Show Left Sidebar, Hide Mobile Nav */
 @media (min-width: 768px) {
   .desktopSidebar { display: block; }
   .mobileNavWrapper { display: none !important; }
-  .mainContent { 
-    margin-left: 275px; 
-    padding-bottom: 0; 
-    padding-top: 2rem;
-  }
   
-  /* Tablet/Small Desktop (>= 768px): Two columns */
+  .mainContent { 
+    margin-left: 275px; /* Push content to right of sidebar */
+    padding-bottom: 0; 
+    padding-top: 1rem;
+  }
+
+  /* Grid becomes 2 columns */
   .postsGrid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 2rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
   }
 }
 
-@media (min-width: 1280px) { 
-    /* Large Desktop (>= 1280px): Three columns */
-    .postsGrid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2.5rem 1.5rem; 
-    }
+/* DESKTOP (>= 1280px) */
+/* Show Right Sidebar */
+@media (min-width: 1280px) {
+  .rightSidebar { display: block; }
+  
+  .mainContent {
+    /* Push content between both sidebars */
+    margin-left: 275px; 
+    margin-right: 350px; 
+  }
+
+  /* Grid becomes 3 columns if space permits in specific views */
+  .postsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem 1.5rem;
+  }
 }
 

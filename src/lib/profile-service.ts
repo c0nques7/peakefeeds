@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/db';
-import { notFound } from 'next/navigation';
 
 // Define the required shape of the data for clarity
 export type ProfileData = {
@@ -22,18 +21,36 @@ export type ProfileData = {
         content: string;
         createdAt: Date;
         isVerified: boolean;
+        contentHash: string | null; // Added for verification card
+        signature: string | null;   // Added for verification card
+        embedUrl: string | null;    // Added for media handling
+        mediaUrl: string | null;    // Added for media handling
+        type: "TEXT" | "IMAGE" | "VIDEO" | "LINK" | "QUOTE" | "POLL" | "REPOST"; // typed strictly
+        
         _count: {
             comments: number;
             likes: number;
         };
-    channel: {
-        id: string;
-        name: string;
-        slug: string;
-        creatorId: string;
+        
+        // Critical for PostCard Header
+        channel: {
+            id: string;
+            name: string;
+            slug: string;
+            creatorId: string;
         };
-    }[];
 
+        // 🆕 ADDED: Critical for Comment Threading
+        comments: {
+            id: string;
+            content: string;
+            parentId: string | null;
+            author: {
+                id: string;
+                username: string | null;
+            };
+        }[];
+    }[];
 
     // Data for the 'My Channels' Tab
     channelsCreated: {
@@ -52,13 +69,13 @@ export type ProfileData = {
  */
 export async function getProfileData(username: string): Promise<ProfileData> {
     
-    
     if (!username || typeof username !== 'string') {
-        // Log the error for server-side debugging
         console.error("Attempted to call getProfileData with invalid username:", username);
         return null;
     }
 
+    // Cast the result to ProfileData because Prisma's generated types 
+    // can be strict about Enums vs Strings for 'type'.
     const user = await prisma.user.findUnique({
         where: { username },
         select: {
@@ -86,13 +103,32 @@ export async function getProfileData(username: string): Promise<ProfileData> {
                     content: true,
                     createdAt: true,
                     isVerified: true,
+                    contentHash: true,
+                    signature: true,
+                    embedUrl: true,
+                    mediaUrl: true,
+                    type: true,
                     
-
-
-                    channel: { select: { id: true, name: true, slug: true, creatorId: true} },
-
+                    // Critical Channel Data
+                    channel: { 
+                        select: { id: true, name: true, slug: true, creatorId: true } 
+                    }, 
+                    
                     _count: { select: { comments: true, likes: true } },
-        }
+
+                    // 🛑 FIX: Fetch Comments for Threading
+                    comments: {
+                        orderBy: { createdAt: 'asc' }, // Oldest first helps tree logic
+                        select: {
+                            id: true,
+                            content: true,
+                            parentId: true, // 👈 REQUIRED for nesting
+                            author: {
+                                select: { id: true, username: true }
+                            }
+                        }
+                    }
+                }
             },
 
             // 3. Channels Created

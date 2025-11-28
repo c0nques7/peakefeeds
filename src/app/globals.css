@@ -23,75 +23,78 @@ body {
 }
 
 :root {
-  /* --- ☀️ LIGHT MODE: "Pearlescent Hologram" --- */
-  /* We bumped the saturation so you can actually see the colors shifting */
+  /* --- ☀️ LIGHT MODE: "Digital Daydream" (2025) --- */
   
-  --bg-color-solid: #f0fdf4; 
+  /* Base Background (Off-White/Gray) */
+  --bg-app: #F5F5F7; 
+  --bg-color-solid: #F5F5F7;
   
-  /* Distinct color stops: White -> Lavender -> Aqua */
+  /* Gradient Stops: White -> Soft Lavender -> Soft Cyan */
   --bg-gradient-start: #ffffff;   
-  --bg-gradient-middle: #d8b4fe;  /* Violet-300 (Visible Purple) */
-  --bg-gradient-end: #6ee7b7;     /* Emerald-300 (Visible Green) */
+  --bg-gradient-middle: #e9d5ff;  /* Soft Lavender */
+  --bg-gradient-end: #cffafe;     /* Soft Cyan */
   
-  /* Glass Surfaces */
+  /* Glass Surfaces (High Opacity for Readability) */
   --glass-panel: rgba(255, 255, 255, 0.6); 
-  --glass-card: rgba(255, 255, 255, 0.7); 
+  --glass-card: rgba(255, 255, 255, 0.75); 
   --glass-card-hover: #ffffff;
   
-  /* 🟢 THE GLOW */
-  --glass-border: rgba(79, 70, 229, 0.2); 
-  --shadow-glass: 0 8px 30px rgba(79, 70, 229, 0.1);
-  --shadow-card: 0 4px 6px rgba(79, 70, 229, 0.15);
+  /* 🟣 THE GLOW (Lavender/Cyan) */
+  --glass-border: rgba(112, 89, 200, 0.15); 
+  --shadow-glass: 0 8px 30px rgba(112, 89, 200, 0.1);
+  --shadow-card: 0 4px 6px rgba(112, 89, 200, 0.1);
   
   /* Text */
-  --text-primary: #0f172a;   
+  --text-primary: #1A1A1A;   
   --text-secondary: #334155; 
-  --text-muted: #64748b;     
+  --text-muted: #6B7280;     
   
-  /* Accents */
-  --accent-primary: #4f46e5;   
-  --accent-secondary: #10b981; 
-  --accent-glow: rgba(79, 70, 229, 0.3);
+  /* Accents (2025 Palette) */
+  --accent-primary: #7059C8;   /* Digital Lavender */
+  --accent-secondary: #00BCD4; /* Muted Cyber Blue */
+  --accent-glow: rgba(112, 89, 200, 0.3);
   
   /* Inputs */
   --input-bg: rgba(255, 255, 255, 0.8); 
-  --input-border: rgba(79, 70, 229, 0.3);
+  --input-border: rgba(112, 89, 200, 0.2);
 }
 
-[data-theme='dark'] {
-  /* --- 🌙 DARK MODE: "Deep Nebula" --- */
-  /* Pitch Black blending into rich, saturated darks */
+/* 🛑 CHANGED FROM [data-theme='dark'] TO .dark */
+.dark {
+  /* --- 🌙 DARK MODE: "Cosmic Deep" (2025) --- */
   
-  --bg-color-solid: #020617; 
+  /* Base Background (Deep Navy) - Matches PostCard Logic */
+  --bg-app: #121216; 
+  --bg-color-solid: #121216; 
   
-  /* Distinct color stops: Void -> Deep Purple -> Deep Teal */
-  --bg-gradient-start: #020617;   /* Slate-950 */
-  --bg-gradient-middle: #4c1d95;  /* Violet-900 (Rich Purple) */
-  --bg-gradient-end: #064e3b;     /* Emerald-900 (Rich Green) */    
+  /* Gradient Stops: Deep Navy -> Dark Violet -> Dark Teal */
+  --bg-gradient-start: #121216;   
+  --bg-gradient-middle: #2e1065;  /* Deep Violet */
+  --bg-gradient-end: #0f172a;     /* Slate Navy */    
   
-  /* Glass Surfaces */
-  --glass-panel: rgba(15, 23, 42, 0.6); 
-  --glass-card: rgba(30, 41, 59, 0.4);
-  --glass-card-hover: rgba(51, 65, 85, 0.6);
+  /* Glass Surfaces (Low Opacity for Contrast) */
+  --glass-panel: rgba(18, 18, 22, 0.6); 
+  --glass-card: rgba(255, 255, 255, 0.05);
+  --glass-card-hover: rgba(255, 255, 255, 0.1);
   
   /* 🟣 THE GLOW */
-  --glass-border: rgba(139, 92, 246, 0.3); 
-  --shadow-glass: 0 0 30px rgba(124, 58, 237, 0.2); 
-  --shadow-card: 0 0 0 1px rgba(139, 92, 246, 0.1), 0 10px 40px rgba(0, 0, 0, 0.7); 
+  --glass-border: rgba(169, 146, 255, 0.2); 
+  --shadow-glass: 0 0 30px rgba(169, 146, 255, 0.1); 
+  --shadow-card: 0 0 0 1px rgba(169, 146, 255, 0.1), 0 10px 40px rgba(0, 0, 0, 0.6); 
   
   /* Text */
-  --text-primary: #f8fafc;
+  --text-primary: #FFFFFF;
   --text-secondary: #cbd5e1; 
-  --text-muted: #64748b;     
+  --text-muted: #A3A3A3;     
   
-  /* Accents */
-  --accent-primary: #a78bfa;   
-  --accent-secondary: #34d399; 
-  --accent-glow: rgba(139, 92, 246, 0.5);
+  /* Accents (Neon Variations) */
+  --accent-primary: #A992FF;   /* Bright Lavender */
+  --accent-secondary: #4DD0E1; /* Bright Cyber Blue */
+  --accent-glow: rgba(169, 146, 255, 0.4);
   
   /* Inputs */
-  --input-bg: rgba(15, 23, 42, 0.8); 
-  --input-border: rgba(139, 92, 246, 0.4);
+  --input-bg: rgba(255, 255, 255, 0.05); 
+  --input-border: rgba(169, 146, 255, 0.3);
 }
 
 html {
@@ -107,14 +110,12 @@ body {
     var(--bg-gradient-end)
   );
   
-  /* Zoomed in 200% (instead of 300%) to make color patches tighter and more visible */
   background-size: 200% 200%; 
-  
-  /* Faster animation (15s) to see the movement */
   animation: backgroundShift 15s ease infinite; 
   background-attachment: fixed; 
 
   color: var(--text-primary);
   min-height: 100vh;
-  transition: color 0.5s ease;
+  transition: color 0.5s ease, background 0.5s ease;
 }
+
