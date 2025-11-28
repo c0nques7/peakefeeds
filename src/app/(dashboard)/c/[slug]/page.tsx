@@ -1,126 +1,127 @@
-import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth.config";
+import { getProfileData } from '@/lib/profile-service';
+import { ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 import { PostCard } from "@/components/PostCard";
-import CreatePostForm from "@/components/posts/CreatePostForm";
-import { SubscribeButton } from "@/components/SubscribeButton";
+import { getServerSession } from "next-auth"; // 🆕
+import { authOptions } from "@/lib/auth.config"; // 🆕
 
-interface ChannelPageProps {
-  params: Promise<{ slug: string }>;
+interface ProfilePageProps {
+    params: Promise<{ username: string }>;
+    searchParams: Promise<{ tab?: 'posts' | 'channels' }>;
 }
 
-export default async function ChannelPage({ params }: ChannelPageProps) {
-  const { slug } = await params; 
-  const session = await getServerSession(authOptions);
-  const currentUserId = session?.user?.id || '';
-
-  const channel = await prisma.channel.findUnique({
-    where: { slug: slug },
-    include: {
-      posts: {
-        orderBy: { createdAt: 'desc' },
-        include: {
-          author: true,
-          channel: true, 
-          _count: { select: { comments: true, likes: true } },
-          comments: {
-            take: 50, // Increase limit so threads don't break
-            orderBy: { createdAt: 'asc' }, // Oldest first is better for threading
-            include: { 
-                author: { 
-                    select: { 
-                        id: true, // 👈 ADDED: Required by PostCard interface
-                        username: true 
-                    } 
-                } 
-            }
-          }
-        }
-      },
-      subscribers: {
-        where: { userId: currentUserId },
-        select: { userId: true }, 
-        take: 1, 
-      },
-      _count: {
-        select: { subscribers: true }
-      }
-    }
-  });
-
-  if (!channel) {
-    notFound();
-  }
-
-  const isSubscribedInitial = channel.subscribers.length > 0;
-  const isCreator = channel.creatorId === currentUserId;
-
-  return (
-    <div className="min-h-screen pb-24 pt-4"> 
-      
-      {/* --- CHANNEL HEADER (Glass Card: Allows Background Gradient Show-Through) --- */}
-      <div className="max-w-5xl mx-auto px-4 mb-12"> 
-        {/* NEW COLOR: bg-white/40 (Light) | dark:bg-black/40 (Dark) - Returning to lighter transparency for better gradient viewing */}
-        <div className="bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] p-8 text-center shadow-xl">
-          
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-2">
-            {channel.name}
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">{channel.description}</p>
-          
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-             
-             {/* Stat Badge - Uses ACCENT PRIMARY (Fuchsia/Pink) for theme consistency */}
-             <div className="px-4 py-1.5 rounded-full bg-pink-600/10 border border-pink-600/20 text-pink-600 dark:text-pink-400 text-sm font-semibold">
-                {channel._count.subscribers} Verifiers
-             </div>
-
-             {/* Action Button - Uses ACCENT PRIMARY (Fuchsia/Pink) for theme consistency */}
-             {currentUserId && !isCreator && (
-                <SubscribeButton
-                    channelId={channel.id}
-                    channelSlug={channel.slug}
-                    isSubscribedInitial={isSubscribedInitial}
-                />
-             )}
-             
-             {isCreator && (
-                <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm font-bold">
-                    You are the Creator
-                </span>
-             )}
-          </div>
-        </div>
-      </div>
-
-      {/* --- MAIN FEED --- */}
-      <main className="max-w-5xl mx-auto px-4">
-        
-        {/* Composer - Uses a light, visible accent color (CYAN/Secondary) for distinction */}
-        {currentUserId && 
-            <div className="mb-12 bg-cyan-100/70 dark:bg-cyan-900/50 rounded-2xl p-4 shadow-lg">
-                <CreatePostForm channelId={channel.id} />
-            </div>
-        }
-
-        {/* Post Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {channel.posts.length === 0 ? (
-                <div className="col-span-full p-16 border-2 border-dashed border-gray-400/30 rounded-3xl text-center text-gray-500 bg-white/20 dark:bg-white/5">
-                  <p className="text-lg font-medium">No verified truth here yet.</p>
-                  <p className="text-sm opacity-70">Be the first to post.</p>
-                </div>
-            ) : (
-                channel.posts.map(post => (
-                    <PostCard 
-                        key={post.id} 
-                        post={{...post, mediaUrl: post.mediaUrl || null}} 
-                    />
-                ))
-            )}
-        </div>
-      </main>
+const StatBadge = ({ count, label }: { count: number, label: string }) => (
+    <div className="flex flex-col items-center justify-center p-3 rounded-xl"
+         style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-card)' }}>
+        <span className="text-xl font-bold" style={{ color: 'var(--accent-primary)' }}>{count}</span>
+        <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{label}</span>
     </div>
-  );
+);
+
+type ActiveTabType = 'posts' | 'channels';
+
+const ProfileTabs = ({ activeTab, username, postCount, channelCount }: 
+    { activeTab: ActiveTabType, username: string, postCount: number, channelCount: number }) => {
+    const baseClass = "px-6 py-2 border-b-2 transition-colors text-sm font-medium";
+    const activeStyle = { color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)', fontWeight: 700 };
+    const defaultStyle = { color: 'var(--text-muted)', borderColor: 'transparent' };
+
+    return (
+        <nav className="flex justify-start border-b" style={{ borderColor: 'var(--glass-border)' }}>
+            <Link href={`/profile/${username}?tab=posts`} className={baseClass} style={activeTab === 'posts' ? activeStyle : defaultStyle}>
+                Posts ({postCount})
+            </Link>
+            <Link href={`/profile/${username}?tab=channels`} className={baseClass} style={activeTab === 'channels' ? activeStyle : defaultStyle}>
+                Channels ({channelCount})
+            </Link>
+        </nav>
+    );
+}
+
+export default async function ProfilePage({ params, searchParams }: ProfilePageProps) {
+    const { username } = await params;
+    const { tab } = await searchParams;
+    const activeTab: ActiveTabType = tab === 'channels' ? 'channels' : 'posts';
+    
+    // 🆕 1. GET SESSION ID
+    const session = await getServerSession(authOptions);
+    const currentUserId = session?.user?.id;
+
+    // 🆕 2. PASS TO SERVICE
+    const profile = await getProfileData(username, currentUserId);
+
+    if (!profile) {
+        notFound();
+    }
+    
+    return (
+        <div className="min-h-screen pt-4 pb-24">
+            <div className="max-w-4xl mx-auto px-4">
+                <header className="mb-12 rounded-[2rem] p-8 text-center"
+                        style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-glass)' }}>
+                    <div className="w-24 h-24 mx-auto rounded-full mb-4 flex items-center justify-center text-3xl font-bold"
+                         style={{ background: 'var(--accent-secondary)', color: 'white' }}>
+                        {profile.username?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>@{profile.username}</h1>
+                    <div className="flex items-center justify-center text-sm font-medium mt-2" 
+                         style={{ color: profile.walletAddress ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+                        <ShieldCheck size={18} style={{ marginRight: '6px' }} />
+                        {profile.walletAddress ? `Verified Wallet: ${profile.walletAddress.slice(0, 6)}...` : 'Unlinked Wallet (Unverified)'}
+                    </div>
+                </header>
+
+                <section className="mb-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatBadge count={profile._count.posts} label="Total Posts" />
+                    <StatBadge count={profile._count.channelsCreated} label="Channels Created" />
+                    <StatBadge count={0} label="Total Reactions" />
+                    <StatBadge count={0} label="Signed Posts" />
+                </section>
+
+                <section>
+                    <ProfileTabs activeTab={activeTab} username={profile.username || 'user'} postCount={profile._count.posts} channelCount={profile._count.channelsCreated} />
+                    
+                    {activeTab === 'posts' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
+                            {profile.posts.length > 0 ? (
+                                profile.posts.map(post => (
+                                    <PostCard 
+                                        key={post.id} 
+                                        post={{ 
+                                            ...post, 
+                                            // Fallback for author details if missing in post object
+                                            author: { id: profile.id, username: profile.username, name: profile.name, image: null }
+                                        }}
+                                        // 🆕 3. PASS INITIAL REACTION
+                                        initialReaction={post.currentUserReaction}
+                                    />
+                                ))
+                            ) : (
+                                <div className="col-span-full p-8 text-center" style={{ color: 'var(--text-muted)' }}>No posts found.</div>
+                            )}
+                        </div>
+                    )}
+                    
+                    {activeTab === 'channels' && (
+                        <div className="p-8 text-center pt-6 space-y-4" style={{ color: 'var(--text-muted)' }}>
+                            <p className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Channels Created ({profile.channelsCreated.length})</p>
+                            {profile.channelsCreated.length > 0 ? (
+                                profile.channelsCreated.map(channel => (
+                                    <Link key={channel.id} href={`/channels/${channel.slug}`} className="block p-4 rounded-xl text-left"
+                                          style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)' }}>
+                                        <h4 className="font-semibold" style={{ color: 'var(--accent-primary)' }}>#{channel.slug}</h4>
+                                        <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{channel.name}</p>
+                                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{channel._count.subscribers} subscribers</p>
+                                    </Link>
+                                ))
+                            ) : (
+                                <p>This user has not created any channels yet.</p>
+                            )}
+                        </div>
+                    )}
+                </section>
+            </div>
+        </div>
+    );
 }

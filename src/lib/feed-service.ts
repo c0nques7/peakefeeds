@@ -65,29 +65,73 @@ export type GlobalFeedPost = Prisma.PostGetPayload<{
 // 2. Data Fetching Logic (Global Feed)
 // -------------------------------------------------------------
 
-export async function getGlobalFeed() {
+export async function getGlobalFeed(currentUserId?: string) {
   const posts = await prisma.post.findMany({
     take: 20,
     orderBy: { createdAt: 'desc' },
-    include: {
-      author: true,
-      channel: true,
-      _count: { select: { comments: true, likes: true } },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      createdAt: true,
+      isVerified: true,
+      contentHash: true,
+      signature: true,
+      embedUrl: true,
+      mediaUrl: true,
+      type: true,
       
-      // 🛑 FIX: Fetch comments properly for threading
-      comments: {
-        orderBy: { createdAt: 'asc' }, // Oldest first helps the tree structure logic visually
-        // Remove 'take: 3' temporarily to ensure parents load, 
-        // or increase it significantly (e.g., take: 50)
-        include: {
-            author: { select: { id: true, username: true } }
-            // Note: 'parentId' is automatically included because we are using 'include'
+      // 🆕 NEW: Select the optimized counts directly
+      likesCount: true,
+      dislikesCount: true,
+      author: {
+        select: {
+            id: true,
+            username: true,
+            name: true,
+            image: true
         }
-      }
+      },
+
+      channel: {
+        select: { id: true, name: true, slug: true, creatorId: true }
+      },
+      
+      // Select comments for threading support
+      comments: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+            id: true, content: true, parentId: true,
+            author: { select: { id: true, username: true } }
+        }
+      },
+      
+      // Check if CURRENT user reacted (for the button state)
+      likes: currentUserId ? {
+        where: { userId: currentUserId },
+        select: { type: true }
+      } : false,
+
+      // Get comment count
+      _count: { select: { comments: true } }
     }
   });
-  
-  return posts;
+
+  // Transform to match PostCard interface
+  return posts.map(post => {
+    // @ts-ignore
+    const userReaction = post.likes?.[0]?.type || null;
+
+    return {
+      ...post,
+      _count: {
+        comments: post._count.comments,
+        likes: post.likesCount,       // Direct from DB
+        dislikes: post.dislikesCount  // Direct from DB
+      },
+      currentUserReaction: userReaction
+    };
+  });
 }
 
 

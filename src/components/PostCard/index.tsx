@@ -6,7 +6,9 @@ import Link from 'next/link'
 import { MessageCircle, Heart, Repeat, ShieldCheck, ShieldOff, X, Send, ChevronDown, ChevronUp, Trash, HeartCrack, Edit2, CornerDownRight } from 'lucide-react'
 import clsx from 'clsx'
 import styles from './PostCard.module.css' 
-import { Post, PostType } from '@prisma/client'
+import { PostType } from '@prisma/client'
+
+// ⚡ IMPORTS
 import { deletePost } from '@/actions/delete-post' 
 import { createComment } from '@/actions/create-comment'
 import { setReaction } from '@/actions/toggle-reaction' 
@@ -17,8 +19,8 @@ interface Comment {
     id: string;
     author: { id: string; username: string | null };
     content: string;
-    parentId?: string | null; // 👈 Needed for threading logic
-    replies?: Comment[];      // We will populate this in the tree builder
+    parentId?: string | null; 
+    replies?: Comment[];      
 }
 
 interface PostProps {
@@ -26,21 +28,23 @@ interface PostProps {
     id: string
     title: string | null
     content: string
-    type: PostType;
-    mediaUrl: string | null
+    type: PostType; 
+    mediaUrl: string | null;
     embedUrl?: string | null;
     contentHash?: string | null;
     isVerified?: boolean; 
     signature?: string | null;
-    createdAt: Date
-    author: { id: string; name: string | null; username: string | null; image?: string | null; }
-    channel: { id: string; name: string; slug: string; creatorId: string; }
-    comments?: Comment[] 
-    _count?: { comments: number, likes: number }
+    createdAt: Date;
+    author: { id: string; name: string | null; username: string | null; image?: string | null; };
+    channel: { id: string; name: string; slug: string; creatorId: string; };
+    comments?: Comment[];
+    // 👇 UPDATE: Expect both counts from the DB
+    _count?: { comments: number, likes: number, dislikes: number };
   }
+  initialReaction?: 'LIKE' | 'DISLIKE' | null;
 }
 
-// --- Helpers ---
+// ... (Helpers: detectMedia, MediaPreview, buildCommentTree - SAME AS BEFORE) ...
 function detectMedia(text: string | null): any {
     if (!text) return null;
     const ytMatch = text.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}(?:\S+)?)/i);
@@ -75,37 +79,25 @@ function MediaPreview({ type, url }: { type: string, url: string | null }) {
     return null;
 }
 
-// 🧠 LOGIC: Turn Flat List into Nested Tree
 function buildCommentTree(flatComments: Comment[] = []): Comment[] {
     const commentMap: Record<string, Comment> = {};
     const roots: Comment[] = [];
-
-    // 1. Initialize map with empty replies array
-    flatComments.forEach(c => {
-        commentMap[c.id] = { ...c, replies: [] };
-    });
-
-    // 2. Link children to parents
+    flatComments.forEach(c => { commentMap[c.id] = { ...c, replies: [] }; });
     flatComments.forEach(c => {
         if (c.parentId && commentMap[c.parentId]) {
-            // It's a child, add to parent's replies
             commentMap[c.parentId].replies!.push(commentMap[c.id]);
         } else {
-            // It's a root comment
             roots.push(commentMap[c.id]);
         }
     });
-
-    // 3. Sort by date (optional, usually DB handles sort order but safe to keep)
-    return roots; // The DB order is usually preserved
+    return roots; 
 }
 
-// --- Single Comment Sub-Component ---
+// ... (SingleComment Component - SAME AS BEFORE) ...
 function SingleComment({ comment, postId, channelSlug, isSubComment = false }: { comment: Comment, postId: string, channelSlug: string, isSubComment?: boolean }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    
     const [editContent, setEditContent] = useState(comment.content || "");
     const [replyContent, setReplyContent] = useState("");
 
@@ -135,8 +127,7 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
         formData.append('postId', postId);
         formData.append('content', replyContent);
         formData.append('channelSlug', channelSlug);
-        formData.append('parentId', comment.id); // 🔗 This creates the nest!
-
+        formData.append('parentId', comment.id); 
         await createComment(formData);
         setIsReplying(false);
         setReplyContent("");
@@ -149,17 +140,11 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
                 <span style={{ color: 'var(--accent-primary)', fontSize: '0.75rem', fontWeight: 'bold' }}>
                     @{comment.author?.username || 'user'}
                 </span>
-                
                 <div className="flex gap-2">
-                    <button onClick={() => setIsEditing(!isEditing)} disabled={isProcessing} className={styles.actionIcon}>
-                        <Edit2 size={12} />
-                    </button>
-                    <button onClick={handleDelete} disabled={isProcessing} className={clsx(styles.actionIcon, styles.delete)}>
-                        <Trash size={12} />
-                    </button>
+                    <button onClick={() => setIsEditing(!isEditing)} disabled={isProcessing} className={styles.actionIcon}><Edit2 size={12} /></button>
+                    <button onClick={handleDelete} disabled={isProcessing} className={clsx(styles.actionIcon, styles.delete)}><Trash size={12} /></button>
                 </div>
             </div>
-
             {isEditing ? (
                 <div className="mt-2">
                     <input type="text" value={editContent} onChange={(e) => setEditContent(e.target.value)} className={styles.commentInput} autoFocus disabled={isProcessing} />
@@ -171,7 +156,6 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
             ) : (
                 <p style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '2px' }}>{comment.content}</p>
             )}
-
             {!isEditing && (
                 <div className={styles.commentActions}>
                     <button onClick={() => setIsReplying(!isReplying)} className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-indigo-400">
@@ -179,7 +163,6 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
                     </button>
                 </div>
             )}
-
             {isReplying && (
                 <div className="mt-2 pl-2 border-l-2 border-indigo-200 dark:border-indigo-800">
                      <input type="text" placeholder={`Reply to @${comment.author?.username}...`} value={replyContent} onChange={(e) => setReplyContent(e.target.value)} className={styles.commentInput} style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem' }} autoFocus disabled={isProcessing} />
@@ -191,18 +174,10 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
                     </div>
                 </div>
             )}
-
-            {/* 🧵 RENDER NESTED REPLIES HERE */}
             {comment.replies && comment.replies.length > 0 && (
                 <div className={styles.commentThread}>
                     {comment.replies.map((reply) => (
-                        <SingleComment 
-                            key={reply.id} 
-                            comment={reply} 
-                            postId={postId} 
-                            channelSlug={channelSlug} 
-                            isSubComment={true} 
-                        />
+                        <SingleComment key={reply.id} comment={reply} postId={postId} channelSlug={channelSlug} isSubComment={true} />
                     ))}
                 </div>
             )}
@@ -211,24 +186,30 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
 }
 
 // --- MAIN COMPONENT ---
-export function PostCard({ post }: PostProps) {
+export function PostCard({ post, initialReaction = null }: PostProps) {
   const [isFlipped, setIsFlipped] = useState(false) 
   const [showComments, setShowComments] = useState(false) 
   const [isExpanded, setIsExpanded] = useState(false) 
-  const [userReaction, setUserReaction] = useState<'LIKE' | 'DISLIKE' | null>(null)
+  
+  // 🆕 STATE: Track Both Counts & Current User Action
+  const [userReaction, setUserReaction] = useState<'LIKE' | 'DISLIKE' | null>(initialReaction);
+  const [counts, setCounts] = useState({
+      likes: post._count?.likes || 0,
+      dislikes: post._count?.dislikes || 0
+  });
+
   const [showConfirm, setShowConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [commentText, setCommentText] = useState("") 
   const [isSending, setIsSending] = useState(false)
 
+  // Theme Logic
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   const drawerBgColor = mounted && resolvedTheme === 'dark' ? 'rgba(18, 18, 22, 0.95)' : 'rgba(255, 255, 255, 0.95)';
 
-  // 🌲 TRANSFORM FLAT COMMENTS TO TREE
-  // We use useMemo so we don't recalculate this on every keystroke
   const commentTree = useMemo(() => {
       return buildCommentTree(post.comments || []);
   }, [post.comments]);
@@ -242,16 +223,39 @@ export function PostCard({ post }: PostProps) {
   if (displayUrl) { cleanContent = cleanContent.replace(displayUrl, '').trim(); }
   cleanContent = cleanContent.replace(/\s{2,}/g, ' ');
 
-  const handleLike = (e: React.MouseEvent) => { e.stopPropagation(); handleReaction(e, 'LIKE'); }
   const handleComments = (e: React.MouseEvent) => { e.stopPropagation(); setShowComments(true) }
   const handleVerifyFlip = (e: React.MouseEvent) => { e.stopPropagation(); if (!showComments) setIsFlipped(!isFlipped) }
   const handleTextExpand = (e: React.MouseEvent) => { e.stopPropagation(); setIsExpanded(!isExpanded) }
   const handleConfirmDelete = (e: React.MouseEvent) => { e.stopPropagation(); setShowConfirm(true); }
 
+  // ⚡ HANDLER: Dual Counter Logic
   const handleReaction = async (e: React.MouseEvent, type: 'LIKE' | 'DISLIKE') => {
     e.stopPropagation();
     const previousReaction = userReaction;
-    setUserReaction(prev => prev === type ? null : type);
+    const previousCounts = { ...counts };
+
+    // Optimistic Update
+    const newCounts = { ...counts };
+
+    if (userReaction === type) {
+        // 1. Toggle OFF (Removing existing)
+        setUserReaction(null);
+        if (type === 'LIKE') newCounts.likes = Math.max(0, newCounts.likes - 1);
+        if (type === 'DISLIKE') newCounts.dislikes = Math.max(0, newCounts.dislikes - 1);
+    } else {
+        // 2. New Reaction OR Switch
+        setUserReaction(type);
+        
+        // Add to new type
+        if (type === 'LIKE') newCounts.likes++;
+        if (type === 'DISLIKE') newCounts.dislikes++;
+
+        // Remove from old type (if switching)
+        if (previousReaction === 'LIKE') newCounts.likes = Math.max(0, newCounts.likes - 1);
+        if (previousReaction === 'DISLIKE') newCounts.dislikes = Math.max(0, newCounts.dislikes - 1);
+    }
+    
+    setCounts(newCounts);
     
     const formData = new FormData();
     formData.append('postId', post.id);
@@ -259,8 +263,10 @@ export function PostCard({ post }: PostProps) {
     formData.append('channelSlug', post.channel.slug);
     
     const result = await setReaction(formData);
+    
     if (result.error) {
         setUserReaction(previousReaction);
+        setCounts(previousCounts);
         console.error("Reaction failed:", result.error);
     }
   }
@@ -320,13 +326,18 @@ export function PostCard({ post }: PostProps) {
           </div>
           
           <div className={styles.actionBar}>
-            <button className={clsx(styles.actionBtn, { "text-red-500": userReaction === 'LIKE' })} onClick={handleLike}>
+            {/* 👍 LIKE BUTTON + COUNT */}
+            <button className={clsx(styles.actionBtn, { "text-red-500": userReaction === 'LIKE' })} onClick={(e) => handleReaction(e, 'LIKE')}>
               <Heart size={18} fill={userReaction === 'LIKE' ? "currentColor" : "none"} />
-              <span>{post._count?.likes || 0}</span>
+              <span>{counts.likes}</span>
             </button>
+
+            {/* 👎 DISLIKE BUTTON + COUNT */}
             <button className={clsx(styles.actionBtn, { "text-purple-500": userReaction === 'DISLIKE' })} onClick={(e) => handleReaction(e, 'DISLIKE')}>
               <HeartCrack size={18} fill={userReaction === 'DISLIKE' ? "currentColor" : "none"} />
+              <span>{counts.dislikes}</span>
             </button>
+
             <button className={styles.actionBtn} onClick={handleComments}>
               <MessageCircle size={18} />
               <span>{post.comments?.length || post._count?.comments || 0}</span>
@@ -341,11 +352,14 @@ export function PostCard({ post }: PostProps) {
             </button>
           </div>
 
+          {/* Delete Modal, Comments, Back Face (Keep existing implementation) */}
+          {/* Paste back the rest of the component body (Modals, Drawer, Back Face) here as it was correct in previous steps */}
           {showConfirm && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 9999 }}>
                 <div style={{ background: 'var(--glass-card)', padding: '24px', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0, 0, 0, 0.4)', textAlign: 'center' }}>
                     <Trash size={32} style={{ color: 'red', margin: '0 auto 12px' }} />
                     <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-primary)' }}>Confirm Deletion</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '16px' }}>Are you sure you want to delete this post?</p>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                         <button onClick={(e) => { e.stopPropagation(); setShowConfirm(false); }} style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--glass-card-hover)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }} disabled={isDeleting}>Cancel</button>
                         <button onClick={handleDeletePost} style={{ padding: '8px 16px', borderRadius: '8px', background: '#dc2626', color: 'white', border: 'none', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1 }} disabled={isDeleting}>Delete</button>
@@ -354,7 +368,6 @@ export function PostCard({ post }: PostProps) {
             </div>
           )}
           
-          {/* === COMMENT DRAWER === */}
           <div className={clsx(styles.commentsPanel, { [styles.commentsOpen]: showComments })} style={{ backgroundColor: drawerBgColor }}>
               <div className={styles.panelHeader}>
                 <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Comments</span>
@@ -363,14 +376,8 @@ export function PostCard({ post }: PostProps) {
 
               <div className={styles.commentsList}>
                 {commentTree.length > 0 ? (
-                    // 🌲 RENDER THE TREE, NOT THE FLAT LIST
                     commentTree.map((comment) => (
-                        <SingleComment 
-                            key={comment.id} 
-                            comment={comment} 
-                            postId={post.id} 
-                            channelSlug={post.channel.slug} 
-                        />
+                        <SingleComment key={comment.id} comment={comment} postId={post.id} channelSlug={post.channel.slug} />
                     ))
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -388,7 +395,6 @@ export function PostCard({ post }: PostProps) {
           </div>
         </div>
 
-        {/* ... Back Face (No Changes) ... */}
         <div className={styles.cardBack}>
              <button className="absolute-close-btn" style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--text-muted)' }} onClick={handleVerifyFlip}><X size={20} /></button>
              <div className={styles.verificationContainer}>

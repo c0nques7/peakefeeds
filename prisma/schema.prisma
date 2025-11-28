@@ -112,6 +112,11 @@ model Post {
   isVerified    Boolean   @default(false)
   contentHash   String?
   signature     String?
+
+  //Post Reactions
+  likesCount    Int       @default(0)
+  dislikesCount Int       @default(0)
+
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
