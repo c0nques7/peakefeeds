@@ -1,67 +1,87 @@
 import Link from "next/link"
-import styles from "./landing.module.css" // Ensure this path is correct relative to your file
-import { ArrowRight, Hexagon, Fingerprint, Layers } from "lucide-react"
+import ThemeLogo from "@/components/ThemeLogo" 
+import styles from "./landing.module.css"
+import { ArrowRight, Hexagon, Fingerprint, Layers, ShieldCheck } from "lucide-react"
 import { PostCard } from "@/components/PostCard"
 
 export default function LandingPage() {
   
-  // --- MOCK DATA (UPDATED TO MATCH SCHEMA) ---
+  // --- MOCK DATA FOR HERO CARD ---
   const demoPost = {
     id: "demo-hero-1",
     title: "Deepfakes are over.",
     content: "This is what a verified thought looks like. Cryptographically signed, anchored on Optimism, and impossible to fake. The truth engine is live.",
     createdAt: new Date(),
-    
-    // ✅ FIX 1: Add the missing Media Fields
-    type: "TEXT" as const, // Cast to const so TS knows it's a valid Enum value
+    type: "TEXT" as const,
     mediaUrl: null,
     mediaHash: null,
-
-    // ✅ FIX 2: Add missing 'id' to Author (Required by PostCard type)
+    embedUrl: null, 
+    contentHash: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069", 
+    isVerified: true, 
+    signature: "0xsignature...", 
     author: { 
         id: "official-peake-id",
         name: "PeakeFeeds", 
         username: "peake_official",
-        image: null // Explicitly null if no image
+        image: null 
     },
-
-    // ✅ FIX 3: Add missing 'id' and 'creatorId' to Channel
     channel: { 
         id: "official-channel-id",
         name: "Announcements", 
         slug: "official-news",
         creatorId: "official-peake-id"
     },
-
-    _count: { 
-        comments: 128, 
-        likes: 4096 
-    },
-    comments: [] 
+    // Updated counts to match new schema (likes + dislikes)
+    _count: { comments: 42, likes: 4096, dislikes: 12 },
+    
+    comments: [
+      {
+        id: "c1",
+        author: { id: "u1", username: "crypto_alice" },
+        content: "Finally! A social graph I actually own. The UI is slick too. 💎",
+        replies: []
+      },
+      {
+        id: "c2",
+        author: { id: "u2", username: "dev_dave" },
+        content: "Is this anchored on L1 or L2?",
+        replies: [
+            {
+                id: "c2-reply",
+                author: { id: "official-peake-id", username: "peake_official" },
+                content: "Optimism L2. Fast, cheap, and secure. ⚡",
+                parentId: "c2"
+            }
+        ]
+      }
+    ] 
   }
 
   return (
     <div className={styles.container}>
       
-      {/* Navigation */}
+      {/* 🌬️ BREATHING BACKGROUND LAYERS */}
+      <div className={styles.backgroundLayer}>
+        <div className={styles.orbTeal} />
+        <div className={styles.orbPurple} />
+        <div className={styles.orbWhite} />
+      </div>
+
+      {/* NAVIGATION */}
       <nav className={styles.nav}>
-        <div className={styles.brandText}> 
-          PeakeFeeds
+        <div className={styles.brandContainer}>
+            {/* 🔄 Dynamic Theme Logo */}
+            <ThemeLogo />
+            <span className={styles.brandText}>PeakeFeeds</span>
         </div>
         
         <div className={styles.navLinksContainer}> 
-          <Link href="/login" className={styles.navLink}>
-            Login
-          </Link>
-          <Link href="/register" className={styles.ctaNavButton}> 
-            Start Verifying
-          </Link>
+          <Link href="/api/auth/signin" className={styles.navLink}>Login</Link>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* HERO SECTION */}
       <section className={styles.hero}>
-        <div className={styles.glowOrb} />
         
         {/* Left: Copy */}
         <div className={styles.heroContent}>
@@ -70,17 +90,18 @@ export default function LandingPage() {
               <span className={styles.pingDot}></span>
               <span className={styles.dot}></span>
             </span>
-            OPTIMISM L2 MAINNET LIVE
+            <span>OPTIMISM L2 LIVE</span>
           </div>
           
           <h1 className={styles.title}>
-            The Truth Layer <br />
+            The <span className={styles.gradientText}>Truth Layer</span> <br />
             for the Internet.
           </h1>
           
           <p className={styles.subtitle}>
-            A decentralized social protocol. We cryptographically verify content 
-            origin to fight AI disinformation. Your words, immutable on the blockchain.
+            A decentralized social protocol fighting AI disinformation. 
+            We cryptographically verify content origin, making your words 
+            immutable on the blockchain.
           </p>
 
           <div className={styles.ctaButtonContainer}> 
@@ -88,29 +109,34 @@ export default function LandingPage() {
               Create Account <ArrowRight size={18} />
             </Link>
             <Link href="/home" className={styles.secondaryButton}>
-              View Feed
+              View Live Feed
             </Link>
           </div>
         </div>
 
-        {/* Right: Product Demo */}
+        {/* Right: Product Demo (Single 3D Card) */}
         <div className={styles.heroVisual}>
           <div className={styles.demoCardWrapper}>
-            {/* The Real Component with Valid Mock Data */}
-            <PostCard post={demoPost} />
+            {/* isDemo={true} ensures we don't try to call the database 
+                when the user clicks like/dislike/comment 
+            */}
+            <PostCard 
+                post={demoPost} 
+                initialReaction="LIKE" 
+                isDemo={true} 
+            />
             
             <div className={styles.demoLabel}>
-                <ArrowRight className="inline mr-1" size={14} />
-                Try tapping the card!
+                Interactive Demo: Inspect the Verification, View Comments or Like This Post!
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
+      {/* FEATURES GRID */}
       <section className={styles.features}>
         <div className={styles.featureCard}>
-          <Hexagon className={styles.featureIcon} size={32} />
+          <div className={styles.iconWrapper}><Hexagon size={24} /></div>
           <h3 className={styles.featureTitle}>Optimism Secured</h3>
           <p className={styles.featureText}>
             Every post creates a cryptographic proof on the Optimism L2. 
@@ -119,7 +145,7 @@ export default function LandingPage() {
         </div>
 
         <div className={styles.featureCard}>
-          <Fingerprint className={styles.featureIcon} size={32} />
+          <div className={styles.iconWrapper}><Fingerprint size={24} /></div>
           <h3 className={styles.featureTitle}>Proof of Humanity</h3>
           <p className={styles.featureText}>
             Combat AI-generated spam. Our Web3 Auth layer validates organic interaction, 
@@ -128,7 +154,7 @@ export default function LandingPage() {
         </div>
 
         <div className={styles.featureCard}>
-          <Layers className={styles.featureIcon} size={32} />
+          <div className={styles.iconWrapper}><Layers size={24} /></div>
           <h3 className={styles.featureTitle}>Content Attribution</h3>
           <p className={styles.featureText}>
             Stop copycats. The original creator is stamped on-chain. 
@@ -137,7 +163,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* FOOTER */}
       <footer className={styles.footer}>
         <p className={styles.footerText}>
           Built on <span className={styles.footerHighlight}>Ethereum</span> • Powered by <span className={styles.footerHighlightRed}>Optimism</span>

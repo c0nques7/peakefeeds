@@ -2,28 +2,69 @@
 .layoutContainer {
   display: flex;
   min-height: 100vh;
-  background: var(--bg-app); 
+  /* 🛑 REMOVED background here. We let the body background show through 
+     so the fixed orbs don't get covered up. */
   position: relative;
   overflow-x: hidden; 
 }
 
-/* --- 2. LEFT SIDEBAR (Desktop Navigation) --- */
+/* --- 🌬️ BACKGROUND ANIMATION LAYER --- */
+.backgroundLayer {
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Ensure it sits behind content (z-10) but visible over body */
+  z-index: 0; 
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Define animations locally to ensure CSS Modules pick them up */
+@keyframes breathe {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate(20px, -20px) scale(1.1); opacity: 0.8; }
+  100% { transform: translate(-10px, 10px) scale(1); opacity: 0.5; }
+}
+
+.orbTeal {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, var(--orb-teal) 0%, rgba(0,0,0,0) 70%);
+  filter: blur(80px);
+  animation: breathe 10s ease-in-out infinite alternate;
+}
+
+.orbPurple {
+  position: absolute;
+  bottom: -10%;
+  right: -5%;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle, var(--orb-purple) 0%, rgba(0,0,0,0) 70%);
+  filter: blur(90px);
+  animation: breathe 14s ease-in-out infinite alternate-reverse;
+}
+
+/* --- 2. SIDEBARS --- */
 .desktopSidebar {
   width: 275px;
   flex-shrink: 0;
-  z-index: 40;
+  z-index: 40; 
   position: fixed; 
   top: 0;
   left: 0;
   height: 100vh;
-  display: none; /* Hidden on mobile */
-  padding: 0;
-  /* Clean slate for component styling */
+  display: none; 
   background: transparent;
   border: none;
+  padding: 0;
 }
 
-/* --- 3. RIGHT SIDEBAR (Search/Trending) --- */
 .rightSidebar {
   width: 350px;
   flex-shrink: 0;
@@ -32,27 +73,34 @@
   top: 0;
   right: 0;
   height: 100vh;
-  display: none; /* Hidden on mobile & tablet */
-  
-  /* Optional: Add a subtle border or background if desired */
+  display: none; 
   border-left: 1px solid var(--glass-border);
   padding: 1.5rem;
 }
 
-/* --- 4. MAIN CONTENT AREA --- */
+/* --- 3. MAIN CONTENT --- */
 .mainContent {
   flex: 1;
   width: 100%; 
+  /* 🛑 Ensure this sits ON TOP of the background layer */
   z-index: 10; 
-  padding-bottom: 2rem; /* Standard spacing */
-  padding-right: 70px;
+  padding-bottom: 2rem; 
+  padding-right: 70px; 
 }
 
-/* Wrapper to constrain feed width on large screens */
 .feedWrapper {
   max-width: 600px; 
   margin: 0 auto;
   width: 100%;
+  position: relative;
+}
+
+/* --- 4. POSTS GRID --- */
+.postsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
 /* --- 5. MOBILE NAV WRAPPER --- */
@@ -65,51 +113,34 @@
   z-index: 50;
 }
 
-/* --- 6. POSTS GRID (For Home Page/Channel Page Grids) --- */
-/* Mobile: 1 Column */
-.postsGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
-/* --- 7. RESPONSIVE BREAKPOINTS --- */
-
-/* TABLET / SMALL LAPTOP (>= 768px) */
-/* Show Left Sidebar, Hide Mobile Nav */
+/* --- RESPONSIVE RULES --- */
 @media (min-width: 768px) {
   .desktopSidebar { display: block; }
   .mobileNavWrapper { display: none !important; }
   
   .mainContent { 
-    margin-left: 275px; /* Push content to right of sidebar */
+    margin-left: 275px; 
     padding-bottom: 0; 
     padding-top: 1rem;
+    padding-right: 0; 
   }
 
-  /* Grid becomes 2 columns */
   .postsGrid {
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
   }
 }
 
-/* DESKTOP (>= 1280px) */
-/* Show Right Sidebar */
 @media (min-width: 1280px) {
   .rightSidebar { display: block; }
   
   .mainContent {
-    /* Push content between both sidebars */
     margin-left: 275px; 
     margin-right: 350px; 
   }
 
-  /* Grid becomes 3 columns if space permits in specific views */
   .postsGrid {
     grid-template-columns: repeat(3, 1fr);
     gap: 2.5rem 1.5rem;
   }
 }
-

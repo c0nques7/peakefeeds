@@ -38,10 +38,12 @@ interface PostProps {
     author: { id: string; name: string | null; username: string | null; image?: string | null; };
     channel: { id: string; name: string; slug: string; creatorId: string; };
     comments?: Comment[];
+    
     // 👇 UPDATE: Expect both counts from the DB
     _count?: { comments: number, likes: number, dislikes: number };
   }
   initialReaction?: 'LIKE' | 'DISLIKE' | null;
+  isDemo?: boolean;
 }
 
 // ... (Helpers: detectMedia, MediaPreview, buildCommentTree - SAME AS BEFORE) ...
@@ -186,7 +188,7 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
 }
 
 // --- MAIN COMPONENT ---
-export function PostCard({ post, initialReaction = null }: PostProps) {
+export function PostCard({ post, initialReaction = null, isDemo = false }: PostProps) {
   const [isFlipped, setIsFlipped] = useState(false) 
   const [showComments, setShowComments] = useState(false) 
   const [isExpanded, setIsExpanded] = useState(false) 
@@ -256,6 +258,9 @@ export function PostCard({ post, initialReaction = null }: PostProps) {
     }
     
     setCounts(newCounts);
+
+    // 🛑 2. DEMO CHECK: Stop here if it's a demo
+    if (isDemo) return; 
     
     const formData = new FormData();
     formData.append('postId', post.id);
