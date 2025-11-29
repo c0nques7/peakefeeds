@@ -174,7 +174,7 @@ export default function LandingPage() {
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Hexagon size={24} /></div>
           <h3 className={styles.featureTitle}>Optimism Secured</h3>
-          <p className={styles.featureText}>Every post creates a cryptographic proof on the Optimism L2. Low gas fees, Ethereum-level security.</p>
+          <p className={styles.featureText}>Every verified post leverages Optimism to create a cryptographic proof on Etherium L2. Low gas fees, same Ethereum-level security.</p>
         </div>
 
         <div className={styles.featureCard}>
@@ -186,14 +186,14 @@ export default function LandingPage() {
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Layers size={24} /></div>
           <h3 className={styles.featureTitle}>Content Attribution</h3>
-          <p className={styles.featureText}>Stop copycats. The original creator is stamped on-chain. Derivatives are tracked.</p>
+          <p className={styles.featureText}>Stop copycats. The original creator is stamped on-chain. Derivatives are tracked and can be reconsiled via our robust reporting features.</p>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer className={styles.footer}>
         <p className={styles.footerText}>
-          Built on <span className={styles.footerHighlight}>Ethereum</span> • Powered by <span className={styles.footerHighlightRed}>Optimism</span>
+          Built on <span className={styles.footerHighlight}>Next.js</span> • Powered by <span className={styles.footerHighlightRed}>Ethereum</span>
         </p>
       </footer>
 
