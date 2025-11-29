@@ -134,7 +134,7 @@ export default function LandingPage() {
               <span className={styles.pingDot}></span>
               <span className={styles.dot}></span>
             </span>
-            <span>OPTIMISM L2 LIVE</span>
+            <span>Ethereum L2 LIVE</span>
           </div>
           
           <h1 className={styles.title}>
