@@ -4,10 +4,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPost } from '@/actions/create-post';
 import { Send, Loader2 } from 'lucide-react';
-import { generateContentHash } from '@/lib/verification'; 
+import { generateContentHash } from '@/lib/hashing'; 
 import { VerificationModal } from './VerificationModal'; 
 
-export default function CreatePostForm({ channelId }: { channelId: string }) {
+interface CreatePostFormProps {
+    channelId: string;
+    userWalletAddress?: string | null; // Optional: helps pre-fill wallet logic
+    authorId?: string; // 🛑 REQUIRED for hashing
+}
+
+export default function CreatePostForm({ channelId, authorId = "anon" }: CreatePostFormProps) {
   const router = useRouter(); 
   
   const [isExpanded, setIsExpanded] = useState(false);
@@ -22,8 +28,8 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
     e.preventDefault();
     if (!content.trim()) return;
 
-    // Generate hash for UI display
-    const hash = generateContentHash(content, "placeholder-id"); 
+    // Generate hash using the actual author ID
+    const hash = generateContentHash(content, authorId); 
     setCurrentHash(hash);
     
     setShowModal(true); 
@@ -41,8 +47,13 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
     if (signature) {
         formData.append('signature', signature);
     }
+    // Also send the contentHash so the server can verify integrity
+    formData.append('contentHash', currentHash);
 
     // Call the Server Action
+    // Note: Assuming createPost accepts (prevState, formData) or just formData depending on your implementation
+    // We pass null for prevState if using useFormState pattern, or just call it directly.
+    // Based on your previous code, it seemed to be a direct async function.
     await createPost({} as any, formData);
     
     router.refresh(); 
@@ -56,14 +67,12 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
 
   return (
     <div className="mb-6">
-        {/* --- NEW HEADING FOR CLARITY --- */}
         <h2 style={{ color: 'var(--text-primary)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>
             New Truth Submission
         </h2>
 
       <form onSubmit={handleInitialSubmit} 
         className={`relative rounded-2xl p-4 transition-all duration-300`}
-        // CRITICAL FIX: Use CSS Variables for standard styles
         style={{ 
             background: 'var(--glass-card)', 
             border: '1px solid var(--glass-border)',
@@ -72,7 +81,6 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
       >
         
         <div className="flex gap-4">
-            {/* Avatar Placeholder: Uses primary accent color */}
             <div className="h-10 w-10 rounded-full flex-shrink-0"
                  style={{ background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                 U
@@ -83,23 +91,16 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows={isExpanded ? 3 : 1}
-                    // 🛑 FINAL FIX: Corrected Placeholder Text
                     placeholder="Share your truth, paste an image/video URL, or drop a long thought..." 
-                    
-                    // 🛑 FINAL FIX: Use Tailwind classes for focus/placeholder styling
-                    // We rely on global/theme CSS to map colors (e.g., text-gray-400 maps to var(--text-muted))
                     className="w-full border-none focus:ring-0 resize-none p-2 text-lg 
-                                bg-transparent text-gray-800 dark:text-white placeholder-gray-500"
-                    
+                                bg-transparent text-gray-800 dark:text-white placeholder-gray-500 focus:outline-none"
                     style={{ 
-                        // Set text color explicitly from var for readability, ensuring background is clear
                         color: 'var(--text-primary)',
                         background: 'transparent',
                     }}
                     onClick={() => setIsExpanded(true)}
                 />
 
-                {/* NEW: Guidance text for media links */}
                 {isExpanded && (
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
                         * URLs for images or videos will generate a preview after posting.
@@ -114,7 +115,7 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
                 <button 
                     type="button"
                     onClick={() => setIsExpanded(false)}
-                    className="mr-3 text-sm px-3 py-2 text-gray-400 hover:text-gray-100" // Use Tailwind hover utility
+                    className="mr-3 text-sm px-3 py-2 text-gray-400 hover:text-gray-100 transition-colors"
                 >
                     Cancel
                 </button>
@@ -123,7 +124,6 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
                     type="submit"
                     disabled={isPosting || !content.trim()}
                     className="px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all"
-                    // CRITICAL FIX: Use standard CSS for background/opacity control
                     style={{ 
                         background: 'var(--accent-primary)', 
                         color: 'white',
@@ -131,7 +131,7 @@ export default function CreatePostForm({ channelId }: { channelId: string }) {
                         cursor: (isPosting || !content.trim()) ? 'not-allowed' : 'pointer',
                     }}
                 >
-                    {isPosting ? <Loader2 className="animate-spin" /> : <>Post <Send size={14} /></>}
+                    {isPosting ? <Loader2 className="animate-spin" size={14} /> : <>Post <Send size={14} /></>}
                 </button>
             </div>
         )}

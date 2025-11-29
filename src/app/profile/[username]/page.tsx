@@ -1,15 +1,17 @@
 import { notFound } from 'next/navigation';
-import { getProfileData, ProfileData } from '@/lib/profile-service';
-import { ShieldCheck, User as UserIcon } from 'lucide-react';
+import { getProfileData } from '@/lib/profile-service';
+import { ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { PostCard } from "@/components/PostCard"; // Assuming PostCard is here
+import { PostCard } from "@/components/PostCard";
+import { getServerSession } from "next-auth"; 
+import { authOptions } from "@/lib/auth.config";
+import { ConnectWalletButton } from "@/components/ConnectWalletButton"; // 👈 IMPORT
 
 interface ProfilePageProps {
-    params: PRomise<{ username: string }>;
-    searchParams: Promise<{ tab?: 'posts' | 'channels' }>; // Get tab from URL
+    params: Promise<{ username: string }>;
+    searchParams: Promise<{ tab?: 'posts' | 'channels' }>;
 }
 
-// Helper component for stat badges
 const StatBadge = ({ count, label }: { count: number, label: string }) => (
     <div className="flex flex-col items-center justify-center p-3 rounded-xl"
          style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-card)' }}>
@@ -20,41 +22,18 @@ const StatBadge = ({ count, label }: { count: number, label: string }) => (
 
 type ActiveTabType = 'posts' | 'channels';
 
-// Helper component for the content tabs/navigation
 const ProfileTabs = ({ activeTab, username, postCount, channelCount }: 
     { activeTab: ActiveTabType, username: string, postCount: number, channelCount: number }) => {
-
     const baseClass = "px-6 py-2 border-b-2 transition-colors text-sm font-medium";
-    
-    // Define explicit style objects
-    const activeStyle = { 
-        color: 'var(--accent-primary)', 
-        borderColor: 'var(--accent-primary)',
-        fontWeight: 700,
-    };
-    const defaultStyle = { 
-        color: 'var(--text-muted)',
-        borderColor: 'transparent',
-    };
+    const activeStyle = { color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)', fontWeight: 700 };
+    const defaultStyle = { color: 'var(--text-muted)', borderColor: 'transparent' };
 
     return (
         <nav className="flex justify-start border-b" style={{ borderColor: 'var(--glass-border)' }}>
-            
-            {/* 1. Posts Tab */}
-            <Link 
-                href={`/profile/${username}?tab=posts`} 
-                className={baseClass} 
-                style={activeTab === 'posts' ? activeStyle : defaultStyle}
-            >
+            <Link href={`/profile/${username}?tab=posts`} className={baseClass} style={activeTab === 'posts' ? activeStyle : defaultStyle}>
                 Posts ({postCount})
             </Link>
-
-            {/* 2. Channels Tab */}
-            <Link 
-                href={`/profile/${username}?tab=channels`} 
-                className={baseClass} 
-                style={activeTab === 'channels' ? activeStyle : defaultStyle}
-            >
+            <Link href={`/profile/${username}?tab=channels`} className={baseClass} style={activeTab === 'channels' ? activeStyle : defaultStyle}>
                 Channels ({channelCount})
             </Link>
         </nav>
@@ -63,29 +42,29 @@ const ProfileTabs = ({ activeTab, username, postCount, channelCount }:
 
 export default async function ProfilePage({ params, searchParams }: ProfilePageProps) {
     const { username } = await params;
+    const { tab } = await searchParams;
+    const activeTab: ActiveTabType = tab === 'channels' ? 'channels' : 'posts';
     
-    // Determine the active tab from the URL query parameter, default to 'posts'
-    const activeTab: ActiveTabType = await searchParams.tab === 'channels' ? 'channels' : 'posts';
-    
-    const profile = await getProfileData(username);
+    const session = await getServerSession(authOptions);
+    const currentUserId = session?.user?.id;
+
+    const profile = await getProfileData(username, currentUserId);
 
     if (!profile) {
         notFound();
     }
+
+    // Check if viewing own profile
+    const isOwnProfile = currentUserId === profile.id;
     
     return (
         <div className="min-h-screen pt-4 pb-24">
             <div className="max-w-4xl mx-auto px-4">
                 
-                {/* 1. PROFILE HEADER / BANNER */}
+                {/* PROFILE HEADER */}
                 <header className="mb-12 rounded-[2rem] p-8 text-center"
-                        style={{ 
-                            background: 'var(--glass-card)', 
-                            border: '1px solid var(--glass-border)', 
-                            boxShadow: 'var(--shadow-glass)' 
-                        }}>
+                        style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-glass)' }}>
                     
-                    {/* Avatar Placeholder */}
                     <div className="w-24 h-24 mx-auto rounded-full mb-4 flex items-center justify-center text-3xl font-bold"
                          style={{ background: 'var(--accent-secondary)', color: 'white' }}>
                         {profile.username?.[0]?.toUpperCase() || 'U'}
@@ -95,35 +74,36 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                         @{profile.username}
                     </h1>
                     
-                    {/* Wallet Status / Verification Chip */}
-                    <div className="flex items-center justify-center text-sm font-medium mt-2" 
-                         style={{ color: profile.walletAddress ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
-                        <ShieldCheck size={18} style={{ marginRight: '6px' }} />
-                        {profile.walletAddress ? 
-                            `Verified Wallet: ${profile.walletAddress.slice(0, 6)}...` : 
-                            'Unlinked Wallet (Unverified)'
-                        }
+                    {/* 🛡️ WALLET SECTION */}
+                    <div className="flex items-center justify-center mt-4">
+                        {isOwnProfile ? (
+                            // Interactive Button for Owner
+                            <ConnectWalletButton />
+                        ) : (
+                            // Static Badge for Visitors
+                            <div className="flex items-center gap-2 text-sm font-medium" 
+                                 style={{ color: profile.walletAddress ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+                                <ShieldCheck size={18} />
+                                {profile.walletAddress ? 
+                                    `Verified: ${profile.walletAddress.slice(0, 6)}...` : 
+                                    'Unlinked Wallet'
+                                }
+                            </div>
+                        )}
                     </div>
+
                 </header>
 
-                {/* 2. STATS & METADATA SECTION */}
                 <section className="mb-12 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatBadge count={profile._count.posts} label="Total Posts" />
                     <StatBadge count={profile._count.channelsCreated} label="Channels Created" />
-                    <StatBadge count={120} label="Total Reactions" /> {/* Placeholder stat */}
-                    <StatBadge count={0} label="Signed Posts" /> {/* Placeholder stat */}
+                    <StatBadge count={0} label="Total Reactions" />
+                    <StatBadge count={0} label="Signed Posts" />
                 </section>
 
-                {/* 3. CONTENT TABS */}
                 <section>
-                    <ProfileTabs 
-                        activeTab={activeTab} 
-                        username={profile.username || 'user'} 
-                        postCount={profile._count.posts}
-                        channelCount={profile._count.channelsCreated}
-                    />
+                    <ProfileTabs activeTab={activeTab} username={profile.username || 'user'} postCount={profile._count.posts} channelCount={profile._count.channelsCreated} />
                     
-                    {/* POSTS FEED */}
                     {activeTab === 'posts' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
                             {profile.posts.length > 0 ? (
@@ -131,33 +111,21 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                                     <PostCard 
                                         key={post.id} 
                                         post={{ 
-                                            // Mock required fields for PostCard interface compliance
                                             ...post, 
-                                            type: post.title ? 'LONGFORM' : 'TEXT',
-                                            mediaUrl: null, 
-                                            mediaHash: null,
-                                            embedUrl: null,
-                                            signature: null,
-                                            contentHash: null,
-                                            author: { id: profile.id, username: profile.username, name: profile.name },
-                                            // Mock required channel structure
-                                            channel: { id: 'mock', name: 'User Post', slug: post.channel.slug, creatorId: profile.id } 
-                                        }} 
+                                            author: { id: profile.id, username: profile.username, name: profile.name, image: null }
+                                        }}
+                                        initialReaction={post.currentUserReaction}
                                     />
                                 ))
                             ) : (
-                                <div className="col-span-full p-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                                    No posts found.
-                                </div>
+                                <div className="col-span-full p-8 text-center" style={{ color: 'var(--text-muted)' }}>No posts found.</div>
                             )}
                         </div>
                     )}
                     
-                    {/* CHANNELS FEED */}
                     {activeTab === 'channels' && (
                         <div className="p-8 text-center pt-6 space-y-4" style={{ color: 'var(--text-muted)' }}>
                             <p className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Channels Created ({profile.channelsCreated.length})</p>
-                            
                             {profile.channelsCreated.length > 0 ? (
                                 profile.channelsCreated.map(channel => (
                                     <Link key={channel.id} href={`/channels/${channel.slug}`} className="block p-4 rounded-xl text-left"
@@ -172,9 +140,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                             )}
                         </div>
                     )}
-
                 </section>
-
             </div>
         </div>
     );

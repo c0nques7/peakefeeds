@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-// 👇 Import the wrapper we created for next-themes
 import { ThemeProvider } from '@/components/ThemeProvider'
-// Keep ClientLayout if it handles auth/sessions, otherwise it might be redundant
+import { Web3Provider } from "@/components/providers/Web3Provider"; 
+import { Providers } from "@/components/Providers"; // 👈 1. Import the Session Wrapper
 import ClientLayout from '@/components/ClientLayout' 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -19,23 +19,27 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    /* suppressHydrationWarning is vital for next-themes */
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {/* 👇 THEME PROVIDER MUST WRAP EVERYTHING */}
+        {/* 1. Theme Provider (CSS Variables) */}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {/* Keep your ClientLayout if it provides SessionProvider */}
-          <ClientLayout>
-            {children}
-          </ClientLayout>
+          {/* 2. Web3 Provider (Wagmi/Blockchain) */}
+          <Web3Provider>
+            {/* 3. Session Provider (NextAuth Authentication) */}
+            <Providers>
+              {/* 4. Client Layout (Mounting Logic) */}
+              <ClientLayout>
+                {children}
+              </ClientLayout>
+            </Providers>
+          </Web3Provider>
         </ThemeProvider>
       </body>
     </html>
   )
 }
-

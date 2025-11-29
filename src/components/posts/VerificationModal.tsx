@@ -1,40 +1,64 @@
 'use client'
 
-import { useState } from 'react';
-import { useWeb3 } from '@/hooks/useWeb3';
+import { useState, useEffect } from 'react';
+import { useAccount, useConnect, useSignMessage } from 'wagmi';
 import { Wallet, PlayCircle, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 
 interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // ✅ UPDATED: Now accepts 'SKIP'
   onVerified: (method: 'WALLET' | 'AD' | 'SKIP', signature?: string) => void;
   contentHash: string; 
 }
 
 export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: VerificationModalProps) {
-  const { connectWallet, signContent, walletAddress } = useWeb3();
+  const { address, isConnected } = useAccount();
+  const { connectors, connectAsync } = useConnect();
+  const { signMessageAsync } = useSignMessage();
+  
   const [adProgress, setAdProgress] = useState(0);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+        setAdProgress(0);
+        setIsWatchingAd(false);
+        setIsSigning(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   // --- OPTION A: WALLET ---
   const handleWalletVerify = async () => {
     setIsSigning(true);
-    let address = walletAddress;
-    if (!address) {
-        address = await connectWallet();
-    }
-    
-    if (address) {
-        const signature = await signContent(contentHash);
-        if (signature) {
-            onVerified('WALLET', signature);
+    try {
+        let currentAddress = address;
+        
+        // 1. Connect if not connected
+        if (!isConnected || !currentAddress) {
+            const result = await connectAsync({ connector: connectors[0] });
+            currentAddress = result.accounts[0];
         }
+        
+        // 2. Sign the Hash
+        if (currentAddress) {
+            const signature = await signMessageAsync({ 
+                message: `Verify Truth Layer Content:\n${contentHash}` 
+            });
+            
+            if (signature) {
+                onVerified('WALLET', signature);
+            }
+        }
+    } catch (error) {
+        console.error("Verification failed:", error);
+        // Optional: Add toast error here
+    } finally {
+        setIsSigning(false);
     }
-    setIsSigning(false);
   };
 
   // --- OPTION B: AD ---
@@ -55,15 +79,15 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-md bg-[var(--bg-app)] border border-[var(--glass-border)] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         
         {/* Header */}
         <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-4 text-emerald-400 border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                 <ShieldCheck size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-white">Verify Content</h2>
-            <p className="text-gray-400 text-sm mt-2">
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Verify Content</h2>
+            <p className="text-[var(--text-muted)] text-sm mt-2">
                 Anchor this post to the Optimism Blockchain to prove authenticity.
             </p>
         </div>
@@ -75,7 +99,7 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
                 <button 
                     onClick={handleWalletVerify}
                     disabled={isSigning}
-                    className="w-full flex items-center justify-between p-4 rounded-xl bg-indigo-600/10 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white text-indigo-300 transition-all group"
+                    className="w-full flex items-center justify-between p-4 rounded-xl bg-indigo-600/10 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white text-indigo-400 transition-all group"
                 >
                     <div className="flex items-center gap-4">
                         <div className="bg-indigo-500/20 p-2 rounded-lg group-hover:bg-white/20"><Wallet size={24} /></div>
@@ -90,25 +114,25 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
                 {/* Button B: Ad */}
                 <button 
                     onClick={handleWatchAd}
-                    className="w-full flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all group"
+                    className="w-full flex items-center justify-between p-4 rounded-xl bg-[var(--glass-card)] border border-[var(--glass-border)] hover:bg-[var(--glass-card-hover)] hover:border-emerald-500/30 transition-all group"
                 >
                     <div className="flex items-center gap-4">
-                        <div className="bg-white/10 p-2 rounded-lg group-hover:bg-emerald-500/20 group-hover:text-emerald-400"><PlayCircle size={24} /></div>
+                        <div className="bg-[var(--glass-panel)] p-2 rounded-lg group-hover:bg-emerald-500/20 group-hover:text-emerald-400 text-[var(--text-primary)]"><PlayCircle size={24} /></div>
                         <div className="text-left">
-                            <span className="block font-bold text-white">Watch 5s Ad</span>
-                            <span className="block text-[10px] text-gray-400">Free Verification (Sponsored)</span>
+                            <span className="block font-bold text-[var(--text-primary)]">Watch 5s Ad</span>
+                            <span className="block text-[10px] text-[var(--text-muted)]">Free Verification (Sponsored)</span>
                         </div>
                     </div>
                 </button>
 
                 <div className="py-2 flex items-center justify-center">
-                    <span className="text-[10px] text-gray-600 uppercase tracking-widest">or</span>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">or</span>
                 </div>
 
                 {/* Button C: SKIP (The "Ghost" Option) */}
                 <button 
                     onClick={() => onVerified('SKIP')}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-colors text-xs"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)] transition-colors text-xs"
                 >
                     <AlertCircle size={14} />
                     Post without verification (Unverified)
@@ -118,14 +142,14 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
         ) : (
             // --- AD PLAYBACK ---
             <div className="text-center py-8">
-                <p className="text-white font-bold mb-4 animate-pulse">Verifying on Optimism...</p>
+                <p className="text-[var(--text-primary)] font-bold mb-4 animate-pulse">Verifying on Optimism...</p>
                 <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden mb-2">
                     <div 
                         className="bg-emerald-500 h-full transition-all duration-500 ease-linear"
                         style={{ width: `${adProgress}%` }}
                     />
                 </div>
-                <p className="text-xs text-gray-500">PeakeFeeds is sponsoring this transaction</p>
+                <p className="text-xs text-[var(--text-muted)]">PeakeFeeds is sponsoring this transaction</p>
             </div>
         )}
 
@@ -133,4 +157,3 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
     </div>
   );
 }
-
