@@ -26,13 +26,15 @@
 
 /* --- Faces (Front & Back) --- */
 .cardFront, .cardBack {
-  z-index: 20;
+  /* Removed fixed z-index here to allow specific overrides below */
   position: relative;
   width: 100%;
   height: 100%;
   -webkit-backface-visibility: hidden; 
   backface-visibility: hidden;
-  overflow: initial;
+  
+  /* Keep rounded corners */
+  overflow: hidden; 
   
   /* Glassmorphism Base */
   background: var(--glass-card);
@@ -45,13 +47,16 @@
   
   display: flex;
   flex-direction: column;
-  overflow: hidden; 
 }
 
+/* --- Front Specifics --- */
 .cardFront {
-  z-index: 2;
+  /* 🛑 FIX: Ensure Front is ABOVE Back by default */
+  z-index: 30; 
+  transform: translateZ(0);
 }
 
+/* --- Back Specifics (Verification Layer) --- */
 .cardBack {
   position: absolute;
   top: 0;
@@ -59,7 +64,22 @@
   transform: rotateY(180deg);
   background: linear-gradient(145deg, rgba(10, 10, 10, 0.95), rgba(20, 20, 20, 0.98));
   border: 1px solid var(--accent-primary); 
+  overflow: hidden; 
+  /* 🛑 FIX: Ensure Back starts BELOW Front */
+  z-index: 10; 
 }
+
+/* 🛑 NEW: Swap Z-Indexes when flipped so the active side is always clickable */
+.flipped .cardFront {
+  z-index: 10;
+  pointer-events: none; /* Disable clicks on front when hidden */
+}
+
+.flipped .cardBack {
+  z-index: 30;
+  pointer-events: auto;
+}
+
 
 /* --- Typography --- */
 .header {
@@ -118,14 +138,25 @@
   min-height: 60px;
 }
 
+/* Global wrapper for the video div in TSX */
+:global(.media-preview-container) {
+    position: relative;
+    z-index: 50;
+}
+
+/* Video Wrapper */
 .videoWrapper {
     position: relative;
     width: 100%;
-    padding-top: 56.25%; 
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
     height: 0;
     margin-bottom: 1rem;
     border-radius: 12px;
     overflow: hidden;
+    
+    z-index: 50; 
+    pointer-events: auto !important; 
+    background: black;
 }
 
 .videoWrapper iframe {
@@ -134,6 +165,58 @@
     left: 0;
     width: 100%;
     height: 100%;
+    border: none;
+    
+    pointer-events: auto !important;
+    z-index: 100;
+}
+
+/* Play Button Overlay */
+.playOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 60;
+    transition: background 0.2s ease;
+    pointer-events: auto; 
+}
+
+.playOverlay:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.playButton {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 0, 0, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.playOverlay:hover .playButton {
+    transform: scale(1.1);
+}
+
+.thumbnailImage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1; 
 }
 
 .title {
@@ -201,7 +284,15 @@
 .actionBtn:hover { color: var(--text-primary); }
 .actionBar .actionBtn:last-child { margin-left: auto; }
 
-/* --- Verified Chip --- */
+/* --- Verification Footer --- */
+.verificationFooter {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* --- Verified Chip Styling --- */
 .verifyChip {
     display: flex;
     align-items: center;
@@ -243,7 +334,6 @@
 }
 
 /* --- COMMENTS PANEL --- */
-/* Note: Background is now handled via inline style in PostCard.tsx */
 .commentsPanel {
   position: absolute;
   top: 0;
@@ -251,19 +341,19 @@
   width: 100%;
   height: 100%;
   
-  /* Blur still handled here */
   backdrop-filter: blur(40px);   
   -webkit-backdrop-filter: blur(40px); 
   
   border: 1px solid var(--glass-border);
   box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
   
-  z-index: 20; 
+  z-index: 200; 
   transform: translateY(100%); 
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
   display: flex;
   flex-direction: column;
   border-radius: 1.5rem;
+  transform-style: flat; 
 }
 
 .commentsOpen { transform: translateY(0); }
@@ -274,7 +364,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* Keep transparent, the parent background handles color */
   background: transparent;
 }
 
@@ -329,7 +418,6 @@
 .inputArea {
   padding: 1rem;
   border-top: 1px solid var(--glass-border);
-  /* Background handled via inline style */
   display: flex;
   gap: 0.5rem;
   border-bottom-left-radius: 1.5rem;
@@ -448,4 +536,3 @@
 .commentsPanel span, .commentsPanel p, .commentsPanel h3 {
     color: var(--text-primary);
 }
-

@@ -1,20 +1,18 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useTheme } from 'next-themes'
+import { useState, useMemo, useEffect } from 'react' // Removed useEffect/useTheme if unused in this snippet
+import { useTheme } from 'next-themes' // Keep if needed for other parts
 import Link from 'next/link'
 import { MessageCircle, Heart, Repeat, ShieldCheck, ShieldOff, X, Send, ChevronDown, ChevronUp, Trash, HeartCrack, Edit2, CornerDownRight } from 'lucide-react'
 import clsx from 'clsx'
 import styles from './PostCard.module.css' 
 import { PostType } from '@prisma/client'
 
-// ⚡ IMPORTS
 import { deletePost } from '@/actions/delete-post' 
 import { createComment } from '@/actions/create-comment'
 import { setReaction } from '@/actions/toggle-reaction' 
 import { deleteComment, updateComment } from '@/actions/comment-actions' 
 
-// --- Types ---
 interface Comment {
     id: string;
     author: { id: string; username: string | null };
@@ -27,7 +25,7 @@ interface PostProps {
   post: {
     id: string
     title: string | null
-    content: string
+    content: string;
     type: PostType; 
     mediaUrl: string | null;
     embedUrl?: string | null;
@@ -38,15 +36,12 @@ interface PostProps {
     author: { id: string; name: string | null; username: string | null; image?: string | null; };
     channel: { id: string; name: string; slug: string; creatorId: string; };
     comments?: Comment[];
-    
-    // 👇 UPDATE: Expect both counts from the DB
     _count?: { comments: number, likes: number, dislikes: number };
   }
   initialReaction?: 'LIKE' | 'DISLIKE' | null;
   isDemo?: boolean;
 }
 
-// ... (Helpers: detectMedia, MediaPreview, buildCommentTree - SAME AS BEFORE) ...
 function detectMedia(text: string | null): any {
     if (!text) return null;
     const ytMatch = text.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}(?:\S+)?)/i);
@@ -58,19 +53,31 @@ function detectMedia(text: string | null): any {
     return null;
 }
 
+// 🎥 SIMPLIFIED MEDIA PREVIEW (Standard Iframe)
 function MediaPreview({ type, url }: { type: string, url: string | null }) {
     if (!url) return null;
     let embedUrl = url;
     let videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    if (videoIdMatch) embedUrl = videoIdMatch[1];
+    let videoId = videoIdMatch ? videoIdMatch[1] : null;
 
-    if (type === 'YOUTUBE' && embedUrl) {
+    if (type === 'YOUTUBE' && videoId) {
         return (
-            <div className={styles.videoWrapper}>
-                <iframe src={`https://www.youtube.com/embed/${embedUrl}?rel=0&modestbranding=1`} title="YouTube video player" allowFullScreen loading="lazy" />
+            <div 
+                className={styles.videoWrapper}
+                // Stop propagation so clicking the video controls doesn't expand the card
+                onClick={(e) => e.stopPropagation()} 
+            >
+                <iframe 
+                    src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`} 
+                    title="YouTube video player" 
+                    loading="lazy" // ⚡ Lazy load for performance
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen 
+                />
             </div>
         );
     }
+
     if (type === 'IMAGE') {
         return (
             <div className="media-image-container">
@@ -95,7 +102,6 @@ function buildCommentTree(flatComments: Comment[] = []): Comment[] {
     return roots; 
 }
 
-// ... (SingleComment Component - SAME AS BEFORE) ...
 function SingleComment({ comment, postId, channelSlug, isSubComment = false }: { comment: Comment, postId: string, channelSlug: string, isSubComment?: boolean }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
@@ -193,7 +199,6 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
   const [showComments, setShowComments] = useState(false) 
   const [isExpanded, setIsExpanded] = useState(false) 
   
-  // 🆕 STATE: Track Both Counts & Current User Action
   const [userReaction, setUserReaction] = useState<'LIKE' | 'DISLIKE' | null>(initialReaction);
   const [counts, setCounts] = useState({
       likes: post._count?.likes || 0,
@@ -209,8 +214,11 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
   // Theme Logic
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  // useEffect(() => { setMounted(true) }, []) // Not strictly needed for background if using CSS vars correctly, but okay to keep
   const drawerBgColor = mounted && resolvedTheme === 'dark' ? 'rgba(18, 18, 22, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+
+  // Ensure mount
+  useEffect(() => { setMounted(true) }, [])
 
   const commentTree = useMemo(() => {
       return buildCommentTree(post.comments || []);
@@ -230,36 +238,25 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
   const handleTextExpand = (e: React.MouseEvent) => { e.stopPropagation(); setIsExpanded(!isExpanded) }
   const handleConfirmDelete = (e: React.MouseEvent) => { e.stopPropagation(); setShowConfirm(true); }
 
-  // ⚡ HANDLER: Dual Counter Logic
   const handleReaction = async (e: React.MouseEvent, type: 'LIKE' | 'DISLIKE') => {
     e.stopPropagation();
     const previousReaction = userReaction;
     const previousCounts = { ...counts };
-
-    // Optimistic Update
-    const newCounts = { ...counts };
+    let newCounts = { ...counts };
 
     if (userReaction === type) {
-        // 1. Toggle OFF (Removing existing)
         setUserReaction(null);
         if (type === 'LIKE') newCounts.likes = Math.max(0, newCounts.likes - 1);
         if (type === 'DISLIKE') newCounts.dislikes = Math.max(0, newCounts.dislikes - 1);
     } else {
-        // 2. New Reaction OR Switch
         setUserReaction(type);
-        
-        // Add to new type
         if (type === 'LIKE') newCounts.likes++;
         if (type === 'DISLIKE') newCounts.dislikes++;
-
-        // Remove from old type (if switching)
         if (previousReaction === 'LIKE') newCounts.likes = Math.max(0, newCounts.likes - 1);
         if (previousReaction === 'DISLIKE') newCounts.dislikes = Math.max(0, newCounts.dislikes - 1);
     }
     
     setCounts(newCounts);
-
-    // 🛑 2. DEMO CHECK: Stop here if it's a demo
     if (isDemo) return; 
     
     const formData = new FormData();
@@ -268,7 +265,6 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
     formData.append('channelSlug', post.channel.slug);
     
     const result = await setReaction(formData);
-    
     if (result.error) {
         setUserReaction(previousReaction);
         setCounts(previousCounts);
@@ -304,7 +300,6 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
     <div className={styles.cardContainer}>
       <div className={clsx(styles.cardInner, { [styles.flipped]: isFlipped })}>
         
-        {/* === FRONT FACE === */}
         <div className={styles.cardFront}>
           <div className={styles.header}>
             <div className={styles.authorInfo}>
@@ -322,7 +317,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
 
           <div className={clsx(styles.contentWrapper, { [styles.expanded]: isExpanded, [styles.clamped]: !isExpanded })} onClick={handleTextExpand}>
             {post.title && <h3 className={styles.title}>{post.title}</h3>}
-            <div onClick={(e) => e.stopPropagation()} className="media-preview-container">
+            <div className="media-preview-container" onClick={(e) => e.stopPropagation()}>
                 <MediaPreview type={displayType} url={displayUrl} />
             </div>
             {cleanContent.trim().length > 0 && <p className={styles.content}>{cleanContent}</p>}
@@ -331,13 +326,11 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
           </div>
           
           <div className={styles.actionBar}>
-            {/* 👍 LIKE BUTTON + COUNT */}
             <button className={clsx(styles.actionBtn, { "text-red-500": userReaction === 'LIKE' })} onClick={(e) => handleReaction(e, 'LIKE')}>
               <Heart size={18} fill={userReaction === 'LIKE' ? "currentColor" : "none"} />
               <span>{counts.likes}</span>
             </button>
 
-            {/* 👎 DISLIKE BUTTON + COUNT */}
             <button className={clsx(styles.actionBtn, { "text-purple-500": userReaction === 'DISLIKE' })} onClick={(e) => handleReaction(e, 'DISLIKE')}>
               <HeartCrack size={18} fill={userReaction === 'DISLIKE' ? "currentColor" : "none"} />
               <span>{counts.dislikes}</span>
@@ -348,17 +341,19 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
               <span>{post.comments?.length || post._count?.comments || 0}</span>
             </button>
             <button className={styles.actionBtn}><Repeat size={18} /></button>
+            
             <button className={clsx(styles.actionBtn)} onClick={handleConfirmDelete} disabled={isDeleting} style={{ color: 'var(--text-muted)', marginLeft: 'auto', opacity: isDeleting ? 0.5 : 1 }}>
                 <Trash size={18} />
             </button>
-            <button className={clsx(styles.verifyChip, { 'unverified': !isPostVerified })} onClick={handleVerifyFlip} style={{ color: isPostVerified ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+          </div>
+
+          <div className={styles.verificationFooter}>
+             <button className={clsx(styles.verifyChip, { 'unverified': !isPostVerified })} onClick={handleVerifyFlip} style={{ color: isPostVerified ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
                 {isPostVerified ? <ShieldCheck size={14} /> : <ShieldOff size={14} style={{ color: 'var(--text-muted)' }} />}
                 {isPostVerified ? 'Verified' : 'Unverified'}
             </button>
           </div>
 
-          {/* Delete Modal, Comments, Back Face (Keep existing implementation) */}
-          {/* Paste back the rest of the component body (Modals, Drawer, Back Face) here as it was correct in previous steps */}
           {showConfirm && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 9999 }}>
                 <div style={{ background: 'var(--glass-card)', padding: '24px', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0, 0, 0, 0.4)', textAlign: 'center' }}>
@@ -404,7 +399,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
              <button className="absolute-close-btn" style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--text-muted)' }} onClick={handleVerifyFlip}><X size={20} /></button>
              <div className={styles.verificationContainer}>
                 {isPostVerified ? <ShieldCheck size={48} style={{ color: 'var(--accent-success)', marginBottom: '8px' }} /> : <ShieldOff size={48} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />}
-                <h3 className="verify-title" style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', marginBottom: '4px' }}>{isPostVerified ? 'Verified on Blockchain' : 'Verification Pending'}</h3>
+                <h3 className="verify-title" style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', marginBottom: '4px' }}>{isPostVerified ? 'Verified on Optimism' : 'Verification Pending'}</h3>
                 <p className="verify-text" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px', padding: '0 24px' }}>Cryptographically secured proof of origin.</p>
                 <div className={styles.hashBox}>
                     <span className={styles.hashLabel}>CONTENT HASH</span>

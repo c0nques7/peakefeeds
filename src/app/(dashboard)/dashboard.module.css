@@ -2,8 +2,7 @@
 .layoutContainer {
   display: flex;
   min-height: 100vh;
-  /* 🛑 REMOVED background here. We let the body background show through 
-     so the fixed orbs don't get covered up. */
+  /* Removed background color to allow global orbs to show */
   position: relative;
   overflow-x: hidden; 
 }
@@ -15,13 +14,11 @@
   left: 0;
   width: 100%;
   height: 100%;
-  /* Ensure it sits behind content (z-10) but visible over body */
   z-index: 0; 
   pointer-events: none;
   overflow: hidden;
 }
 
-/* Define animations locally to ensure CSS Modules pick them up */
 @keyframes breathe {
   0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
   50% { transform: translate(20px, -20px) scale(1.1); opacity: 0.8; }
@@ -82,24 +79,32 @@
 .mainContent {
   flex: 1;
   width: 100%; 
-  /* 🛑 Ensure this sits ON TOP of the background layer */
   z-index: 10; 
   padding-bottom: 2rem; 
-  padding-right: 70px; 
+  padding-right: 70px; /* Default mobile padding */
 }
 
 .feedWrapper {
-  max-width: 600px; 
-  margin: 0 auto;
   width: 100%;
   position: relative;
+  margin: 0 auto;
+  
+  /* 🛑 FIX: Allow width to expand on desktop */
+  /* Was 600px, which squeezed the grid. 1600px lets it fill the middle area. */
+  max-width: 1600px; 
+  padding: 0 1rem;
 }
 
-/* --- 4. POSTS GRID --- */
+/* --- 4. POSTS GRID (SMART LAYOUT) --- */
 .postsGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
+  /* SMART GRID LOGIC:
+     - Creates as many columns as will fit.
+     - Each column is at least 300px wide (minmax).
+     - If space remains, columns stretch to fill it (1fr).
+  */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
   margin-top: 2rem;
 }
 
@@ -124,10 +129,10 @@
     padding-top: 1rem;
     padding-right: 0; 
   }
-
-  .postsGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
+  
+  /* On tablets, ensure we don't stretch single cards too wide */
+  .feedWrapper {
+      padding: 0 2rem;
   }
 }
 
@@ -136,11 +141,11 @@
   
   .mainContent {
     margin-left: 275px; 
-    margin-right: 350px; 
+    margin-right: 350px; /* Make room for Right Sidebar */
   }
-
+  
+  /* On large desktops, tight spacing looks better */
   .postsGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2.5rem 1.5rem;
+    gap: 2rem;
   }
 }

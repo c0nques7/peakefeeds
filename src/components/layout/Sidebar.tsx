@@ -3,12 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
-import { Compass, LayoutGrid, LogOut, User, Mountain } from 'lucide-react'
-import ThemeToggle from '@/components/ThemeToggle' // 👈 Import the Toggle
-
-// We define the styles object to map to your CSS modules or Tailwind classes
-// If you don't have a specific Sidebar.module.css, we can use Tailwind classes directly for layout
-// and reuse the glass variables for styling.
+// 1. Imported Home icon, Removed LayoutGrid
+import { Compass, LogOut, User, Mountain, Home } from 'lucide-react'
+import ThemeToggle from '@/components/ThemeToggle' 
 
 interface SidebarProps {
   user?: {
@@ -25,15 +22,18 @@ export function Sidebar({ user }: SidebarProps) {
   const isActive = (path: string) => pathname === path
 
   const navItems = [
-    { label: 'Discover', href: '/home', icon: Compass },
-    { label: 'My Feed', href: '/my-feed', icon: LayoutGrid },
+    // 2. NEW: Home Button (Top Priority)
+    { label: 'Home', href: '/home', icon: Home },
+    // 3. Discover (Global Feed)
+    { label: 'Discover', href: '/all', icon: Compass },
+    // 4. Profile
     { label: 'Profile', href: `/profile/${user?.username || ''}`, icon: User },
   ]
 
   return (
     <div className="h-full flex flex-col p-4 border-r border-[var(--glass-border)] bg-[var(--glass-panel)] backdrop-blur-xl">
       
-      {/* 1. LOGO AREA */}
+      {/* LOGO AREA */}
       <div className="mb-8 px-4 py-2 flex items-center gap-3">
         <div className="w-8 h-8 bg-gradient-to-br from-[var(--accent-primary)] to-purple-600 rounded-lg flex items-center justify-center text-white shadow-lg">
           <Mountain size={18} fill="currentColor" />
@@ -43,7 +43,7 @@ export function Sidebar({ user }: SidebarProps) {
         </span>
       </div>
 
-      {/* 2. NAVIGATION LINKS */}
+      {/* NAVIGATION LINKS */}
       <nav className="flex-1 space-y-2">
         {navItems.map((item) => {
           const active = isActive(item.href)
@@ -67,10 +67,10 @@ export function Sidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      {/* 3. FOOTER AREA (Toggle + User) */}
+      {/* FOOTER AREA (Toggle + User) */}
       <div className="mt-auto space-y-4">
         
-        {/* 🌗 THEME TOGGLE ROW */}
+        {/* THEME TOGGLE ROW */}
         <div className="px-4 py-3 rounded-xl bg-[var(--glass-card)] border border-[var(--glass-border)] flex items-center justify-between">
             <span className="text-sm font-medium text-[var(--text-muted)]">Theme</span>
             <ThemeToggle />
