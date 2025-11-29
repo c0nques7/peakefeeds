@@ -100,14 +100,14 @@
 
 /* --- NAVIGATION --- */
 .nav {
+  padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
-  z-index: 50;
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
+  z-index: 50;
 }
 
 .brandContainer {
@@ -120,7 +120,7 @@
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-main); /* Swaps automatically */
+  color: var(--text-main);
 }
 
 .navLinksContainer {
@@ -141,7 +141,7 @@
 .ctaNavButton {
   padding: 0.6rem 1.2rem;
   border-radius: 99px;
-  background: rgba(125, 125, 125, 0.1); /* Neutral glass */
+  background: rgba(125, 125, 125, 0.1);
   border: 1px solid rgba(125, 125, 125, 0.2);
   font-size: 0.85rem;
   font-weight: 600;
@@ -151,7 +151,7 @@
 
 .ctaNavButton:hover {
   background: var(--text-main);
-  color: var(--landing-bg); /* Invert colors on hover */
+  color: var(--landing-bg); 
 }
 
 /* --- HERO SECTION --- */
@@ -168,6 +168,7 @@
   position: relative;
 }
 
+/* Left Content */
 .heroContent { max-width: 600px; }
 
 .optimismBadge {
@@ -213,40 +214,101 @@
   max-width: 90%;
 }
 
-.ctaButtonContainer { display: flex; gap: 1rem; }
-
-.ctaButton {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1.5rem;
-  background: var(--text-main); /* Black in light, White in dark */
-  color: var(--landing-bg);     /* White in light, Black in dark */
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1rem;
-  transition: transform 0.2s, box-shadow 0.2s;
+/* --- WAITLIST FORM --- */
+.waitlistForm {
+    width: 100%;
+    max-width: 450px;
+    margin-bottom: 1rem;
 }
 
-.ctaButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px var(--orb-teal);
+.inputGroup {
+    display: flex;
+    align-items: center;
+    background: var(--glass-card-hover);
+    border: 1px solid var(--glass-border);
+    border-radius: 99px;
+    padding: 0.5rem;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s;
 }
 
-.secondaryButton {
-  padding: 0.8rem 1.5rem;
-  background: transparent;
-  border: 1px solid rgba(125, 125, 125, 0.2);
-  color: var(--text-main);
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1rem;
-  transition: all 0.2s;
+.inputGroup:focus-within {
+    box-shadow: 0 0 0 3px var(--accent-primary);
 }
 
-.secondaryButton:hover { background: rgba(125, 125, 125, 0.1); }
+.mailIcon {
+    color: var(--text-muted);
+    margin: 0 0.5rem;
+    flex-shrink: 0;
+}
 
-/* --- HERO VISUAL --- */
+.emailInput {
+    flex-grow: 1;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.emailInput::placeholder {
+    color: var(--text-muted);
+    opacity: 0.8;
+}
+
+.waitlistButton {
+    padding: 0.6rem 1.5rem;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    color: var(--text-primary);
+    background: var(--accent-secondary);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.waitlistButton:hover:not(:disabled) {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.waitlistButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.successMessage {
+    display: flex;
+    align-items: center;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.errorMessage {
+    display: flex;
+    align-items: center;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.smallLegal {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin-top: 1rem;
+}
+
+/* --- Hero Visual --- */
 .heroVisual {
   display: flex;
   justify-content: center;
@@ -259,7 +321,7 @@
   max-width: 450px;
   transform: rotateY(-10deg) rotateX(5deg);
   transition: transform 0.5s ease;
-  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.3)); /* Softer shadow for light mode compatibility */
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.3));
 }
 
 .demoCardWrapper:hover { transform: rotateY(0) rotateX(0); }
@@ -268,7 +330,7 @@
   text-align: center;
   font-size: 0.85rem;
   color: var(--text-sub);
-  margin-top: 1rem;
+  margin-top: 3rem;
   opacity: 0.8;
   font-family: monospace;
   letter-spacing: 0.05em;
@@ -285,7 +347,7 @@
 }
 
 .featureCard {
-  background: rgba(125, 125, 125, 0.05); /* Neutral glass */
+  background: rgba(125, 125, 125, 0.05);
   border: 1px solid rgba(125, 125, 125, 0.1);
   padding: 2rem;
   border-radius: 1.5rem;
@@ -315,15 +377,15 @@
 
 /* --- FOOTER --- */
 .footer {
-  text-align: center;
   padding: 2rem;
   border-top: 1px solid rgba(125, 125, 125, 0.1);
   margin-top: auto;
+  text-align: center;
 }
 
-.footerText { font-size: 0.8rem; color: var(--text-sub); }
-.footerHighlight { color: var(--grad-end); font-weight: bold; }
-.footerHighlightRed { color: #ff4d4d; font-weight: bold; }
+.footerText { color: var(--text-muted); font-size: 0.875rem; }
+.footerHighlight { color: var(--text-primary); font-weight: 600; }
+.footerHighlightRed { color: var(--accent-secondary); font-weight: 600; }
 
 /* --- MOBILE --- */
 @media (max-width: 1024px) { .title { font-size: 3rem; } }
@@ -331,7 +393,8 @@
   .hero { grid-template-columns: 1fr; text-align: center; gap: 3rem; padding-top: 2rem; }
   .heroContent { margin: 0 auto; }
   .optimismBadge { margin-left: auto; margin-right: auto; }
-  .ctaButtonContainer { justify-content: center; }
+  .waitlistForm { max-width: 100%; }
+  .inputGroup { width: 100%; }
   .heroVisual { perspective: none; }
   .demoCardWrapper { transform: none; margin-top: 2rem; }
   .features { grid-template-columns: 1fr; }

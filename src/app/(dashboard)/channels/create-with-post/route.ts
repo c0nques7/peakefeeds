@@ -27,12 +27,11 @@ export async function POST(request: Request) {
       });
 
       // 2. Join Channel
-      await tx.channelMember.create({
+      await tx.subscription.create({
         data: {
           userId: session.user.id,
           channelId: channel.id,
-          role: 'OWNER'
-        }
+        },
       });
 
       // 3. Create First Post

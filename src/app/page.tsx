@@ -1,13 +1,82 @@
+'use client'
+
 import Link from "next/link"
 import ThemeLogo from "@/components/ThemeLogo" 
 import styles from "./landing.module.css"
-import { ArrowRight, Hexagon, Fingerprint, Layers, ShieldCheck } from "lucide-react"
+import { ArrowRight, Hexagon, Fingerprint, Layers, ShieldCheck, Mail, Check, AlertCircle } from "lucide-react"
 import { PostCard } from "@/components/PostCard"
+import { subscribeToWaitlist } from "@/actions/subscribe-waitlist" // 👈 Import new action
+import { useState } from "react" // 👈 Needed for form state
+
+// Client component wrapper for the form submission logic
+function WaitlistForm() {
+    const [email, setEmail] = useState('');
+    const [message, setMessage] = useState('');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus('loading');
+        setMessage('');
+
+        const formData = new FormData();
+        formData.append('email', email);
+
+        const result = await subscribeToWaitlist(formData);
+
+        if (result.success) {
+            setStatus('success');
+            setMessage(result.message);
+        } else {
+            setStatus('error');
+            setMessage(result.message || "Subscription failed.");
+        }
+    };
+
+    const isSubscribed = status === 'success';
+
+    return (
+        <form onSubmit={handleSubmit} className={styles.waitlistForm}>
+            
+            {/* Display status messages */}
+            {message && (
+                <p className={isSubscribed ? styles.successMessage : styles.errorMessage}>
+                    {isSubscribed ? <Check size={14} className="mr-2" /> : <AlertCircle size={14} className="mr-2" />}
+                    {message}
+                </p>
+            )}
+
+            <div className={styles.inputGroup}>
+                <Mail size={20} className={styles.mailIcon} />
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email for beta access"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className={styles.emailInput}
+                    disabled={isSubscribed || status === 'loading'}
+                />
+                <button
+                    type="submit"
+                    className={styles.waitlistButton}
+                    disabled={status === 'loading' || isSubscribed}
+                >
+                    {status === 'loading' ? 'Sending...' : 'Get Access'}
+                </button>
+            </div>
+            
+        </form>
+    );
+}
+
 
 export default function LandingPage() {
   
-  // --- MOCK DATA FOR HERO CARD ---
+  // --- MOCK DATA ---
   const demoPost = {
+    // ... (Keep the existing demoPost object) ...
     id: "demo-hero-1",
     title: "Deepfakes are over.",
     content: "This is what a verified thought looks like. Cryptographically signed, anchored on Optimism, and impossible to fake. The truth engine is live.",
@@ -31,36 +100,16 @@ export default function LandingPage() {
         slug: "official-news",
         creatorId: "official-peake-id"
     },
-    // Updated counts to match new schema (likes + dislikes)
     _count: { comments: 42, likes: 4096, dislikes: 12 },
-    
     comments: [
-      {
-        id: "c1",
-        author: { id: "u1", username: "crypto_alice" },
-        content: "Finally! A social graph I actually own. The UI is slick too. 💎",
-        replies: []
-      },
-      {
-        id: "c2",
-        author: { id: "u2", username: "dev_dave" },
-        content: "Is this anchored on L1 or L2?",
-        replies: [
-            {
-                id: "c2-reply",
-                author: { id: "official-peake-id", username: "peake_official" },
-                content: "Optimism L2. Fast, cheap, and secure. ⚡",
-                parentId: "c2"
-            }
-        ]
-      }
+      { id: "c1", author: { id: "u1", username: "crypto_alice" }, content: "Finally! A social graph I actually own. The UI is slick too. 💎", replies: [] },
     ] 
   }
 
   return (
     <div className={styles.container}>
       
-      {/* 🌬️ BREATHING BACKGROUND LAYERS */}
+      {/* 🌬️ BACKGROUND LAYERS */}
       <div className={styles.backgroundLayer}>
         <div className={styles.orbTeal} />
         <div className={styles.orbPurple} />
@@ -70,13 +119,8 @@ export default function LandingPage() {
       {/* NAVIGATION */}
       <nav className={styles.nav}>
         <div className={styles.brandContainer}>
-            {/* 🔄 Dynamic Theme Logo */}
             <ThemeLogo />
             <span className={styles.brandText}>PeakeFeeds</span>
-        </div>
-        
-        <div className={styles.navLinksContainer}> 
-          <Link href="/api/auth/signin" className={styles.navLink}>Login</Link>
         </div>
       </nav>
 
@@ -104,27 +148,19 @@ export default function LandingPage() {
             immutable on the blockchain.
           </p>
 
-          <div className={styles.ctaButtonContainer}> 
-            <Link href="/register" className={styles.ctaButton}>
-              Create Account <ArrowRight size={18} />
-            </Link>
-            <Link href="/home" className={styles.secondaryButton}>
-              View Live Feed
-            </Link>
-          </div>
+          {/* 🎯 NEW: EMAIL WAITLIST FORM */}
+          <WaitlistForm />
+          
+          <p className={styles.smallLegal}>
+              Join 1,200+ early verifiers on our private beta list.
+          </p>
+
         </div>
 
-        {/* Right: Product Demo (Single 3D Card) */}
+        {/* Right: Product Demo */}
         <div className={styles.heroVisual}>
           <div className={styles.demoCardWrapper}>
-            {/* isDemo={true} ensures we don't try to call the database 
-                when the user clicks like/dislike/comment 
-            */}
-            <PostCard 
-                post={demoPost} 
-                initialReaction="LIKE" 
-                isDemo={true} 
-            />
+            <PostCard post={demoPost} initialReaction="LIKE" isDemo={true} />
             
             <div className={styles.demoLabel}>
                 Interactive Demo: Inspect the Verification, View Comments or Like This Post!
@@ -138,28 +174,19 @@ export default function LandingPage() {
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Hexagon size={24} /></div>
           <h3 className={styles.featureTitle}>Optimism Secured</h3>
-          <p className={styles.featureText}>
-            Every post creates a cryptographic proof on the Optimism L2. 
-            Low gas fees, Ethereum-level security.
-          </p>
+          <p className={styles.featureText}>Every post creates a cryptographic proof on the Optimism L2. Low gas fees, Ethereum-level security.</p>
         </div>
 
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Fingerprint size={24} /></div>
           <h3 className={styles.featureTitle}>Proof of Humanity</h3>
-          <p className={styles.featureText}>
-            Combat AI-generated spam. Our Web3 Auth layer validates organic interaction, 
-            making it impossible for bot farms to scale.
-          </p>
+          <p className={styles.featureText}>Combat AI-generated spam. Our Web3 Auth layer validates organic interaction.</p>
         </div>
 
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Layers size={24} /></div>
           <h3 className={styles.featureTitle}>Content Attribution</h3>
-          <p className={styles.featureText}>
-            Stop copycats. The original creator is stamped on-chain. 
-            Derivatives are tracked protecting IP.
-          </p>
+          <p className={styles.featureText}>Stop copycats. The original creator is stamped on-chain. Derivatives are tracked.</p>
         </div>
       </section>
 
