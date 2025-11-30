@@ -20,7 +20,7 @@ export default function DiscoverPage() {
         <section className="relative z-10">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-[var(--text-primary)]">
-                    Live Content From Across the Peake
+                    Live Content From the Peake
                 </h2>
                 <div className="text-xs font-mono px-3 py-1 rounded-full border border-[var(--accent-secondary)] text-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10">
                     Discover
