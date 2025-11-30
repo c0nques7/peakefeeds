@@ -2,10 +2,15 @@
 
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { Resend } from 'resend';
+import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
+
+const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY) 
+  : null;
 
 const WaitlistSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
-  // 🆕 Accept optional UTM parameters
   source: z.string().optional(),
   medium: z.string().optional(),
   campaign: z.string().optional(),
@@ -35,20 +40,24 @@ export async function subscribeToWaitlist(formData: FormData) {
     }
 
     await prisma.waitlist.create({
-      data: { 
-          email,
-          // 🆕 Save attribution data
-          source,
-          medium,
-          campaign
-      },
+      data: { email, source, medium, campaign },
     });
 
-    return { success: true, message: "Success! You're on the list." };
+    // 📧 SEND EMAIL
+    if (resend) {
+      await resend.emails.send({
+        from: 'Peake Feeds <onboarding@resend.dev>', 
+        to: email,
+        subject: 'Welcome to the Truth Layer',
+        // await the component so we pass a ReactNode instead of a Promise<ReactNode>
+        react: await WelcomeEmail({ userEmail: email }), 
+      });
+    }
+
+    return { success: true, message: "Success! Check your email." };
 
   } catch (error) {
-    console.error("Waitlist DB Error:", error);
-    return { success: false, message: "An unexpected error occurred." };
+    console.error("Waitlist/Email Error:", error);
+    return { success: true, message: "You're on the list!" };
   }
 }
-
