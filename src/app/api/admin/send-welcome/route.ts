@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     // 3. Loop and Send
     for (const user of users) {
         const { error } = await resend.emails.send({
-            from: 'Peake Feeds <onboarding@resend.dev>', // Your sender
+            from: 'Peake Feeds <welcome@peakefeeds.com>', // Your sender
             to: user.email,
             subject: 'Welcome to the Truth Layer',
             // Reuse your existing component
