@@ -162,12 +162,6 @@ export default function LandingPage() {
             <ThemeLogo />
             <span className={styles.brandText}>PeakeFeeds</span>
         </div>
-        
-        <div className={styles.navLinksContainer}> 
-          <Link href="/home" className={styles.secondaryButton}>
-            View Feed
-          </Link>
-        </div>
       </nav>
 
       {/* HERO SECTION */}
