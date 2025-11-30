@@ -4,13 +4,14 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { Resend } from 'resend';
 import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
+import { render } from "@react-email/render";
 
 const resend = process.env.RESEND_API_KEY 
   ? new Resend(process.env.RESEND_API_KEY) 
   : null;
 
 const WaitlistSchema = z.object({
-  email: z.string().email("Invalid email address").max(255),
+  email: z.email("Invalid email address").max(255),
   source: z.string().optional(),
   medium: z.string().optional(),
   campaign: z.string().optional(),
@@ -45,12 +46,15 @@ export async function subscribeToWaitlist(formData: FormData) {
 
     // 📧 SEND EMAIL
     if (resend) {
+      // 2. Manually Render the Email to HTML String
+      const emailHtml = await render(WelcomeEmail({ userEmail: email }) as React.ReactElement);
+
       await resend.emails.send({
         from: 'Peake Feeds <onboarding@resend.dev>', 
         to: email,
         subject: 'Welcome to the Truth Layer',
-        // await the component so we pass a ReactNode instead of a Promise<ReactNode>
-        react: await WelcomeEmail({ userEmail: email }), 
+        // 3. Pass as HTML instead of 'react' property
+        html: emailHtml, 
       });
     }
 
