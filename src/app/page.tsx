@@ -1,18 +1,25 @@
 'use client'
 
+import { useState, Suspense } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import ThemeLogo from "@/components/ThemeLogo" 
 import styles from "./landing.module.css"
 import { ArrowRight, Hexagon, Fingerprint, Layers, ShieldCheck, Mail, Check, AlertCircle } from "lucide-react"
 import { PostCard } from "@/components/PostCard"
-import { subscribeToWaitlist } from "@/actions/subscribe-waitlist" // 👈 Import new action
-import { useState } from "react" // 👈 Needed for form state
+import { subscribeToWaitlist } from "@/actions/subscribe-waitlist"
 
-// Client component wrapper for the form submission logic
+// --- 1. CLIENT FORM COMPONENT (With Analytics & UTMs) ---
 function WaitlistForm() {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    // Capture Marketing Data from URL
+    const searchParams = useSearchParams();
+    const source = searchParams.get('utm_source') || '';
+    const medium = searchParams.get('utm_medium') || '';
+    const campaign = searchParams.get('utm_campaign') || '';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,12 +28,27 @@ function WaitlistForm() {
 
         const formData = new FormData();
         formData.append('email', email);
+        
+        // Pass attribution data to server
+        if (source) formData.append('source', source);
+        if (medium) formData.append('medium', medium);
+        if (campaign) formData.append('campaign', campaign);
 
         const result = await subscribeToWaitlist(formData);
 
         if (result.success) {
             setStatus('success');
             setMessage(result.message);
+            
+            // 🔥 Fire Analytics Event (Client Side)
+            // Checks if GTM/GA4 script is loaded before calling
+            if (typeof window !== 'undefined' && (window as any).gtag) {
+                (window as any).gtag('event', 'join_waitlist', {
+                    event_category: 'engagement',
+                    event_label: source || 'organic',
+                    value: 1
+                });
+            }
         } else {
             setStatus('error');
             setMessage(result.message || "Subscription failed.");
@@ -38,7 +60,7 @@ function WaitlistForm() {
     return (
         <form onSubmit={handleSubmit} className={styles.waitlistForm}>
             
-            {/* Display status messages */}
+            {/* Feedback Messages */}
             {message && (
                 <p className={isSubscribed ? styles.successMessage : styles.errorMessage}>
                     {isSubscribed ? <Check size={14} className="mr-2" /> : <AlertCircle size={14} className="mr-2" />}
@@ -66,7 +88,6 @@ function WaitlistForm() {
                     {status === 'loading' ? 'Sending...' : 'Get Access'}
                 </button>
             </div>
-            
         </form>
     );
 }
@@ -74,9 +95,8 @@ function WaitlistForm() {
 
 export default function LandingPage() {
   
-  // --- MOCK DATA ---
+  // --- MOCK DATA FOR DEMO ---
   const demoPost = {
-    // ... (Keep the existing demoPost object) ...
     id: "demo-hero-1",
     title: "Deepfakes are over.",
     content: "This is what a verified thought looks like. Cryptographically signed, anchored on Optimism, and impossible to fake. The truth engine is live.",
@@ -101,15 +121,34 @@ export default function LandingPage() {
         creatorId: "official-peake-id"
     },
     _count: { comments: 42, likes: 4096, dislikes: 12 },
+    
     comments: [
-      { id: "c1", author: { id: "u1", username: "crypto_alice" }, content: "Finally! A social graph I actually own. The UI is slick too. 💎", replies: [] },
+      {
+        id: "c1",
+        author: { id: "u1", username: "crypto_alice" },
+        content: "Finally! A social graph I actually own. The UI is slick too. 💎",
+        replies: []
+      },
+      {
+        id: "c2",
+        author: { id: "u2", username: "dev_dave" },
+        content: "Is this anchored on L1 or L2?",
+        replies: [
+            {
+                id: "c2-reply",
+                author: { id: "official-peake-id", username: "peake_official" },
+                content: "Optimism L2. Fast, cheap, and secure. ⚡",
+                parentId: "c2"
+            }
+        ]
+      }
     ] 
   }
 
   return (
     <div className={styles.container}>
       
-      {/* 🌬️ BACKGROUND LAYERS */}
+      {/* 🌬️ ANIMATED BACKGROUND */}
       <div className={styles.backgroundLayer}>
         <div className={styles.orbTeal} />
         <div className={styles.orbPurple} />
@@ -119,22 +158,29 @@ export default function LandingPage() {
       {/* NAVIGATION */}
       <nav className={styles.nav}>
         <div className={styles.brandContainer}>
+            {/* 🔄 Dynamic Theme Logo */}
             <ThemeLogo />
             <span className={styles.brandText}>PeakeFeeds</span>
+        </div>
+        
+        <div className={styles.navLinksContainer}> 
+          <Link href="/home" className={styles.secondaryButton}>
+            View Feed
+          </Link>
         </div>
       </nav>
 
       {/* HERO SECTION */}
       <section className={styles.hero}>
         
-        {/* Left: Copy */}
+        {/* Left: Copy & Lead Gen */}
         <div className={styles.heroContent}>
           <div className={styles.optimismBadge}> 
             <span className={styles.pingEffect}>
               <span className={styles.pingDot}></span>
               <span className={styles.dot}></span>
             </span>
-            <span>Ethereum L2 LIVE</span>
+            <span>OPTIMISM L2 LIVE</span>
           </div>
           
           <h1 className={styles.title}>
@@ -148,8 +194,15 @@ export default function LandingPage() {
             immutable on the blockchain.
           </p>
 
-          {/* 🎯 NEW: EMAIL WAITLIST FORM */}
-          <WaitlistForm />
+          {/* ⚠️ SUSPENSE WRAPPER: 
+            Crucial for 'useSearchParams' to work without disabling 
+            static optimization for the whole page.
+          */}
+          <Suspense fallback={
+            <div className="h-12 w-full max-w-md bg-white/10 animate-pulse rounded-full mb-4" />
+          }>
+             <WaitlistForm />
+          </Suspense>
           
           <p className={styles.smallLegal}>
               Join 1,200+ early verifiers on our private beta list.
@@ -160,7 +213,12 @@ export default function LandingPage() {
         {/* Right: Product Demo */}
         <div className={styles.heroVisual}>
           <div className={styles.demoCardWrapper}>
-            <PostCard post={demoPost} initialReaction="LIKE" isDemo={true} />
+            {/* isDemo={true} prevents DB calls on click */}
+            <PostCard 
+                post={demoPost} 
+                initialReaction="LIKE" 
+                isDemo={true} 
+            />
             
             <div className={styles.demoLabel}>
                 Interactive Demo: Inspect the Verification, View Comments or Like This Post!
@@ -174,29 +232,41 @@ export default function LandingPage() {
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Hexagon size={24} /></div>
           <h3 className={styles.featureTitle}>Optimism Secured</h3>
-          <p className={styles.featureText}>Every verified post leverages Optimism to create a cryptographic proof on Etherium L2. Low gas fees, same Ethereum-level security.</p>
+          <p className={styles.featureText}>
+            Every post creates a cryptographic proof on the Optimism L2. 
+            Low gas fees, Ethereum-level security.
+          </p>
         </div>
 
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Fingerprint size={24} /></div>
           <h3 className={styles.featureTitle}>Proof of Humanity</h3>
-          <p className={styles.featureText}>Combat AI-generated spam. Our Web3 Auth layer validates organic interaction.</p>
+          <p className={styles.featureText}>
+            Combat AI-generated spam. Our Web3 Auth layer validates organic interaction, 
+            making it impossible for bot farms to scale.
+          </p>
         </div>
 
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Layers size={24} /></div>
           <h3 className={styles.featureTitle}>Content Attribution</h3>
-          <p className={styles.featureText}>Stop copycats. The original creator is stamped on-chain. Derivatives are tracked and can be reconsiled via our robust reporting features.</p>
+          <p className={styles.featureText}>
+            Stop copycats. The original creator is stamped on-chain. 
+            Derivatives are tracked protecting IP.
+          </p>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer className={styles.footer}>
         <p className={styles.footerText}>
-          Built on <span className={styles.footerHighlight}>Next.js</span> • Powered by <span className={styles.footerHighlightRed}>Ethereum</span>
+          Built on <span className={styles.footerHighlight}>Next.js</span> • Powered by <span className={styles.footerHighlightRed}>Ethereum</span> and <span className={styles.footerHighlightRed}>Optimism</span>
         </p>
       </footer>
 
     </div>
   )
 }
+
+
+

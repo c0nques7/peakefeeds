@@ -1,26 +1,31 @@
 'use server'
 
 import { prisma } from "@/lib/db";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const WaitlistSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
+  // 🆕 Accept optional UTM parameters
+  source: z.string().optional(),
+  medium: z.string().optional(),
+  campaign: z.string().optional(),
 });
 
 export async function subscribeToWaitlist(formData: FormData) {
   const parsed = WaitlistSchema.safeParse({
     email: formData.get("email"),
+    source: formData.get("source") || undefined,
+    medium: formData.get("medium") || undefined,
+    campaign: formData.get("campaign") || undefined,
   });
 
   if (!parsed.success) {
     return { success: false, message: "Invalid email format." };
   }
 
-  const { email } = parsed.data;
+  const { email, source, medium, campaign } = parsed.data;
 
   try {
-    // 1. Check if user is already subscribed
     const existing = await prisma.waitlist.findUnique({
       where: { email },
     });
@@ -29,12 +34,16 @@ export async function subscribeToWaitlist(formData: FormData) {
       return { success: true, message: "You are already on the waitlist!" };
     }
 
-    // 2. Save new email
     await prisma.waitlist.create({
-      data: { email },
+      data: { 
+          email,
+          // 🆕 Save attribution data
+          source,
+          medium,
+          campaign
+      },
     });
 
-    // 3. Optional: Revalidate the page if needed, but not strictly necessary for landing.
     return { success: true, message: "Success! You're on the list." };
 
   } catch (error) {
@@ -43,11 +52,3 @@ export async function subscribeToWaitlist(formData: FormData) {
   }
 }
 
-// ⚠️ NOTE: You must add the Waitlist model to your schema.prisma:
-/*
-model Waitlist {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  joinedAt  DateTime @default(now())
-}
-*/

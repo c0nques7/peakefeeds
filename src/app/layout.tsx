@@ -9,9 +9,34 @@ import ClientLayout from '@/components/ClientLayout'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PeakeFeeds',
-  description: 'The Truth Engine.',
-}
+  title: {
+    template: '%s | Peake Feeds',
+    default: 'Peake Feeds | The Truth Layer', // Default title
+  },
+  description: 'The first social platform verified by Ethereum. Join the migration to clarity.',
+  openGraph: {
+    title: 'Peake Feeds | The Truth Layer',
+    description: 'The first social platform verified by Ethereum.. Join the migration to clarity.',
+    url: 'https://peakefeeds.com',
+    siteName: 'Peake Feeds',
+    images: [
+      {
+        url: '/peake-logo-dark.png', // Using the dark logo we added earlier
+        width: 1200,
+        height: 630,
+        alt: 'Peake Feeds - The Truth Layer',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Peake Feeds',
+    description: 'Verified by Ethereum. Immutable truth.',
+    images: ['/peake-logo-dark.png'], 
+  },
+};
 
 export default function RootLayout({
   children,
