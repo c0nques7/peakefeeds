@@ -15,7 +15,7 @@ export const WelcomeEmail: React.FC<WelcomeEmailProps> = ({ userEmail }) => (
       </div>
 
       <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
-        Welcome to the Beta.
+        Welcome, and thank you for your interest. We're very excited to show you what we've been working on.
       </h1>
       
       <p style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '16px' }}>
@@ -26,25 +26,9 @@ export const WelcomeEmail: React.FC<WelcomeEmailProps> = ({ userEmail }) => (
         We will reach out soon with your invite code.
       </p>
 
-      <a 
-        href="https://peakefeeds.com" 
-        style={{
-            display: 'inline-block',
-            backgroundColor: '#7059C8',
-            color: '#ffffff',
-            padding: '12px 24px',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            fontWeight: 'bold',
-            marginBottom: '30px'
-        }}
-      >
-        View the Live Feed
-      </a>
-
       <div style={{ borderTop: '1px solid #eee', paddingTop: '20px', fontSize: '12px', color: '#888' }}>
         <p>Sent to {userEmail}</p>
-        <p>Peake Feeds • Secured by Optimism</p>
+        <p>Peake Feeds • Secured by Ethereum</p>
       </div>
       
     </div>
