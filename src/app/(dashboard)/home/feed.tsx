@@ -1,18 +1,25 @@
-import { getGlobalFeed } from "@/lib/feed-service";
+import { getPersonalFeed } from "@/lib/feed-service";
 import { PostCard } from "@/components/PostCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
-import styles from "../dashboard.module.css"; // Matches your existing import path
+import Link from "next/link";
+import styles from "../dashboard.module.css";
 
-export default async function Feed() {
-  // 1. Get Session so we know if the user liked the posts
+export default async function PersonalFeed() {
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id;
 
-  // 2. Fetch Data (This is the slow part that we want to suspend)
-  const posts = await getGlobalFeed(currentUserId);
+  if (!currentUserId) {
+     return (
+        <div className="col-span-full p-12 text-center text-[var(--text-muted)]">
+          <p>Please log in to view your feed.</p>
+        </div>
+     );
+  }
 
-  // 3. Render the Grid
+  // ⚡ Fetch Personal Feed
+  const posts = await getPersonalFeed(currentUserId);
+
   return (
     <div className={styles.postsGrid}>
       {posts.length > 0 ? (
@@ -30,8 +37,12 @@ export default async function Feed() {
           />
         ))
       ) : (
-        <div className="col-span-full p-12 text-center text-[var(--text-muted)]">
-          <p>No posts found. Be the first to post!</p>
+        <div className="col-span-full flex flex-col items-center justify-center p-12 text-center text-[var(--text-muted)] border border-dashed border-[var(--glass-border)] rounded-3xl bg-[var(--glass-card)]">
+          <p className="text-lg font-medium mb-2">Your feed is empty.</p>
+          <p className="text-sm opacity-70 mb-6">Subscribe to channels to see their truth here.</p>
+          <Link href="/discover" className="px-6 py-2 rounded-full bg-[var(--accent-primary)] text-white font-bold text-sm hover:opacity-90 transition-opacity">
+            Go to Discover
+          </Link>
         </div>
       )}
     </div>

@@ -25,7 +25,7 @@ export function Sidebar({ user }: SidebarProps) {
     // 2. NEW: Home Button (Top Priority)
     { label: 'Home', href: '/home', icon: Home },
     // 3. Discover (Global Feed)
-    { label: 'Discover', href: '/all', icon: Compass },
+    { label: 'Discover', href: '/discover', icon: Compass },
     // 4. Profile
     { label: 'Profile', href: `/profile/${user?.username || ''}`, icon: User },
   ]

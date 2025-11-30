@@ -2,27 +2,55 @@ import { prisma } from '@/lib/db';
 import { PostType, ReactionType } from '@prisma/client';
 
 export type ProfileData = {
-    // ... same top level fields ...
-    id: string; username: string | null; name: string | null; walletAddress: string | null; createdAt: Date;
-    _count: { posts: number; channelsCreated: number; };
+    id: string;
+    username: string | null;
+    name: string | null;
+    walletAddress: string | null;
+    createdAt: Date;
+    
+    _count: {
+        posts: number;
+        channelsCreated: number;
+    };
+
     posts: {
-        // ... same post fields ...
-        id: string; title: string | null; content: string; createdAt: Date; isVerified: boolean;
-        contentHash: string | null; signature: string | null; embedUrl: string | null; mediaUrl: string | null;
+        id: string;
+        title: string | null;
+        content: string;
+        createdAt: Date;
+        isVerified: boolean;
+        contentHash: string | null;
+        signature: string | null;
+        embedUrl: string | null;
+        mediaUrl: string | null;
         type: PostType;
         
-        // Count Interface
-        _count: { comments: number; likes: number; dislikes: number; };
+        // 🛑 NEW COUNTS
+        _count: {
+            comments: number;
+            likes: number;
+            dislikes: number;
+        };
         
-        channel: { id: string; name: string; slug: string; creatorId: string; };
+        channel: {
+            id: string;
+            name: string;
+            slug: string;
+            creatorId: string;
+        };
         comments: {
-            id: string; content: string; parentId: string | null;
+            id: string;
+            content: string;
+            parentId: string | null;
             author: { id: string; username: string | null; };
         }[];
         currentUserReaction?: ReactionType | null;
     }[];
+
     channelsCreated: {
-        id: string; name: string; slug: string;
+        id: string;
+        name: string;
+        slug: string;
         _count: { subscribers: number; };
     }[];
 } | null;
@@ -35,6 +63,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
         select: {
             id: true, username: true, name: true, walletAddress: true, createdAt: true,
             _count: { select: { posts: true, channelsCreated: true } },
+            
             posts: {
                 take: 10,
                 orderBy: { createdAt: 'desc' },
@@ -42,11 +71,12 @@ export async function getProfileData(username: string, currentUserId?: string): 
                     id: true, title: true, content: true, createdAt: true, isVerified: true, 
                     contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
                     
-                    // 🆕 Use Optimized Columns
+                    // ⚡ 1. SELECT OPTIMIZED COLUMNS
                     likesCount: true,
                     dislikesCount: true,
 
                     channel: { select: { id: true, name: true, slug: true, creatorId: true } }, 
+                    
                     comments: {
                         orderBy: { createdAt: 'asc' }, 
                         select: {
@@ -54,11 +84,13 @@ export async function getProfileData(username: string, currentUserId?: string): 
                             author: { select: { id: true, username: true } }
                         }
                     },
-                    // Get Viewer's Reaction Only
+                    
+                    // ⚡ 2. ONLY SELECT CURRENT USER REACTION (Efficiency)
                     likes: currentUserId ? {
                         where: { userId: currentUserId },
                         select: { type: true }
                     } : false,
+                    
                     _count: { select: { comments: true } } 
                 }
             },
@@ -74,7 +106,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
 
     if (!user) return null;
 
-    // Simplified Transform
+    // ⚡ 3. SIMPLIFIED TRANSFORM
     const formattedPosts = user.posts.map(post => {
         // @ts-ignore
         const userReaction = post.likes?.[0]?.type || null;
@@ -85,8 +117,9 @@ export async function getProfileData(username: string, currentUserId?: string): 
             ...rest,
             _count: {
                 comments: _count.comments,
-                likes: likesCount,       // Direct from DB
-                dislikes: dislikesCount  // Direct from DB
+                // Use DB columns
+                likes: likesCount,       
+                dislikes: dislikesCount 
             },
             currentUserReaction: userReaction
         };

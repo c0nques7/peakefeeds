@@ -1,177 +1,144 @@
-import { prisma } from "@/lib/db"
-import { Prisma } from "@prisma/client"
+import { prisma } from '@/lib/db';
+import { PostType, ReactionType } from '@prisma/client';
 
-// -------------------------------------------------------------
-// 1. Define the Relational Fields (The 'Includes')
-// -------------------------------------------------------------
+// 1. Define a Strict Type for the Feed Items
+// This ensures the component knows exactly what fields are available
+export type FeedPost = {
+  id: string;
+  title: string | null;
+  content: string;
+  createdAt: Date;
+  isVerified: boolean;
+  contentHash: string | null;
+  signature: string | null;
+  embedUrl: string | null;
+  mediaUrl: string | null;
+  type: PostType; // 👈 Strict Enum
+  
+  // Optimized Counts
+  likesCount: number;
+  dislikesCount: number;
 
-// This object holds only the necessary relational fields and their nested selections.
-const postRelations = {
+  author: {
+    id: string;
+    username: string | null;
+    name: string | null;
+    image: string | null;
+  };
+
+  channel: {
+    id: string;
+    name: string;
+    slug: string;
+    creatorId: string;
+  };
+  
+  comments: {
+    id: string;
+    content: string;
+    parentId: string | null;
     author: {
-        select: {
-            id: true,
-            name: true,
-            username: true,
-            image: true,
-        }
-    },
-    channel: {
-        select: {
-            id: true,
-            name: true,
-            slug: true,
-            creatorId: true
-        }
-    },
-    _count: {
-        select: {
-            comments: true,
-            likes: true
-        }
-    },
-    comments: {
-        orderBy: { createdAt: 'desc' as const }, 
-        take: 3,
-        select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            author: {
-                select: { username: true }
-            }
-        }
-    }
+      id: string;
+      username: string | null;
+    };
+  }[];
+
+  _count: {
+    comments: number;
+    likes: number;
+    dislikes: number;
+  };
+  
+  currentUserReaction?: ReactionType | null;
 };
 
-// The final TypeScript type derived from the query structure.
-export type GlobalFeedPost = Prisma.PostGetPayload<{ 
-    select: typeof postRelations & { 
-        id: true; 
-        title: true; 
-        content: true;
-        createdAt: true;
-        updatedAt: true;
-        
-        // Web3 and Media fields
-        type: true;
-        isVerified: true;
-        contentHash: true;
-        signature: true;
-    } 
-}>;
-
-
-// -------------------------------------------------------------
-// 2. Data Fetching Logic (Global Feed)
-// -------------------------------------------------------------
-
-export async function getGlobalFeed(currentUserId?: string) {
+// 2. GLOBAL FEED (For /discover)
+export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]> {
   const posts = await prisma.post.findMany({
     take: 20,
     orderBy: { createdAt: 'desc' },
     select: {
-      id: true,
-      title: true,
-      content: true,
-      createdAt: true,
-      isVerified: true,
-      contentHash: true,
-      signature: true,
-      embedUrl: true,
-      mediaUrl: true,
-      type: true,
-      
-      // 🆕 NEW: Select the optimized counts directly
-      likesCount: true,
-      dislikesCount: true,
-      author: {
-        select: {
-            id: true,
-            username: true,
-            name: true,
-            image: true
-        }
-      },
-
-      channel: {
-        select: { id: true, name: true, slug: true, creatorId: true }
-      },
-      
-      // Select comments for threading support
+      id: true, title: true, content: true, createdAt: true, isVerified: true,
+      contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
+      likesCount: true, dislikesCount: true,
+      author: { select: { id: true, username: true, name: true, image: true } },
+      channel: { select: { id: true, name: true, slug: true, creatorId: true } },
       comments: {
         orderBy: { createdAt: 'asc' },
-        select: {
-            id: true, content: true, parentId: true,
-            author: { select: { id: true, username: true } }
-        }
+        select: { id: true, content: true, parentId: true, author: { select: { id: true, username: true } } }
       },
-      
-      // Check if CURRENT user reacted (for the button state)
-      likes: currentUserId ? {
-        where: { userId: currentUserId },
-        select: { type: true }
-      } : false,
-
-      // Get comment count
+      likes: currentUserId ? { where: { userId: currentUserId }, select: { type: true } } : false,
       _count: { select: { comments: true } }
     }
   });
 
-  // Transform to match PostCard interface
+  return transformPosts(posts);
+}
+
+// 3. PERSONAL FEED (For /home)
+export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
+  const posts = await prisma.post.findMany({
+    where: {
+      channel: {
+        subscribers: {
+          some: { userId: userId }
+        }
+      }
+    },
+    take: 20,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, title: true, content: true, createdAt: true, isVerified: true,
+      contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
+      likesCount: true, dislikesCount: true,
+      author: { select: { id: true, username: true, name: true, image: true } },
+      channel: { select: { id: true, name: true, slug: true, creatorId: true } },
+      comments: {
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, content: true, parentId: true, author: { select: { id: true, username: true } } }
+      },
+      likes: { where: { userId: userId }, select: { type: true } },
+      _count: { select: { comments: true } }
+    }
+  });
+
+  return transformPosts(posts);
+}
+
+// --- HELPER: Transform Prisma Result to FeedPost ---
+// Now strictly typed to return FeedPost[]
+function transformPosts(posts: any[]): FeedPost[] {
   return posts.map(post => {
-    // @ts-ignore
     const userReaction = post.likes?.[0]?.type || null;
 
     return {
-      ...post,
+      // Spread basic fields
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      createdAt: post.createdAt,
+      isVerified: post.isVerified,
+      contentHash: post.contentHash,
+      signature: post.signature,
+      embedUrl: post.embedUrl,
+      mediaUrl: post.mediaUrl,
+      type: post.type as PostType, // Ensure Enum match
+
+      // Map Counts
+      likesCount: post.likesCount,
+      dislikesCount: post.dislikesCount,
+      
+      // Map Relations
+      author: post.author,
+      channel: post.channel,
+      comments: post.comments,
+
       _count: {
         comments: post._count.comments,
-        likes: post.likesCount,       // Direct from DB
-        dislikes: post.dislikesCount  // Direct from DB
+        likes: post.likesCount,
+        dislikes: post.dislikesCount
       },
-      currentUserReaction: userReaction
+      currentUserReaction: userReaction as ReactionType | null
     };
   });
-}
-
-
-// -------------------------------------------------------------
-// 3. Data Fetching Logic (Personalized Feed)
-// -------------------------------------------------------------
-
-/**
- * Fetches posts ONLY from channels the given userId is actively subscribed to.
- */
-export async function getPersonalizedFeed(userId: string): Promise<GlobalFeedPost[]> {
-    
-    const posts = await prisma.post.findMany({
-        take: 20,
-        orderBy: { createdAt: 'desc' },
-        
-        // 💡 CRITICAL: Filters posts based on the Subscription model
-        where: { 
-           channel: { 
-             subscribers: { 
-               some: { userId: userId } // Requires at least one matching subscription
-             } 
-           } 
-        },
-        
-        select: {
-            id: true,
-            title: true,
-            content: true,
-            createdAt: true,
-            updatedAt: true,
-            type: true,
-            mediaUrl: true,
-            mediaHash: true,
-            isVerified: true,
-            contentHash: true,
-            signature: true,
-            ...postRelations
-        }
-    });
-
-    return posts as GlobalFeedPost[];
 }

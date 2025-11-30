@@ -5,7 +5,6 @@ import { authOptions } from "@/lib/auth.config";
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm";
 import { SubscribeButton } from "@/components/SubscribeButton";
-// Import dashboard styles for the background logic
 import styles from "../../dashboard.module.css"; 
 
 interface ChannelPageProps {
@@ -17,31 +16,64 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id || '';
 
+  // Fetch Channel Data
   const channel = await prisma.channel.findUnique({
     where: { slug: slug },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      slug: true,
+      creatorId: true,
+      _count: { select: { subscribers: true } },
+      
+      // Check subscription status
+      subscribers: {
+        where: { userId: currentUserId },
+        select: { userId: true }, 
+        take: 1, 
+      },
+
+      // Fetch Posts with Optimized Counts
       posts: {
         orderBy: { createdAt: 'desc' },
-        include: {
-          author: true,
-          channel: true, 
-          comments: {
-            take: 50,
-            orderBy: { createdAt: 'asc' },
-            include: { author: { select: { id: true, username: true } } }
-          },
-          likes: currentUserId ? { where: { userId: currentUserId }, select: { type: true } } : false,
-          _count: { select: { comments: true } }
+        select: {
+            id: true, title: true, content: true, createdAt: true, isVerified: true,
+            contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
+            
+            // ⚡ 1. SELECT COUNTS
+            likesCount: true,
+            dislikesCount: true,
+
+            author: { select: { id: true, name: true, username: true, image: true } },
+            channel: { select: { id: true, name: true, slug: true, creatorId: true } },
+            
+            comments: {
+                take: 50,
+                orderBy: { createdAt: 'asc' },
+                select: {
+                    id: true, content: true, parentId: true,
+                    author: { select: { id: true, username: true } }
+                }
+            },
+
+            // ⚡ 2. USER REACTION CHECK
+            likes: currentUserId ? {
+                where: { userId: currentUserId },
+                select: { type: true }
+            } : false,
+            
+            _count: { select: { comments: true } }
         }
-      },
-      subscribers: { where: { userId: currentUserId }, select: { userId: true }, take: 1 },
-      _count: { select: { subscribers: true } }
+      }
     }
   });
 
-  if (!channel) notFound();
+  if (!channel) {
+    notFound();
+  }
 
-  // Transform Data
+  // ⚡ 3. TRANSFORM
   const formattedPosts = channel.posts.map((post) => {
       // @ts-ignore
       const userReaction = post.likes?.[0]?.type || null;
@@ -62,13 +94,12 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   return (
     <div className="min-h-screen pb-24 pt-4 relative"> 
       
-      {/* 🌬️ ANIMATED BACKGROUND */}
       <div className={styles.backgroundLayer}>
           <div className={styles.orbTeal} />
           <div className={styles.orbPurple} />
       </div>
 
-      {/* --- CHANNEL HEADER --- */}
+      {/* HEADER */}
       <div className="max-w-5xl mx-auto px-4 mb-12 relative z-10"> 
         <div 
             className="backdrop-blur-xl rounded-[2rem] p-8 text-center shadow-xl"
@@ -118,10 +149,9 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
         </div>
       </div>
 
-      {/* --- MAIN FEED --- */}
+      {/* FEED */}
       <main className="max-w-5xl mx-auto px-4 relative z-10">
         
-        {/* Composer */}
         {currentUserId && 
             <div className="mb-12 rounded-2xl p-4 shadow-lg"
                  style={{ background: 'var(--glass-panel)', border: '1px solid var(--glass-border)' }}>

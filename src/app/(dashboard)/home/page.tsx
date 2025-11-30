@@ -1,42 +1,50 @@
-import { Suspense } from "react";
-import { SearchBar } from "@/components/SearchBar";
-import Feed from "./feed"; // This imports the async component we just created
-import { PostCardSkeleton } from "@/components/SkeletonLoader/PostCardSkeleton";
+import { getPersonalFeed } from "@/lib/feed-service";
+import { PostCard } from "@/components/PostCard";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth.config";
+import Link from "next/link";
 import styles from "../dashboard.module.css";
 
-export default function HomePage() {
+export default async function PersonalFeed() {
+  const session = await getServerSession(authOptions);
+  const currentUserId = session?.user?.id;
+
+  if (!currentUserId) {
+     return (
+        <div className="col-span-full p-12 text-center text-[var(--text-muted)]">
+          <p>Please log in to view your feed.</p>
+        </div>
+     );
+  }
+
+  // ⚡ Fetch Personal Feed
+  const posts = await getPersonalFeed(currentUserId);
+
   return (
-    <div className="max-w-5xl mx-auto pt-6 px-4 relative">
-        
-        {/* 🌬️ ANIMATED BACKGROUND */}
-        <div className={styles.backgroundLayer}>
-            <div className={styles.orbTeal} />
-            <div className={styles.orbPurple} />
+    <div className={styles.postsGrid}>
+      {posts.length > 0 ? (
+        posts.map((post) => (
+          <PostCard 
+            key={post.id} 
+            post={{
+               ...post,
+               mediaUrl: post.mediaUrl || null,
+               embedUrl: post.embedUrl || null,
+               signature: post.signature || null,
+               contentHash: post.contentHash || null
+            }}
+            initialReaction={post.currentUserReaction}
+          />
+        ))
+      ) : (
+        <div className="col-span-full flex flex-col items-center justify-center p-12 text-center text-[var(--text-muted)] border border-dashed border-[var(--glass-border)] rounded-3xl bg-[var(--glass-card)]">
+          <p className="text-lg font-medium mb-2">Your feed is empty.</p>
+          <p className="text-sm opacity-70 mb-6">Subscribe to channels to see their truth here.</p>
+          <Link href="/discover" className="px-6 py-2 rounded-full bg-[var(--accent-primary)] text-white font-bold text-sm hover:opacity-90 transition-opacity">
+            Go to Discover
+          </Link>
         </div>
-
-        <div className="mb-8 relative z-10">
-            <SearchBar />
-        </div>
-
-        <section className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[var(--text-primary)]">
-                    Live Content At The Peake
-                </h2>
-                <div className="text-xs font-mono px-3 py-1 rounded-full border border-[var(--accent-secondary)] text-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10">
-                    Live
-                </div>
-            </div>
-
-            {/* 🚀 SUSPENSE BOUNDARY 
-                1. Shows <PostCardSkeleton /> immediately.
-                2. Swaps to <Feed /> (the post grid) once data is ready.
-            */}
-            <Suspense fallback={<PostCardSkeleton count={6} />}>
-                <Feed />
-            </Suspense>
-            
-        </section>
+      )}
     </div>
-  )
+  );
 }

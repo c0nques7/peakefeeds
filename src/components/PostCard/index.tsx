@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react' // Removed useEffect/useTheme if unused in this snippet
-import { useTheme } from 'next-themes' // Keep if needed for other parts
+import { useState, useEffect, useMemo } from 'react'
+import { useTheme } from 'next-themes'
 import Link from 'next/link'
-import { MessageCircle, Heart, Repeat, ShieldCheck, ShieldOff, X, Send, ChevronDown, ChevronUp, Trash, HeartCrack, Edit2, CornerDownRight } from 'lucide-react'
+import { MessageCircle, Heart, Repeat, ShieldCheck, ShieldOff, X, Send, ChevronDown, ChevronUp, Trash, HeartCrack, Edit2, CornerDownRight, Play } from 'lucide-react'
 import clsx from 'clsx'
 import styles from './PostCard.module.css' 
 import { PostType } from '@prisma/client'
@@ -53,10 +53,10 @@ function detectMedia(text: string | null): any {
     return null;
 }
 
-// 🎥 SIMPLIFIED MEDIA PREVIEW (Standard Iframe)
 function MediaPreview({ type, url }: { type: string, url: string | null }) {
+    const [isPlaying, setIsPlaying] = useState(false);
+    
     if (!url) return null;
-    let embedUrl = url;
     let videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     let videoId = videoIdMatch ? videoIdMatch[1] : null;
 
@@ -64,16 +64,30 @@ function MediaPreview({ type, url }: { type: string, url: string | null }) {
         return (
             <div 
                 className={styles.videoWrapper}
-                // Stop propagation so clicking the video controls doesn't expand the card
                 onClick={(e) => e.stopPropagation()} 
             >
-                <iframe 
-                    src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`} 
-                    title="YouTube video player" 
-                    loading="lazy" // ⚡ Lazy load for performance
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen 
-                />
+                {!isPlaying ? (
+                    <div 
+                        className={styles.playOverlay} 
+                        onClick={() => setIsPlaying(true)}
+                    >
+                        <img 
+                            src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} 
+                            alt="Video Thumbnail" 
+                            className={styles.thumbnailImage} 
+                        />
+                        <div className={styles.playButton}>
+                            <Play size={24} fill="white" className="ml-1" />
+                        </div>
+                    </div>
+                ) : (
+                    <iframe 
+                        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`} 
+                        title="YouTube video player" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen 
+                    />
+                )}
             </div>
         );
     }
@@ -193,7 +207,6 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
     )
 }
 
-// --- MAIN COMPONENT ---
 export function PostCard({ post, initialReaction = null, isDemo = false }: PostProps) {
   const [isFlipped, setIsFlipped] = useState(false) 
   const [showComments, setShowComments] = useState(false) 
@@ -211,14 +224,10 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
   const [commentText, setCommentText] = useState("") 
   const [isSending, setIsSending] = useState(false)
 
-  // Theme Logic
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  // useEffect(() => { setMounted(true) }, []) // Not strictly needed for background if using CSS vars correctly, but okay to keep
-  const drawerBgColor = mounted && resolvedTheme === 'dark' ? 'rgba(18, 18, 22, 0.95)' : 'rgba(255, 255, 255, 0.95)';
-
-  // Ensure mount
   useEffect(() => { setMounted(true) }, [])
+  const drawerBgColor = mounted && resolvedTheme === 'dark' ? 'rgba(18, 18, 22, 0.95)' : 'rgba(255, 255, 255, 0.95)';
 
   const commentTree = useMemo(() => {
       return buildCommentTree(post.comments || []);
@@ -317,7 +326,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
 
           <div className={clsx(styles.contentWrapper, { [styles.expanded]: isExpanded, [styles.clamped]: !isExpanded })} onClick={handleTextExpand}>
             {post.title && <h3 className={styles.title}>{post.title}</h3>}
-            <div className="media-preview-container" onClick={(e) => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()} className="media-preview-container">
                 <MediaPreview type={displayType} url={displayUrl} />
             </div>
             {cleanContent.trim().length > 0 && <p className={styles.content}>{cleanContent}</p>}
@@ -326,12 +335,14 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
           </div>
           
           <div className={styles.actionBar}>
-            <button className={clsx(styles.actionBtn, { "text-red-500": userReaction === 'LIKE' })} onClick={(e) => handleReaction(e, 'LIKE')}>
+            {/* 🛑 UPDATED: Using Module Classes for Likes */}
+            <button className={clsx(styles.actionBtn, { [styles.liked]: userReaction === 'LIKE' })} onClick={(e) => handleReaction(e, 'LIKE')}>
               <Heart size={18} fill={userReaction === 'LIKE' ? "currentColor" : "none"} />
               <span>{counts.likes}</span>
             </button>
 
-            <button className={clsx(styles.actionBtn, { "text-purple-500": userReaction === 'DISLIKE' })} onClick={(e) => handleReaction(e, 'DISLIKE')}>
+            {/* 🛑 UPDATED: Using Module Classes for Dislikes */}
+            <button className={clsx(styles.actionBtn, { [styles.disliked]: userReaction === 'DISLIKE' })} onClick={(e) => handleReaction(e, 'DISLIKE')}>
               <HeartCrack size={18} fill={userReaction === 'DISLIKE' ? "currentColor" : "none"} />
               <span>{counts.dislikes}</span>
             </button>
@@ -347,6 +358,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
             </button>
           </div>
 
+          {/* Verification Footer */}
           <div className={styles.verificationFooter}>
              <button className={clsx(styles.verifyChip, { 'unverified': !isPostVerified })} onClick={handleVerifyFlip} style={{ color: isPostVerified ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
                 {isPostVerified ? <ShieldCheck size={14} /> : <ShieldOff size={14} style={{ color: 'var(--text-muted)' }} />}
@@ -354,6 +366,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
             </button>
           </div>
 
+          {/* Delete Modal */}
           {showConfirm && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 9999 }}>
                 <div style={{ background: 'var(--glass-card)', padding: '24px', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0, 0, 0, 0.4)', textAlign: 'center' }}>
@@ -368,6 +381,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
             </div>
           )}
           
+          {/* Comment Drawer */}
           <div className={clsx(styles.commentsPanel, { [styles.commentsOpen]: showComments })} style={{ backgroundColor: drawerBgColor }}>
               <div className={styles.panelHeader}>
                 <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Comments</span>
