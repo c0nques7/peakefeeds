@@ -3,227 +3,270 @@
 // --------------------------------------
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // --------------------------------------
-// 2. Core Application Models
+// 2. Enums (Updated with Truth Layer Roles)
+// --------------------------------------
+
+// 🆕 GLOBAL USER ROLES
+enum UserRole {
+  STANDARD      // Default user: Post, Comment, Like
+  
+  // Commercial & Creators
+  BUSINESS      // Corporate entities: Ads, Analytics, Manager of Influencers
+  INFLUENCER    // Paid creators: Managed by Business, Wallet Payouts
+  
+  // Trust & Transparency (The Truth Layer)
+  FACT_CHECKER  // Independent auditors: Can attach context/notes to posts
+  BOT           // Automated/API accounts: Must be clearly labeled
+  GOVERNMENT    // Official public sector: High-tier verification for alerts
+  
+  // Platform Management
+  MODERATOR     // Global moderation: Can delete/hide content platform-wide
+  ADMIN         // Superuser: Full system access
+}
+
+// 🆕 CHANNEL-SPECIFIC PERMISSIONS
+enum ChannelRole {
+  MEMBER        // Standard subscriber
+  MODERATOR     // Can delete/pin posts in this specific channel
+  OWNER         // Creator: Can edit settings, ban users from channel
+}
+
+// --------------------------------------
+// 3. Core Application Models
 // --------------------------------------
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  username      String?   @unique
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  
-  // 🛡️ Web3 Identity
-  walletAddress String?   @unique
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  username      String?   @unique
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  
+  // 🛡️ Web3 Identity
+  walletAddress String?   @unique
 
-  // --- Relations ---
-  accounts      Account[]
-  sessions      Session[]
+  // 🆕 GLOBAL ROLE
+  role          UserRole  @default(STANDARD)
 
-  // Content Creation
-  channelsCreated Channel[]      @relation("CreatedChannels")
-  posts           Post[]
-  comments        Comment[]
-  
-  // Engagement
-  subscriptions   Subscription[]
-  likes           Reaction[] // 👈 UPDATED: Points to new Reaction model
+  // 🆕 BUSINESS MANAGEMENT (Self-Relation)
+  // A Business (Manager) can manage multiple Influencer accounts
+  managerId     String?
+  manager       User?     @relation("BusinessManagement", fields: [managerId], references: [id])
+  managedUsers  User[]    @relation("BusinessManagement")
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // --- Relations ---
+  accounts      Account[]
+  sessions      Session[]
+
+  // Content Creation
+  channelsCreated Channel[]       @relation("CreatedChannels")
+  posts           Post[]
+  comments        Comment[]
+  
+  // Engagement
+  subscriptions   Subscription[]
+  likes           Reaction[] 
 }
 
 model Channel {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  tags        String[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  tags        String[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  // --- Relations ---
-  creatorId   String
-  creator     User           @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
-  
-  subscribers Subscription[]
-  posts       Post[]
+  // --- Relations ---
+  creatorId   String
+  creator     User            @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
+  
+  subscribers Subscription[]
+  posts       Post[]
 
-  @@index([name])
+  @@index([name])
 }
 
 model Subscription {
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  channelId String
-  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
-  joinedAt  DateTime @default(now())
+  joinedAt  DateTime @default(now())
 
-  @@id([userId, channelId])
-  @@index([userId])
+  // 🆕 CHANNEL ROLE
+  role      ChannelRole @default(MEMBER)
+
+  @@id([userId, channelId])
+  @@index([userId])
 }
 
 // --------------------------------------
-// 3. Post and Media Models
+// 4. Post and Media Models
 // --------------------------------------
 
 enum PostType {
-  TEXT
-  LONGFORM
-  IMAGE
-  VIDEO
-  LINK
-  QUOTE
-  POLL
-  REPOST
+  TEXT
+  LONGFORM
+  IMAGE
+  VIDEO
+  LINK
+  QUOTE
+  POLL
+  REPOST
 }
 
 enum ReactionType {
-  LIKE
-  DISLIKE
+  LIKE
+  DISLIKE
 }
 
 model Post {
-  id            String    @id @default(cuid())
-  title         String?
-  content       String    @db.Text
-  
-  // Media Handling
-  type          PostType  @default(TEXT)
-  mediaUrl      String?
-  embedUrl      String?   // 👈 CRITICAL: The required field for video rendering
-  mediaHash     String?
-  
-  // 🛡️ Verification Fields (The Truth Engine)
-  isVerified    Boolean   @default(false)
-  contentHash   String?
-  signature     String?
+  id            String    @id @default(cuid())
+  title         String?
+  content       String    @db.Text
+  
+  // Media Handling
+  type          PostType  @default(TEXT)
+  mediaUrl      String?
+  embedUrl      String?   
+  mediaHash     String?
+  
+  // 🛡️ Verification Fields
+  isVerified    Boolean   @default(false)
+  contentHash   String?
+  signature     String?
 
-  //Post Reactions
-  likesCount    Int       @default(0)
-  dislikesCount Int       @default(0)
+  // Post Reactions (Cached Counts)
+  likesCount    Int       @default(0)
+  dislikesCount Int       @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Relations
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  likes     Reaction[] 
 
-  // Relations
-  channelId String
-  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  likes     Reaction[] // 👈 UPDATED: Points to new Reaction model
-
-  @@index([channelId, createdAt(sort: Desc)])
-  @@index([authorId])
+  @@index([channelId, createdAt(sort: Desc)])
+  @@index([authorId])
 }
 
 // --------------------------------------
-// 4. Engagement Models
+// 5. Engagement Models
 // --------------------------------------
 
 model Comment {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(cuid())
+  content   String    @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Author
-  authorId  String
-  author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // Author
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  // Parent Post
-  postId    String
-  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  // Parent Post
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  // Threading (Recursive)
-  parentId  String?
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
+  // Threading
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
 
-  @@index([postId])
-  @@index([parentId])
+  @@index([postId])
+  @@index([parentId])
 }
 
-model Reaction { // 👈 RENAMED FROM 'Like'
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
+model Reaction { 
+  id        String    @id @default(cuid())
+  createdAt DateTime @default(now())
 
-  type      ReactionType @default(LIKE) 
-  
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType @default(LIKE) 
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, postId])
-  @@index([postId])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, postId])
+  @@index([postId])
 }
 
-// 🆕 ADDED: Waitlist Model for Landing Page Leads
+// --------------------------------------
+// 6. Marketing & Waitlist
+// --------------------------------------
+
 model Waitlist {
   id        String   @id @default(cuid())
   email     String   @unique
   joinedAt  DateTime @default(now())
-  source    String? // utm_source
-  medium    String? // utm_medium
-  campaign  String? // utm_campaign
+  
+  // Marketing Attribution
+  source    String?  
+  medium    String?  
+  campaign  String?  
 }
 
-
-
 // --------------------------------------
-// 5. NextAuth Boilerplate
+// 7. NextAuth Boilerplate
 // --------------------------------------
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@unique([provider, providerAccountId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-  @@unique([identifier, token])
+  @@unique([identifier, token])
 }
