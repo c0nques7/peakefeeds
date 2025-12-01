@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useTheme } from 'next-themes'
+import { useState, useMemo, useEffect } from 'react'
+import { useTheme } from 'next-themes' 
 import Link from 'next/link'
-import { MessageCircle, Heart, Repeat, ShieldCheck, ShieldOff, X, Send, ChevronDown, ChevronUp, Trash, HeartCrack, Edit2, CornerDownRight, Play } from 'lucide-react'
+import { MessageCircle, Heart, Repeat, ShieldCheck, ShieldOff, X, Send, ChevronDown, ChevronUp, Trash, HeartCrack, Edit2, CornerDownRight } from 'lucide-react'
 import clsx from 'clsx'
 import styles from './PostCard.module.css' 
 import { PostType } from '@prisma/client'
@@ -12,6 +12,8 @@ import { deletePost } from '@/actions/delete-post'
 import { createComment } from '@/actions/create-comment'
 import { setReaction } from '@/actions/toggle-reaction' 
 import { deleteComment, updateComment } from '@/actions/comment-actions' 
+// 🆕 IMPORT: Role Badge
+import { UserRoleBadge } from '@/components/UserRoleBadge'; 
 
 interface Comment {
     id: string;
@@ -33,7 +35,14 @@ interface PostProps {
     isVerified?: boolean; 
     signature?: string | null;
     createdAt: Date;
-    author: { id: string; name: string | null; username: string | null; image?: string | null; };
+    // 🆕 UPDATE: Added role
+    author: { 
+        id: string; 
+        name: string | null; 
+        username: string | null; 
+        image?: string | null; 
+        role?: string; 
+    };
     channel: { id: string; name: string; slug: string; creatorId: string; };
     comments?: Comment[];
     _count?: { comments: number, likes: number, dislikes: number };
@@ -53,10 +62,10 @@ function detectMedia(text: string | null): any {
     return null;
 }
 
+// 🎥 MEDIA PREVIEW (Direct Iframe - Known Good Version)
 function MediaPreview({ type, url }: { type: string, url: string | null }) {
-    const [isPlaying, setIsPlaying] = useState(false);
-    
     if (!url) return null;
+    let embedUrl = url;
     let videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     let videoId = videoIdMatch ? videoIdMatch[1] : null;
 
@@ -64,30 +73,16 @@ function MediaPreview({ type, url }: { type: string, url: string | null }) {
         return (
             <div 
                 className={styles.videoWrapper}
+                // Stop propagation so clicking the video controls doesn't expand the card
                 onClick={(e) => e.stopPropagation()} 
             >
-                {!isPlaying ? (
-                    <div 
-                        className={styles.playOverlay} 
-                        onClick={() => setIsPlaying(true)}
-                    >
-                        <img 
-                            src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} 
-                            alt="Video Thumbnail" 
-                            className={styles.thumbnailImage} 
-                        />
-                        <div className={styles.playButton}>
-                            <Play size={24} fill="white" className="ml-1" />
-                        </div>
-                    </div>
-                ) : (
-                    <iframe 
-                        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`} 
-                        title="YouTube video player" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen 
-                    />
-                )}
+                <iframe 
+                    src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`} 
+                    title="YouTube video player" 
+                    loading="lazy" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen 
+                />
             </div>
         );
     }
@@ -207,6 +202,7 @@ function SingleComment({ comment, postId, channelSlug, isSubComment = false }: {
     )
 }
 
+// --- MAIN COMPONENT ---
 export function PostCard({ post, initialReaction = null, isDemo = false }: PostProps) {
   const [isFlipped, setIsFlipped] = useState(false) 
   const [showComments, setShowComments] = useState(false) 
@@ -314,7 +310,14 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
             <div className={styles.authorInfo}>
               <div className={styles.avatar}>{post.author.username?.[0]?.toUpperCase() || "U"}</div>
               <div>
-                <span className={styles.authorName}>{post.author.username}</span>
+                {/* 🆕 INTEGRATED ROLE BADGE */}
+                <div className="flex items-center gap-2">
+                    <span className={styles.authorName}>{post.author.username}</span>
+                    {post.author.role && (
+                        // @ts-ignore 
+                        <UserRoleBadge role={post.author.role} />
+                    )}
+                </div>
                 <span className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
@@ -326,7 +329,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
 
           <div className={clsx(styles.contentWrapper, { [styles.expanded]: isExpanded, [styles.clamped]: !isExpanded })} onClick={handleTextExpand}>
             {post.title && <h3 className={styles.title}>{post.title}</h3>}
-            <div onClick={(e) => e.stopPropagation()} className="media-preview-container">
+            <div className="media-preview-container" onClick={(e) => e.stopPropagation()}>
                 <MediaPreview type={displayType} url={displayUrl} />
             </div>
             {cleanContent.trim().length > 0 && <p className={styles.content}>{cleanContent}</p>}
@@ -335,13 +338,13 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
           </div>
           
           <div className={styles.actionBar}>
-            {/* 🛑 UPDATED: Using Module Classes for Likes */}
+            {/* 🛑 FIX: Using styles.liked instead of text-red-500 */}
             <button className={clsx(styles.actionBtn, { [styles.liked]: userReaction === 'LIKE' })} onClick={(e) => handleReaction(e, 'LIKE')}>
               <Heart size={18} fill={userReaction === 'LIKE' ? "currentColor" : "none"} />
               <span>{counts.likes}</span>
             </button>
 
-            {/* 🛑 UPDATED: Using Module Classes for Dislikes */}
+            {/* 🛑 FIX: Using styles.disliked instead of text-purple-500 */}
             <button className={clsx(styles.actionBtn, { [styles.disliked]: userReaction === 'DISLIKE' })} onClick={(e) => handleReaction(e, 'DISLIKE')}>
               <HeartCrack size={18} fill={userReaction === 'DISLIKE' ? "currentColor" : "none"} />
               <span>{counts.dislikes}</span>

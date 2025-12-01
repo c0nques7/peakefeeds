@@ -26,21 +26,22 @@
 
 /* --- Faces (Front & Back) --- */
 .cardFront, .cardBack {
-  z-index: 20;
+  /* Removed fixed z-index here to allow specific overrides below */
   position: relative;
   width: 100%;
   height: 100%;
   -webkit-backface-visibility: hidden; 
   backface-visibility: hidden;
   
+  /* Keep rounded corners */
   overflow: hidden; 
   
   /* Glassmorphism Base */
   background: var(--glass-card);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 1.5rem;
   padding: 1.5rem;
   
@@ -50,11 +51,8 @@
 
 /* --- Front Specifics --- */
 .cardFront {
-  z-index: 2;
-  /* Firefox Fix + Video Interaction Fix */
-  backface-visibility: visible !important; 
-  -webkit-backface-visibility: visible !important;
-  transform-style: flat !important;
+  /* 🛑 FIX: Ensure Front is ABOVE Back by default */
+  z-index: 30; 
   transform: translateZ(0);
 }
 
@@ -64,12 +62,24 @@
   top: 0;
   left: 0;
   transform: rotateY(180deg);
-  background: var(--glass-panel); 
+  background: linear-gradient(145deg, rgba(10, 10, 10, 0.95), rgba(20, 20, 20, 0.98));
   border: 1px solid var(--accent-primary); 
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  overflow: hidden;
+  overflow: hidden; 
+  /* 🛑 FIX: Ensure Back starts BELOW Front */
+  z-index: 10; 
 }
+
+/* 🛑 NEW: Swap Z-Indexes when flipped so the active side is always clickable */
+.flipped .cardFront {
+  z-index: 10;
+  pointer-events: none; /* Disable clicks on front when hidden */
+}
+
+.flipped .cardBack {
+  z-index: 30;
+  pointer-events: auto;
+}
+
 
 /* --- Typography --- */
 .header {
@@ -89,7 +99,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(135deg, var(--accent-primary), #6366f1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,7 +138,7 @@
   min-height: 60px;
 }
 
-/* Wrapper for the video div in TSX */
+/* Global wrapper for the video div in TSX */
 :global(.media-preview-container) {
     position: relative;
     z-index: 50;
@@ -138,17 +148,15 @@
 .videoWrapper {
     position: relative;
     width: 100%;
-    padding-top: 56.25%; /* 16:9 */
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
     height: 0;
     margin-bottom: 1rem;
     border-radius: 12px;
     overflow: hidden;
+    
     z-index: 50; 
-    background: var(--bg-app);
-    border: 1px solid var(--glass-border);
     pointer-events: auto !important; 
-    cursor: auto; 
-    isolation: isolate; 
+    background: black;
 }
 
 .videoWrapper iframe {
@@ -158,6 +166,7 @@
     width: 100%;
     height: 100%;
     border: none;
+    
     pointer-events: auto !important;
     z-index: 100;
 }
@@ -172,7 +181,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.3);
     cursor: pointer;
     z-index: 60;
     transition: background 0.2s ease;
@@ -180,7 +189,7 @@
 }
 
 .playOverlay:hover {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0,0,0,0.1);
 }
 
 .playButton {
@@ -340,12 +349,14 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--glass-panel);
+  
   backdrop-filter: blur(40px);   
   -webkit-backdrop-filter: blur(40px); 
+  
   border: 1px solid var(--glass-border);
   box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
-  z-index: 20; 
+  
+  z-index: 200; 
   transform: translateY(100%); 
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
   display: flex;
@@ -424,8 +435,8 @@
 
 .commentInput {
   flex: 1;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
+  background: var(--glass-card-hover); 
+  border: 1px solid var(--glass-border);
   border-radius: 99px;
   padding: 0.5rem 1rem;
   color: var(--text-primary);
@@ -433,10 +444,19 @@
   transition: all 0.2s;
 }
 
+:global(.dark) .commentInput {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
 .commentInput:focus {
   outline: none;
   border-color: var(--accent-primary);
-  filter: brightness(1.1);
+  background: var(--bg-app); 
+}
+
+:global(.dark) .commentInput:focus {
+  background: black;
 }
 
 .commentInput::placeholder { color: var(--text-muted); }
@@ -468,7 +488,7 @@
 
 .hashBox {
   width: 100%;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.5);
   padding: 1rem;
   border-radius: 0.75rem;
   border: 1px solid var(--glass-border);
@@ -492,7 +512,7 @@
 }
 
 .etherscanLink {
-  color: var(--accent-secondary);
+  color: #6366f1;
   font-size: 0.85rem;
   text-decoration: underline;
   z-index: 10;

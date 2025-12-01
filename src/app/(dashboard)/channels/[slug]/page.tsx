@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth.config";
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm";
 import { SubscribeButton } from "@/components/SubscribeButton";
-import styles from "../../dashboard.module.css"; 
+import styles from "../../dashboard.module.css"; // Adjusted import path based on file location
 
 interface ChannelPageProps {
   params: Promise<{ slug: string }>;
@@ -45,7 +45,17 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
             likesCount: true,
             dislikesCount: true,
 
-            author: { select: { id: true, name: true, username: true, image: true } },
+            // 🛑 FIX: Select Role for Author
+            author: { 
+                select: { 
+                    id: true, 
+                    name: true, 
+                    username: true, 
+                    image: true,
+                    role: true // 🆕 Added Role
+                } 
+            },
+            
             channel: { select: { id: true, name: true, slug: true, creatorId: true } },
             
             comments: {
