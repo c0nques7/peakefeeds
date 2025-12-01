@@ -24,6 +24,8 @@ export type FeedPost = {
     username: string | null;
     name: string | null;
     image: string | null;
+    // 🆕 ADDED ROLE TO TYPE
+    role: string | null; // Ideally use UserRole enum if imported, but string works for now
   };
 
   channel: {
@@ -61,7 +63,18 @@ export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]>
       id: true, title: true, content: true, createdAt: true, isVerified: true,
       contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
       likesCount: true, dislikesCount: true,
-      author: { select: { id: true, username: true, name: true, image: true } },
+      
+      // 🛑 FIX: Fetch Role!
+      author: { 
+        select: { 
+            id: true, 
+            username: true, 
+            name: true, 
+            image: true,
+            role: true // 👈 Crucial Addition
+        } 
+      },
+
       channel: { select: { id: true, name: true, slug: true, creatorId: true } },
       comments: {
         orderBy: { createdAt: 'asc' },
@@ -91,7 +104,18 @@ export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
       id: true, title: true, content: true, createdAt: true, isVerified: true,
       contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
       likesCount: true, dislikesCount: true,
-      author: { select: { id: true, username: true, name: true, image: true } },
+      
+      // 🛑 FIX: Fetch Role Here Too!
+      author: { 
+          select: { 
+              id: true, 
+              username: true, 
+              name: true, 
+              image: true,
+              role: true 
+          } 
+      },
+
       channel: { select: { id: true, name: true, slug: true, creatorId: true } },
       comments: {
         orderBy: { createdAt: 'asc' },
@@ -106,13 +130,11 @@ export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
 }
 
 // --- HELPER: Transform Prisma Result to FeedPost ---
-// Now strictly typed to return FeedPost[]
 function transformPosts(posts: any[]): FeedPost[] {
   return posts.map(post => {
     const userReaction = post.likes?.[0]?.type || null;
 
     return {
-      // Spread basic fields
       id: post.id,
       title: post.title,
       content: post.content,
@@ -122,14 +144,17 @@ function transformPosts(posts: any[]): FeedPost[] {
       signature: post.signature,
       embedUrl: post.embedUrl,
       mediaUrl: post.mediaUrl,
-      type: post.type as PostType, // Ensure Enum match
+      type: post.type as PostType,
 
-      // Map Counts
       likesCount: post.likesCount,
       dislikesCount: post.dislikesCount,
       
-      // Map Relations
-      author: post.author,
+      // Pass Author with Role
+      author: {
+          ...post.author,
+          role: post.author.role // Ensure this flows through
+      },
+
       channel: post.channel,
       comments: post.comments,
 
