@@ -41,7 +41,7 @@ interface PostProps {
         name: string | null; 
         username: string | null; 
         image?: string | null; 
-        role?: string; 
+        role?: string | null; 
     };
     channel: { id: string; name: string; slug: string; creatorId: string; };
     comments?: Comment[];
