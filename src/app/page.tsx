@@ -99,7 +99,7 @@ export default function LandingPage() {
   const demoPost = {
     id: "demo-hero-1",
     title: "Deepfakes are over.",
-    content: "This is what a verified thought looks like. Cryptographically signed, anchored on Optimism, and impossible to fake. The truth engine is live.",
+    content: "This is what a verified thought looks like. Cryptographically signed, anchored on Ethereum, and impossible to fake. The truth layer is live.",
     createdAt: new Date(),
     type: "TEXT" as const,
     mediaUrl: null,
@@ -174,7 +174,7 @@ export default function LandingPage() {
               <span className={styles.pingDot}></span>
               <span className={styles.dot}></span>
             </span>
-            <span>OPTIMISM L2 LIVE</span>
+            <span>ETH L2 LIVE</span>
           </div>
           
           <h1 className={styles.title}>
@@ -215,7 +215,7 @@ export default function LandingPage() {
             />
             
             <div className={styles.demoLabel}>
-                Interactive Demo: Inspect the Verification, View Comments or Like This Post!
+                Interactive Demo: Click the Badge to Inspect Verification, View Comments or Like This Post!
             </div>
           </div>
         </div>
@@ -227,8 +227,8 @@ export default function LandingPage() {
           <div className={styles.iconWrapper}><Hexagon size={24} /></div>
           <h3 className={styles.featureTitle}>Optimism Secured</h3>
           <p className={styles.featureText}>
-            Every post creates a cryptographic proof on the Optimism L2. 
-            Low gas fees, Ethereum-level security.
+            Every post creates a cryptographic proof on Ethereum L2. 
+            Low gas fees, same Ethereum-level security.
           </p>
         </div>
 
