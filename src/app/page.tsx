@@ -28,7 +28,7 @@ function WaitlistForm() {
 
         const formData = new FormData();
         formData.append('email', email);
-        
+
         // Pass attribution data to server
         if (source) formData.append('source', source);
         if (medium) formData.append('medium', medium);
@@ -39,9 +39,8 @@ function WaitlistForm() {
         if (result.success) {
             setStatus('success');
             setMessage(result.message);
-            
+
             // 🔥 Fire Analytics Event (Client Side)
-            // Checks if GTM/GA4 script is loaded before calling
             if (typeof window !== 'undefined' && (window as any).gtag) {
                 (window as any).gtag('event', 'join_waitlist', {
                     event_category: 'engagement',
@@ -59,7 +58,7 @@ function WaitlistForm() {
 
     return (
         <form onSubmit={handleSubmit} className={styles.waitlistForm}>
-            
+
             {/* Feedback Messages */}
             {message && (
                 <p className={isSubscribed ? styles.successMessage : styles.errorMessage}>
@@ -73,7 +72,8 @@ function WaitlistForm() {
                 <input
                     type="email"
                     name="email"
-                    placeholder="Enter your email for beta access"
+                    // UPDATE: Aggressive CTA for higher conversion
+                    placeholder="Secure your handle..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -94,12 +94,14 @@ function WaitlistForm() {
 
 
 export default function LandingPage() {
-  
-  // --- MOCK DATA FOR DEMO ---
+
+  // --- MOCK DATA FOR DEMO (UPDATED FOR NARRATIVE) ---
   const demoPost = {
     id: "demo-hero-1",
-    title: "Deepfakes are over.",
-    content: "This is what a verified thought looks like. Cryptographically signed, anchored on Ethereum, and impossible to fake. The truth layer is live.",
+    // UPDATE: Strong Hook
+    title: "The algorithm is broken.",
+    // UPDATE: Explaining the tech in plain English
+    content: "You are looking at a verified thought. It wasn't curated by a black box. It was cryptographically signed on Optimism and anchored to Ethereum. This is what clarity looks like. #TheTruthLayer",
     createdAt: new Date(),
     type: "TEXT" as const,
     mediaUrl: null,
@@ -121,7 +123,7 @@ export default function LandingPage() {
         creatorId: "official-peake-id"
     },
     _count: { comments: 42, likes: 4096, dislikes: 12 },
-    
+
     comments: [
       {
         id: "c1",
@@ -137,7 +139,8 @@ export default function LandingPage() {
             {
                 id: "c2-reply",
                 author: { id: "official-peake-id", username: "peake_official" },
-                content: "Optimism L2. Fast, cheap, and secure. ⚡",
+                // UPDATE: Accurate Tech Distinction
+                content: "Verified instantly on Optimism (L2). Settled securely on Ethereum (L1). 🔴✨",
                 parentId: "c2"
             }
         ]
@@ -147,7 +150,7 @@ export default function LandingPage() {
 
   return (
     <div className={styles.container}>
-      
+
       {/* 🌬️ ANIMATED BACKGROUND */}
       <div className={styles.backgroundLayer}>
         <div className={styles.orbTeal} />
@@ -166,40 +169,39 @@ export default function LandingPage() {
 
       {/* HERO SECTION */}
       <section className={styles.hero}>
-        
+
         {/* Left: Copy & Lead Gen */}
         <div className={styles.heroContent}>
+          {/* UPDATE: Signal to the Superchain ecosystem */}
           <div className={styles.optimismBadge}> 
             <span className={styles.pingEffect}>
               <span className={styles.pingDot}></span>
               <span className={styles.dot}></span>
             </span>
-            <span>ETH L2 LIVE</span>
+            <span>BUILT ON OPTIMISM</span>
           </div>
-          
+
           <h1 className={styles.title}>
             The <span className={styles.gradientText}>Truth Layer</span> <br />
-            for the Internet.
+            is finally here.
           </h1>
-          
+
+          {/* UPDATE: The "Notebook Analogy" - Speed vs Security */}
           <p className={styles.subtitle}>
-            A decentralized social protocol fighting AI disinformation. 
-            We cryptographically verify content origin, making your words 
-            immutable on the blockchain.
+            The algorithm broke the truth. We built the engine to fix it.
+            <br className="hidden md:block" />
+            Experience the first social protocol with the <strong>speed of Optimism</strong> and the <strong>security of Ethereum</strong>.
           </p>
 
-          {/* ⚠️ SUSPENSE WRAPPER: 
-            Crucial for 'useSearchParams' to work without disabling 
-            static optimization for the whole page.
-          */}
           <Suspense fallback={
             <div className="h-12 w-full max-w-md bg-white/10 animate-pulse rounded-full mb-4" />
           }>
              <WaitlistForm />
           </Suspense>
-          
+
+          {/* UPDATE: Social Proof - Make it sound exclusive */}
           <p className={styles.smallLegal}>
-              Join 1,200+ early verifiers on our private beta list.
+              Join 1,200+ builders migrating to clarity.
           </p>
 
         </div>
@@ -213,7 +215,7 @@ export default function LandingPage() {
                 initialReaction="LIKE" 
                 isDemo={true} 
             />
-            
+
             <div className={styles.demoLabel}>
                 Interactive Demo: Click the Badge to Inspect Verification, View Comments or Like This Post!
             </div>
@@ -225,28 +227,31 @@ export default function LandingPage() {
       <section className={styles.features}>
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Hexagon size={24} /></div>
-          <h3 className={styles.featureTitle}>Optimism Secured</h3>
+          {/* UPDATE: "Verifiable Speed" Hook */}
+          <h3 className={styles.featureTitle}>Verifiable Speed</h3>
           <p className={styles.featureText}>
-            Every post creates a cryptographic proof on Ethereum L2. 
-            Low gas fees, same Ethereum-level security.
+            We operate at the speed of the Superchain. Posts are verified instantly on Optimism, 
+            costing fractions of a penny, but inherit the unbreakable security of Ethereum.
           </p>
         </div>
 
         <div className={styles.featureCard}>
-          <div className={styles.iconWrapper}><Fingerprint size={24} /></div>
-          <h3 className={styles.featureTitle}>Proof of Humanity</h3>
+          <div className={styles.iconWrapper}><ShieldCheck size={24} /></div>
+          {/* UPDATE: Attack the "Bot" problem directly */}
+          <h3 className={styles.featureTitle}>The Anti-Bot Layer</h3>
           <p className={styles.featureText}>
-            Combat AI-generated spam. Our Web3 Auth layer validates organic interaction, 
-            making it impossible for bot farms to scale.
+            AI trains on noise. We filter for signal. Our cryptographic handshake ensures 
+            you are interacting with real humans, not farming armies.
           </p>
         </div>
 
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Layers size={24} /></div>
-          <h3 className={styles.featureTitle}>Content Attribution</h3>
+          {/* UPDATE: Focus on Ownership */}
+          <h3 className={styles.featureTitle}>Ownership by Default</h3>
           <p className={styles.featureText}>
-            Stop copycats. The original creator is stamped on-chain. 
-            Derivatives are tracked protecting IP.
+            You own your graph. You own your words. Because your content is signed on-chain, 
+            no platform can de-platform your history.
           </p>
         </div>
       </section>
@@ -261,6 +266,4 @@ export default function LandingPage() {
     </div>
   )
 }
-
-
 
