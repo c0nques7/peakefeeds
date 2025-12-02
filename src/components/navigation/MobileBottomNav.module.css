@@ -1,12 +1,30 @@
 /* src/components/navigation/MobileBottomNav.module.css */
 
-/* The Container is handled mostly by inline styles for the slide effect, 
-   but we keep base styles here */
-.navContainer {
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+.bottomNav {
+  /* Fixed Position at Bottom of Viewport */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px; 
+  z-index: 50;
+
+  /* Layout: 4 Equal Columns */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  justify-items: center;
+
+  /* Visuals: Dark Glass */
+  background: rgba(5, 5, 5, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--glass-border);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+
+  /* iOS Safe Area */
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: transform 0.3s ease;
 }
 
 .navItem {
@@ -15,21 +33,26 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: var(--text-secondary); /* Gray by default */
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  flex: 1; /* Distribute space evenly */
+  width: 100%;
   height: 100%;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: transform 0.1s ease, color 0.2s ease;
 }
 
 .navItem:active {
   transform: scale(0.9);
 }
 
-.active {
-  color: var(--accent-primary); /* Active Color (Green/Purple) */
-  text-shadow: 0 0 20px var(--accent-glow);
+.navItemActive {
+  color: var(--accent-secondary); /* Teal */
 }
 
-.active svg {
-  fill: rgba(255,255,255,0.1); /* Subtle fill on active icon */
+/* 🛑 SAFETY CHECK: Force Hide on Tablet/Desktop */
+/* This works in tandem with dashboard.module.css to ensure no overlap */
+@media (min-width: 768px) {
+  .bottomNav {
+    display: none !important;
+  }
 }
+

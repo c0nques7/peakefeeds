@@ -1,16 +1,48 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { NextAuthOptions } from "next-auth"
+import { NextAuthOptions, DefaultSession } from "next-auth"
+import { DefaultJWT } from "next-auth/jwt"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/db"
 import * as argon2 from "argon2"
 
+// ---------------------------------------------------------
+// 1. TYPE AUGMENTATION (FIXED)
+// ---------------------------------------------------------
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      // FIX: Allow null/undefined to match Prisma's "String?" and NextAuth defaults
+      username?: string | null 
+      role: string
+    } & DefaultSession["user"]
+  }
+
+  interface User {
+    // FIX: Match Prisma's return type exactly
+    username?: string | null
+    role: string
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT extends DefaultJWT {
+    id: string
+    username?: string | null
+    role: string
+  }
+}
+
+// ---------------------------------------------------------
+// 2. CONFIGURATION
+// ---------------------------------------------------------
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
   },
   pages: {
-    signIn: "/login", // Custom login page
+    signIn: "/login",
   },
   providers: [
     CredentialsProvider({
@@ -26,65 +58,59 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          // 💡 FIX: Explicitly request the passwordHash field
           select: {
             id: true,
             email: true,
             name: true,
             username: true,
-            passwordHash: true, // ✅ CRITICAL FIX: Ensure the hash is retrieved
+            passwordHash: true,
+            role: true, 
           }
         })
 
-        // 1. Check if user exists
         if (!user) return null
-
-        // 2. Check if user has a password (they might have signed up via OAuth)
         if (!user.passwordHash) return null
 
-        // 3. Verify Password (Argon2)
         const isValid = await argon2.verify(user.passwordHash, credentials.password)
 
         if (!isValid) return null
 
+        // 💡 FIX: Return object matches interface User exactly now
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          username: user.username
+          username: user.username, 
+          role: user.role as string, // Cast Enum to string to satisfy interface
         }
       }
     })
   ],
   callbacks: {
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.username = token.username as string
-      }
-      return session
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.username = user.username
+        token.role = user.role
       }
       return token
     },
 
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id
+        session.user.username = token.username
+        session.user.role = token.role
+      }
+      return session
+    },
+
     async redirect({ url, baseUrl }) {
-      // 1. If the user is coming from the login page, force them to /home
       if (url === '/login' || url === `${baseUrl}/login`) {
         return `${baseUrl}/home`
       }
-      
-      // 2. Allow relative internal callbacks (e.g., /channels/tech-talks)
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      
-      // 3. Allow absolute internal callbacks
       else if (new URL(url).origin === baseUrl) return url
-      
-      // 4. Default fallback
       return `${baseUrl}/home`
     }
   }

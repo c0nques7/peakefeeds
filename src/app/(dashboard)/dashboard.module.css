@@ -1,13 +1,12 @@
-/* --- 1. BASE LAYOUT --- */
+/* BASE CONTAINER */
 .layoutContainer {
   display: flex;
   min-height: 100vh;
-  /* Removed background color to allow global orbs to show */
   position: relative;
-  overflow-x: hidden; 
+  /* 🛑 DELETED: overflow-x: hidden; (This was killing the sticky behavior) */
 }
 
-/* --- 🌬️ BACKGROUND ANIMATION LAYER --- */
+/* BACKGROUND LAYERS */
 .backgroundLayer {
   position: fixed; 
   top: 0;
@@ -16,13 +15,7 @@
   height: 100%;
   z-index: 0; 
   pointer-events: none;
-  overflow: hidden;
-}
-
-@keyframes breathe {
-  0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-  50% { transform: translate(20px, -20px) scale(1.1); opacity: 0.8; }
-  100% { transform: translate(-10px, 10px) scale(1); opacity: 0.5; }
+  overflow: hidden; /* We handle overflow here instead */
 }
 
 .orbTeal {
@@ -33,7 +26,7 @@
   height: 60vw;
   background: radial-gradient(circle, var(--orb-teal) 0%, rgba(0,0,0,0) 70%);
   filter: blur(80px);
-  animation: breathe 10s ease-in-out infinite alternate;
+  opacity: 0.5;
 }
 
 .orbPurple {
@@ -44,108 +37,77 @@
   height: 55vw;
   background: radial-gradient(circle, var(--orb-purple) 0%, rgba(0,0,0,0) 70%);
   filter: blur(90px);
-  animation: breathe 14s ease-in-out infinite alternate-reverse;
+  opacity: 0.5;
 }
 
-/* --- 2. SIDEBARS --- */
+/* --- 📱 MOBILE DEFAULT (< 640px) --- */
+
+/* 1. Sidebar: HIDDEN */
 .desktopSidebar {
-  width: 275px;
-  flex-shrink: 0;
-  z-index: 40; 
-  position: fixed; 
-  top: 0;
-  left: 0;
-  height: 100vh;
-  display: none; 
-  background: transparent;
-  border: none;
-  padding: 0;
+  display: none !important; 
 }
 
-.rightSidebar {
-  width: 350px;
-  flex-shrink: 0;
-  z-index: 40;
-  position: fixed; 
-  top: 0;
-  right: 0;
-  height: 100vh;
-  display: none; 
-  border-left: 1px solid var(--glass-border);
-  padding: 1.5rem;
-}
-
-/* --- 3. MAIN CONTENT --- */
-.mainContent {
-  flex: 1;
-  width: 100%; 
-  z-index: 10; 
-  padding-bottom: 2rem; 
-  padding-right: 70px; /* Default mobile padding */
-}
-
-.feedWrapper {
-  width: 100%;
-  position: relative;
-  margin: 0 auto;
-  
-  /* 🛑 FIX: Allow width to expand on desktop */
-  /* Was 600px, which squeezed the grid. 1600px lets it fill the middle area. */
-  max-width: 1600px; 
-  padding: 0 1rem;
-}
-
-/* --- 4. POSTS GRID (SMART LAYOUT) --- */
-.postsGrid {
-  display: grid;
-  /* SMART GRID LOGIC:
-     - Creates as many columns as will fit.
-     - Each column is at least 300px wide (minmax).
-     - If space remains, columns stretch to fill it (1fr).
-  */
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-/* --- 5. MOBILE NAV WRAPPER --- */
+/* 2. Mobile Nav: VISIBLE */
 .mobileNavWrapper {
-  display: block;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  display: block !important;
   z-index: 50;
 }
 
-/* --- RESPONSIVE RULES --- */
-@media (min-width: 768px) {
-  .desktopSidebar { display: block; }
-  .mobileNavWrapper { display: none !important; }
+/* 3. Main Content */
+.mainContent {
+  flex: 1;
+  width: 100%;
+  z-index: 10;
+  padding-bottom: 90px; /* Space for Bottom Nav */
+  overflow-x: hidden; /* Handle content overflow here locally */
+}
+
+
+/* --- 💻 TABLET/FOLDABLE & DESKTOP (≥ 640px) --- */
+@media (min-width: 640px) {
   
+  /* 1. Show Sidebar (STICKY FIX) */
+  .desktopSidebar { 
+    display: block !important; 
+    flex-shrink: 0;
+    
+    /* 🛠️ FIXED: Sticky Positioning */
+    position: fixed; 
+    top: 0;
+    height: 100vh; /* Must define height for sticky to work */
+    align-self: flex-start; /* Prevents it from stretching with content */
+    
+    z-index: 40;
+    overflow-y: auto; /* Allows menu to scroll internally if screen is short */
+  }
+
+  /* 2. Hide Mobile Nav */
+  .mobileNavWrapper { 
+    display: none !important; 
+  }
+
+  /* 3. Adjust Content Padding */
   .mainContent { 
-    margin-left: 275px; 
     padding-bottom: 0; 
     padding-top: 1rem;
-    padding-right: 0; 
-  }
-  
-  /* On tablets, ensure we don't stretch single cards too wide */
-  .feedWrapper {
-      padding: 0 2rem;
   }
 }
 
+/* --- 🖥️ LARGE DESKTOP (≥ 1280px) --- */
 @media (min-width: 1280px) {
-  .rightSidebar { display: block; }
-  
-  .mainContent {
-    margin-left: 275px; 
-    margin-right: 350px; /* Make room for Right Sidebar */
-  }
-  
-  /* On large desktops, tight spacing looks better */
-  .postsGrid {
-    gap: 2rem;
+  .rightSidebar {
+    display: block !important; 
+    width: 350px;
+    flex-shrink: 0;
+    
+    /* 🛠️ FIXED: Sticky Positioning for Right Rail too */
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    align-self: flex-start;
+    
+    border-left: 1px solid var(--glass-border);
+    overflow-y: auto;
   }
 }
+
