@@ -12,10 +12,10 @@ datasource db {
 }
 
 // --------------------------------------
-// 2. Enums (Updated with Truth Layer Roles)
+// 2. Enums
 // --------------------------------------
 
-// 🆕 GLOBAL USER ROLES
+// GLOBAL USER ROLES
 enum UserRole {
   STANDARD      // Default user: Post, Comment, Like
   
@@ -33,11 +33,61 @@ enum UserRole {
   ADMIN         // Superuser: Full system access
 }
 
-// 🆕 CHANNEL-SPECIFIC PERMISSIONS
+// CHANNEL-SPECIFIC PERMISSIONS
 enum ChannelRole {
   MEMBER        // Standard subscriber
   MODERATOR     // Can delete/pin posts in this specific channel
   OWNER         // Creator: Can edit settings, ban users from channel
+}
+
+// POST TYPES
+enum PostType {
+  TEXT
+  LONGFORM
+  IMAGE
+  VIDEO
+  LINK
+  QUOTE
+  POLL
+  REPOST
+}
+
+enum ReactionType {
+  LIKE
+  DISLIKE
+}
+
+// 🛡️ MODERATION & REPORTING ENUMS
+enum ReportReason {
+  SPAM
+  HATE_SPEECH
+  VIOLENCE
+  MISINFORMATION          // Fact check related
+  COPYRIGHT_INFRINGEMENT  // Ownership violation
+  IMPERSONATION           // Identity fraud (User)
+  TRADEMARK_VIOLATION     // Brand fraud (Channel)
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportTargetType {
+  POST
+  USER
+  CHANNEL
+}
+
+enum PenaltyType {
+  WARNING             // Just a notification
+  STRIKE_1_TIMEOUT    // 24hr mute
+  STRIKE_2_SUSPENSION // 7-day ban
+  PERMANENT_BAN       // Account locked
+  CONTENT_REMOVAL     // Content gone, no strike
 }
 
 // --------------------------------------
@@ -56,11 +106,15 @@ model User {
   // 🛡️ Web3 Identity
   walletAddress String?   @unique
 
-  // 🆕 GLOBAL ROLE
+  // GLOBAL ROLE
   role          UserRole  @default(STANDARD)
 
-  // 🆕 BUSINESS MANAGEMENT (Self-Relation)
-  // A Business (Manager) can manage multiple Influencer accounts
+  // 🛡️ SAFETY & STANDING (The Justice System)
+  strikeCount   Int       @default(0)
+  isBanned      Boolean   @default(false)
+  mutedUntil    DateTime? // If set, user cannot post/comment
+
+  // BUSINESS MANAGEMENT
   managerId     String?
   manager       User?     @relation("BusinessManagement", fields: [managerId], references: [id])
   managedUsers  User[]    @relation("BusinessManagement")
@@ -80,6 +134,17 @@ model User {
   // Engagement
   subscriptions   Subscription[]
   likes           Reaction[] 
+
+  // Moderation Relations
+  reportsFiled    Report[]  @relation("ReportedBy")
+  reportsResolved Report[]  @relation("ResolvedBy")
+  reportsAgainst  Report[]  @relation("ProfileReported") // Reports filed against this user (Impersonation)
+  
+  penaltiesReceived Penalty[] @relation("ReceivedPenalties")
+  penaltiesIssued   Penalty[] @relation("IssuedPenalties")
+  
+  // Monetization
+  adsWatched      AdView[]
 }
 
 model Channel {
@@ -98,6 +163,7 @@ model Channel {
   
   subscribers Subscription[]
   posts       Post[]
+  reports     Report[] // Reports filed against this channel (Trademark/Brand Safety)
 
   @@index([name])
 }
@@ -110,8 +176,6 @@ model Subscription {
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   joinedAt  DateTime @default(now())
-
-  // 🆕 CHANNEL ROLE
   role      ChannelRole @default(MEMBER)
 
   @@id([userId, channelId])
@@ -121,22 +185,6 @@ model Subscription {
 // --------------------------------------
 // 4. Post and Media Models
 // --------------------------------------
-
-enum PostType {
-  TEXT
-  LONGFORM
-  IMAGE
-  VIDEO
-  LINK
-  QUOTE
-  POLL
-  REPOST
-}
-
-enum ReactionType {
-  LIKE
-  DISLIKE
-}
 
 model Post {
   id            String    @id @default(cuid())
@@ -149,10 +197,17 @@ model Post {
   embedUrl      String?   
   mediaHash     String?
   
-  // 🛡️ Verification Fields
-  isVerified    Boolean   @default(false)
-  contentHash   String?
-  signature     String?
+  // 🛡️ THE TRUTH LAYER (Verification)
+  isVerified         Boolean   @default(false)
+  
+  // 1. The Data Integrity
+  contentHash        String?   // SHA256(Content + Salt)
+  salt               String?   // Random pepper for GDPR compliance
+  signature          String?   // User's cryptographic signature
+  
+  // 2. The Blockchain Anchor
+  verificationTx     String?   // The Optimism Transaction Hash (0x...)
+  verificationSource String?   // "WALLET" | "HYPELAB" | "GOOGLE" (Who paid gas?)
 
   // Post Reactions (Cached Counts)
   likesCount    Int       @default(0)
@@ -168,6 +223,9 @@ model Post {
   author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Reaction[] 
+  
+  // Safety
+  reports   Report[]
 
   @@index([channelId, createdAt(sort: Desc)])
   @@index([authorId])
@@ -218,7 +276,89 @@ model Reaction {
 }
 
 // --------------------------------------
-// 6. Marketing & Waitlist
+// 6. Safety & Moderation (NEW)
+// --------------------------------------
+
+model Report {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  reason    ReportReason
+  details   String?      @db.Text
+  status    ReportStatus @default(PENDING)
+  targetType ReportTargetType
+
+  // The Reporter
+  reporterId String
+  reporter   User   @relation("ReportedBy", fields: [reporterId], references: [id])
+  
+  // Sparse Fields (Polymorphic Target)
+  postId     String?
+  post       Post?   @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  reportedProfileId String?
+  reportedProfile   User?   @relation("ProfileReported", fields: [reportedProfileId], references: [id])
+
+  channelId  String?
+  channel    Channel? @relation(fields: [channelId], references: [id])
+
+  // Resolution
+  resolverId String?
+  resolver   User?  @relation("ResolvedBy", fields: [resolverId], references: [id])
+  
+  // If this report resulted in a penalty
+  penalty    Penalty?
+
+  @@index([status])
+  @@index([reporterId])
+}
+
+model Penalty {
+  id          String      @id @default(cuid())
+  createdAt   DateTime    @default(now())
+  
+  type        PenaltyType
+  reason      String      @db.Text 
+  
+  expiresAt   DateTime?   // Null = Permanent
+  isActive    Boolean     @default(true)
+
+  // Relations
+  userId      String      // The offender
+  user        User        @relation("ReceivedPenalties", fields: [userId], references: [id])
+  
+  issuerId    String      // The Moderator
+  issuer      User        @relation("IssuedPenalties", fields: [issuerId], references: [id])
+  
+  reportId    String?     @unique
+  report      Report?     @relation(fields: [reportId], references: [id])
+
+  @@index([userId])
+}
+
+// --------------------------------------
+// 7. Ad Framework (NEW)
+// --------------------------------------
+
+model AdView {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  provider    String   // "HYPELAB", "GOOGLE", "UNITY"
+  
+  // Monetization Data
+  txHash      String?  // If we sponsored gas, track it here
+  revenueEst  Float?   // Estimated earning from this view (USD)
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// --------------------------------------
+// 8. Marketing & Waitlist
 // --------------------------------------
 
 model Waitlist {
@@ -226,14 +366,13 @@ model Waitlist {
   email     String   @unique
   joinedAt  DateTime @default(now())
   
-  // Marketing Attribution
   source    String?  
   medium    String?  
   campaign  String?  
 }
 
 // --------------------------------------
-// 7. NextAuth Boilerplate
+// 9. NextAuth Boilerplate
 // --------------------------------------
 
 model Account {
@@ -270,3 +409,4 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+

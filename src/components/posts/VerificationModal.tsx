@@ -78,7 +78,7 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
       <div className="w-full max-w-md bg-[var(--bg-app)] border border-[var(--glass-border)] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         
         {/* Header */}

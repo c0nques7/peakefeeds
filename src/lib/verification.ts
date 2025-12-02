@@ -1,33 +1,35 @@
-import { id, verifyMessage } from "ethers";
+import { keccak256, toBytes, recoverMessageAddress } from 'viem';
+import { randomBytes } from 'crypto';
 
 /**
- * 1. GENERATE CONTENT HASH (The "Truth Fingerprint")
- * * We combine the content text and the author's ID into a JSON object
- * and then hash it using Keccak-256. This ensures that:
- * A) The hash is unique to this specific user (even if they post the same text as someone else).
- * B) It matches the format expected by Solidity smart contracts (bytes32).
+ * 1. GENERATE SALT (The "Pepper")
  */
-export function generateContentHash(content: string, authorId: string): string {
-  const payload = JSON.stringify({
-    content: content.trim(),
-    authorId: authorId
-  });
-  
-  // 'id' in ethers v6 is a shortcut for keccak256(toUtf8Bytes(str))
-  return id(payload);
+export function generateSalt(): string {
+  return randomBytes(32).toString('hex');
 }
 
 /**
- * 2. VERIFY SIGNATURE (Server-Side Check)
- * * This function takes a hash and a signature and cryptographically recovers
- * the wallet address that signed it. 
- * * Returns the signer's address if valid, or null if invalid.
+ * 2. GENERATE CONTENT HASH (The "Truth Fingerprint")
+ * Keccak256(Content + "|" + Salt)
  */
-export function recoverSignerAddress(contentHash: string, signature: string): string | null {
+export function generateContentHash(content: string, salt: string): string {
+  const payload = `${content.trim()}|${salt}`;
+  return keccak256(toBytes(payload));
+}
+
+/**
+ * 3. VERIFY SIGNATURE (Server-Side Check)
+ */
+export async function recoverSignerAddress(contentHash: string, signature: string): Promise<string | null> {
   try {
-    // verifyMessage performs the Elliptic Curve recovery
-    const recoveredAddress = verifyMessage(contentHash, signature);
-    return recoveredAddress;
+    const validSignature = signature.startsWith('0x') 
+      ? signature as `0x${string}` 
+      : `0x${signature}` as `0x${string}`;
+
+    return await recoverMessageAddress({
+      message: { raw: contentHash as `0x${string}` },
+      signature: validSignature,
+    });
   } catch (error) {
     console.error("Crypto Verification Failed:", error);
     return null;

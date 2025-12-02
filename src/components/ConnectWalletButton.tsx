@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { ShieldCheck, Wallet, Loader2, LogOut } from 'lucide-react'
 import clsx from 'clsx'
-import { verifyWalletAddress } from '@/actions/verifiy-wallet'
+import { verifyWalletAddress } from '@/actions/verify-wallet'
 
 export function ConnectWalletButton() {
   const [mounted, setMounted] = useState(false)
@@ -36,10 +36,10 @@ export function ConnectWalletButton() {
   const handleConnect = () => {
     // Priority 1: Explicit MetaMask (Supports Mobile Deep Linking)
     const metaMask = connectors.find(c => c.id === 'metaMask' || c.name === 'MetaMask');
-    
+
     // Priority 2: WalletConnect (If you add it later)
     const walletConnect = connectors.find(c => c.id === 'walletConnect');
-    
+
     // Priority 3: Injected (Desktop Browser Extension)
     const injected = connectors.find(c => c.id === 'injected');
 
@@ -72,7 +72,7 @@ export function ConnectWalletButton() {
           <LogOut size={16} className="hidden group-hover:block" />
           <span>{address.slice(0, 6)}...{address.slice(-4)}</span>
         </div>
-        
+
         <button 
             onClick={() => disconnect()}
             className="absolute inset-0 w-full h-full z-10"

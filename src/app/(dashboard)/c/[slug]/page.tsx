@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { PostCard } from "@/components/PostCard";
-import CreatePostForm from "@/components/posts/CreatePostForm";
+import CreatePostForm from "@/components/posts/CreatePostForm"; // Ensure this path matches where you saved the form
 import { SubscribeButton } from "@/components/SubscribeButton";
 import styles from "../../dashboard.module.css"; 
 
@@ -26,7 +26,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
       slug: true,
       creatorId: true,
       _count: { select: { subscribers: true } },
-      
+
       // Check subscription status
       subscribers: {
         where: { userId: currentUserId },
@@ -40,14 +40,24 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
         select: {
             id: true, title: true, content: true, createdAt: true, isVerified: true,
             contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
-            
+
             // ⚡ 1. SELECT COUNTS
             likesCount: true,
             dislikesCount: true,
 
-            author: { select: { id: true, name: true, username: true, image: true } },
+            // 🛑 Role Selection
+            author: { 
+                select: { 
+                    id: true, 
+                    name: true, 
+                    username: true, 
+                    image: true,
+                    role: true 
+                } 
+            },
+
             channel: { select: { id: true, name: true, slug: true, creatorId: true } },
-            
+
             comments: {
                 take: 50,
                 orderBy: { createdAt: 'asc' },
@@ -62,7 +72,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                 where: { userId: currentUserId },
                 select: { type: true }
             } : false,
-            
+
             _count: { select: { comments: true } }
         }
       }
@@ -93,7 +103,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
 
   return (
     <div className="min-h-screen pb-24 pt-4 relative"> 
-      
+
       <div className={styles.backgroundLayer}>
           <div className={styles.orbTeal} />
           <div className={styles.orbPurple} />
@@ -114,7 +124,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           <p className="text-lg max-w-2xl mx-auto text-[var(--text-secondary)]">
             {channel.description}
           </p>
-          
+
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
              <div className="px-4 py-1.5 rounded-full border text-sm font-semibold"
                   style={{ 
@@ -133,7 +143,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                     isSubscribedInitial={isSubscribedInitial}
                 />
              )}
-             
+
              {isCreator && (
                 <span className="px-4 py-1.5 rounded-full border text-sm font-bold"
                       style={{ 
@@ -151,11 +161,16 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
 
       {/* FEED */}
       <main className="max-w-5xl mx-auto px-4 relative z-10">
-        
+
         {currentUserId && 
             <div className="mb-12 rounded-2xl p-4 shadow-lg"
                  style={{ background: 'var(--glass-panel)', border: '1px solid var(--glass-border)' }}>
-                <CreatePostForm channelId={channel.id} />
+                {/* 🚨 UPDATED: Passing session data to form */}
+                <CreatePostForm 
+                    channelId={channel.id} 
+                    userImage={session?.user?.image}
+                    username={session?.user?.username || 'user'} // Required for redirect
+                />
             </div>
         }
 
@@ -185,3 +200,4 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     </div>
   );
 }
+
