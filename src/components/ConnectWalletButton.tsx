@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
-import { ShieldCheck, Wallet, Loader2, LogOut } from 'lucide-react'
+import { ShieldCheck, Wallet, Loader2, LogOut, Laptop, QrCode } from 'lucide-react'
 import clsx from 'clsx'
 import { verifyWalletAddress } from '@/actions/verify-wallet'
+import { toast } from 'sonner'
 
 export function ConnectWalletButton() {
   const [mounted, setMounted] = useState(false)
+  const [showOptions, setShowOptions] = useState(false) // 🆕 State for menu
+  
   const { address, isConnected } = useAccount()
   const { connectors, connect, isPending } = useConnect()
   const { disconnect } = useDisconnect()
@@ -17,7 +20,7 @@ export function ConnectWalletButton() {
     setMounted(true)
   }, [])
 
-  // 2. Auto-Sync
+  // 2. Auto-Sync to Database
   useEffect(() => {
     const syncToDb = async () => {
       if (isConnected && address) {
@@ -32,24 +35,28 @@ export function ConnectWalletButton() {
     }
   }, [isConnected, address, mounted]);
 
-  // 3. 🧠 SMARTER CONNECTION LOGIC
-  const handleConnect = () => {
-    // Priority 1: Explicit MetaMask (Supports Mobile Deep Linking)
-    const metaMask = connectors.find(c => c.id === 'metaMask' || c.name === 'MetaMask');
-
-    // Priority 2: WalletConnect (If you add it later)
-    const walletConnect = connectors.find(c => c.id === 'walletConnect');
-
-    // Priority 3: Injected (Desktop Browser Extension)
-    const injected = connectors.find(c => c.id === 'injected');
-
-    // Select the best available option
-    const target = metaMask || walletConnect || injected || connectors[0];
-
+  // 3. HANDLERS
+  const handleBrowserWallet = () => {
+    // Looks for 'injected' (Generic) or 'metaMask' specifically
+    const target = connectors.find(c => c.id === 'injected' || c.id === 'metaMask');
+    
     if (target) {
         connect({ connector: target });
+        setShowOptions(false);
     } else {
-        console.error("No suitable wallet connector found.");
+        toast.info("No browser wallet detected.");
+    }
+  };
+
+  const handleWalletConnect = () => {
+    // Explicitly looks for the WalletConnect connector
+    const target = connectors.find(c => c.id === 'walletConnect');
+    
+    if (target) {
+        connect({ connector: target });
+        setShowOptions(false);
+    } else {
+        toast.error("WalletConnect not configured. Check Project ID.");
     }
   };
 
@@ -63,7 +70,7 @@ export function ConnectWalletButton() {
     )
   }
 
-  // Connected State
+  // --- CONNECTED STATE ---
   if (isConnected && address) {
     return (
       <div className="group relative flex items-center gap-2 cursor-pointer">
@@ -82,12 +89,39 @@ export function ConnectWalletButton() {
     )
   }
 
-  // Disconnected State
+  // --- SELECTION MENU (When Clicked) ---
+  if (showOptions) {
+      return (
+          <div className="flex flex-col gap-2 p-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-card)] absolute z-50 min-w-[220px] shadow-xl animate-in fade-in zoom-in-95 duration-200">
+              
+              <button onClick={handleBrowserWallet} className="flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--glass-card-hover)] text-left text-sm transition-colors group">
+                  <div className="p-2 bg-indigo-500/20 rounded-md text-indigo-400 group-hover:text-indigo-300"><Laptop size={18} /></div>
+                  <div>
+                      <span className="block font-bold text-[var(--text-primary)]">Browser Wallet</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">MetaMask / Injected</span>
+                  </div>
+              </button>
+
+              <button onClick={handleWalletConnect} className="flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--glass-card-hover)] text-left text-sm transition-colors group">
+                  <div className="p-2 bg-blue-500/20 rounded-md text-blue-400 group-hover:text-blue-300"><QrCode size={18} /></div>
+                  <div>
+                      <span className="block font-bold text-[var(--text-primary)]">WalletConnect</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">Mobile App / QR Code</span>
+                  </div>
+              </button>
+
+              <button onClick={() => setShowOptions(false)} className="text-xs text-center p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                  Cancel
+              </button>
+          </div>
+      )
+  }
+
+  // --- DISCONNECTED BUTTON ---
   return (
     <button
       disabled={isPending}
-      // 🛑 UPDATED: Use the smart handler
-      onClick={handleConnect} 
+      onClick={() => setShowOptions(true)}
       className={clsx(
         "flex items-center gap-2 px-6 py-2 rounded-full font-bold text-sm transition-all duration-300",
         "border border-[var(--accent-primary)] text-[var(--accent-primary)]",
