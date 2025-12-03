@@ -170,6 +170,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                     channelId={channel.id} 
                     userImage={session?.user?.image}
                     username={session?.user?.username || 'user'} // Required for redirect
+                    linkedWallet={session?.user?.walletAddress}
                 />
             </div>
         }

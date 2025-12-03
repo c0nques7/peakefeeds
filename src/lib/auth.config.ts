@@ -1,41 +1,9 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { NextAuthOptions, DefaultSession } from "next-auth"
-import { DefaultJWT } from "next-auth/jwt"
+import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/db"
 import * as argon2 from "argon2"
 
-// ---------------------------------------------------------
-// 1. TYPE AUGMENTATION (FIXED)
-// ---------------------------------------------------------
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      // FIX: Allow null/undefined to match Prisma's "String?" and NextAuth defaults
-      username?: string | null 
-      role: string
-    } & DefaultSession["user"]
-  }
-
-  interface User {
-    // FIX: Match Prisma's return type exactly
-    username?: string | null
-    role: string
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT extends DefaultJWT {
-    id: string
-    username?: string | null
-    role: string
-  }
-}
-
-// ---------------------------------------------------------
-// 2. CONFIGURATION
-// ---------------------------------------------------------
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
@@ -65,6 +33,7 @@ export const authOptions: NextAuthOptions = {
             username: true,
             passwordHash: true,
             role: true, 
+            walletAddress: true, // 🟢 1. FETCH FROM DB
           }
         })
 
@@ -75,13 +44,14 @@ export const authOptions: NextAuthOptions = {
 
         if (!isValid) return null
 
-        // 💡 FIX: Return object matches interface User exactly now
+        // 🟢 2. RETURN TO JWT CALLBACK
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           username: user.username, 
-          role: user.role as string, // Cast Enum to string to satisfy interface
+          role: user.role as string,
+          walletAddress: user.walletAddress, 
         }
       }
     })
@@ -92,6 +62,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.username = user.username
         token.role = user.role
+        token.walletAddress = user.walletAddress // 🟢 3. ADD TO TOKEN
       }
       return token
     },
@@ -101,6 +72,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id
         session.user.username = token.username
         session.user.role = token.role
+        session.user.walletAddress = token.walletAddress // 🟢 4. ADD TO SESSION
       }
       return session
     },

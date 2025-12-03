@@ -8,6 +8,7 @@ import {
   Compass, User, Home, Mountain, ChevronLeft, Menu, LogOut, LogIn,
   ShieldCheck, Building2, Sparkles, Bot, Gavel, CheckCircle, Briefcase
 } from 'lucide-react';
+import { signIn, signOut } from 'next-auth/react';
 import ThemeToggle from '@/components/ThemeToggle'; 
 import styles from './sidebar.module.css';
 
@@ -137,7 +138,7 @@ export function Sidebar({ user }: SidebarProps) {
         <NavLink href="/home" icon={Home} label="Home" />
         <NavLink href="/discover" icon={Compass} label="Discover" />
         {user && (
-           <NavLink href={`/profile/${user.username || 'me'}`} icon={User} label="Profile" />
+           <NavLink href={`/profile/${user.username}`} icon={User} label="Profile" />
            /* Wallet Link Removed Here */
         )}
       </nav>
@@ -147,10 +148,13 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="flex items-center justify-between px-2 pt-4 border-t border-[var(--glass-border)]">
             <ThemeToggle /> 
             {user ? (
-                <Link href="/api/auth/signout" className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-red-400 hover:text-red-500 transition-colors">
-                    <LogOut size={14} />
-                    <span>Sign Out</span>
-                </Link>
+                <button 
+                  onClick={() => signOut({ callbackUrl: '/' })} // Redirects to home immediately
+                  className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-500 transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
             ) : (
                 <Link href="/api/auth/signin" className="flex items-center gap-2 px-2 py-1 text-xs font-bold text-[var(--accent-primary)] hover:text-white transition-colors">
                     <LogIn size={14} />

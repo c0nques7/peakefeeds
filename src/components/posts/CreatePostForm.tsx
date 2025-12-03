@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toHex } from 'viem'; 
-import { useSignMessage, useAccount } from 'wagmi'; // Removed useConnect, useDisconnect
+import { useSignMessage, useAccount, useConnect } from 'wagmi'; 
 import { useActionState } from 'react'; 
 import { useFormStatus } from 'react-dom'; 
 
@@ -11,6 +11,7 @@ import { Send, Loader2, User, Wallet, PlayCircle, ShieldOff, ShieldCheck, ArrowR
 import { toast } from 'sonner'; 
 
 import { createPost, CreatePostState } from '@/actions/create-post'; 
+import { verifyWalletAddress } from '@/actions/verify-wallet'; 
 import { generateContentHash, generateSalt } from '@/lib/verification'; 
 import { AdPlayerOverlay } from '@/components/ads/AdPlayerOverlay';
 import { useAdMediator } from '@/hooks/useAdMediator';
@@ -20,7 +21,8 @@ type VerificationState = 'NONE' | 'WALLET' | 'AD' | 'SKIP';
 interface CreatePostFormProps {
     channelId: string;
     userImage?: string | null; 
-    username: string; // 🆕 REQUIRED: Needed for profile redirection
+    username: string; 
+    linkedWallet?: string | null; 
 }
 
 const initialFormState: CreatePostState = {
@@ -28,21 +30,17 @@ const initialFormState: CreatePostState = {
     message: null,
 };
 
-export default function CreatePostForm({ channelId, userImage, username }: CreatePostFormProps) {
+export default function CreatePostForm({ channelId, userImage, username, linkedWallet }: CreatePostFormProps) {
   const router = useRouter(); 
   
-  // Wagmi Hooks (Only need Account & Sign now)
   const { address, isConnected } = useAccount();
+  const { connectors, connectAsync } = useConnect();
   const { signMessageAsync } = useSignMessage();
-  
-  // Ad Hooks
   const { triggerAdWaterfall, status: adStatus, currentProvider } = useAdMediator();
 
-  // Server Action State
   const [state, formAction] = useActionState(createPost, initialFormState);
   const { pending } = useFormStatus();
 
-  // Component State
   const [content, setContent] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -73,45 +71,103 @@ export default function CreatePostForm({ channelId, userImage, username }: Creat
     }
   }, [state, router]);
 
-  // 3. 🚀 REDIRECT HELPER
-  const redirectToProfile = () => {
-      toast.info("Redirecting to profile to manage wallet...");
-      router.push(`/profile/${username}`);
+  // 3. Connect Helper
+  const performConnect = async () => {
+    // Prefer Injected (MetaMask)
+    const target = connectors.find(c => c.id === 'injected') || connectors[0];
+
+    if (target && typeof window !== 'undefined' && (window as any).ethereum) {
+        try {
+            await connectAsync({ connector: target });
+            return true;
+        } catch (e: any) {
+            console.error(e);
+            return false;
+        }
+    }
+
+    if (typeof window !== 'undefined') {
+        const currentUrl = window.location.host + window.location.pathname;
+        const deepLink = `https://metamask.app.link/dapp/${currentUrl}`;
+        toast.info("Opening MetaMask App...");
+        window.location.href = deepLink;
+        return false; 
+    }
+    return false;
   };
 
-  // 4. Verification Logic
+  // 4. Redirect Helper
+  const redirectToProfile = () => {
+      toast.info("Please connect your wallet in your profile.");
+      router.push(`/profile/${username}?tab=wallet`);
+  };
+
+  // 5. Verification Logic
   const handleVerifyClick = useCallback(async (choice: 'WALLET' | 'AD') => {
     if (!content.trim()) { toast.warning("Please enter content first."); return; }
     if (!postHash) return; 
-
-    // A. Check Connection -> Redirect if missing
-    if (!isConnected || !address) {
-        redirectToProfile();
-        return; 
-    }
 
     setIsPreparing(true);
     setMethod(choice);
 
     try {
-      // B. Sign
-      const hashToSign = toHex(postHash as string) as `0x${string}`;
-      const sig = await signMessageAsync({ message: { raw: hashToSign } });
-      
-      // Note: We removed auto-link logic here since the Profile Page handles it now.
+        // --- STEP A: ENSURE CONNECTION & GET LIVE ADDRESS ---
+        let freshAddress = address;
 
-      if (choice === 'AD') {
-        await triggerAdWaterfall('peake-ad-container', { 
-            userId: address!, 
-            contentHash: postHash, 
-            signature: sig 
-        });
-        toast.success("Verification Sponsored.");
-      } else {
-        toast.success("Content signed.");
-      }
-      
-      setSignature(sig);
+        // If React thinks we aren't connected, try connecting
+        if (!isConnected || !freshAddress) {
+            await performConnect();
+            
+            // 🛑 FORCE FETCH: Don't wait for React state to update.
+            // Ask MetaMask directly what account is active RIGHT NOW.
+            if (typeof window !== 'undefined' && (window as any).ethereum) {
+                const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+                freshAddress = accounts[0]; // This is the Single Source of Truth
+            }
+        }
+
+        // If we still don't have an address, bail out
+        if (!freshAddress) {
+            redirectToProfile();
+            setIsPreparing(false);
+            return;
+        }
+
+        // --- STEP B: SECURITY GUARD (Using freshAddress) ---
+        if (linkedWallet) {
+            // Normalize both strings to lowercase for comparison
+            if (linkedWallet.toLowerCase() !== freshAddress.toLowerCase()) {
+                toast.error("Wallet Mismatch!");
+                toast.warning(`Switch MetaMask to: ${linkedWallet.slice(0,6)}...${linkedWallet.slice(-4)}`);
+                console.warn("Mismatch detected:", { linked: linkedWallet, active: freshAddress });
+                setIsPreparing(false);
+                return; // 🛑 Stop execution
+            }
+        }
+
+        // --- STEP C: SIGNING ---
+        const hashToSign = toHex(postHash as string) as `0x${string}`;
+        const sig = await signMessageAsync({ message: hashToSign });
+        
+        // Auto-Link (Optimistic)
+        if (freshAddress) {
+            const formData = new FormData();
+            formData.append('address', freshAddress);
+            verifyWalletAddress(formData);
+        }
+
+        if (choice === 'AD') {
+            await triggerAdWaterfall('peake-ad-container', { 
+                userId: freshAddress, 
+                contentHash: postHash, 
+                signature: sig 
+            });
+            toast.success("Verification Sponsored.");
+        } else {
+            toast.success("Content signed.");
+        }
+        
+        setSignature(sig);
       
     } catch (e: any) {
       console.error(e);
@@ -122,7 +178,7 @@ export default function CreatePostForm({ channelId, userImage, username }: Creat
     } finally {
       setIsPreparing(false);
     }
-  }, [content, postHash, address, isConnected, signMessageAsync, triggerAdWaterfall, router, username]);
+  }, [content, postHash, address, isConnected, signMessageAsync, triggerAdWaterfall, connectors, connectAsync, linkedWallet, username, router]);
 
 
   // UI
@@ -136,7 +192,7 @@ export default function CreatePostForm({ channelId, userImage, username }: Creat
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-3 text-[var(--text-primary)]">New Truth Submission</h2>
 
-        {/* 4. VISUAL GUARD: Redirect to Profile if not connected */}
+        {/* Visual Guard */}
         {!isConnected ? (
              <div className="p-3 mb-4 rounded-xl bg-indigo-800/20 border border-indigo-700 text-indigo-400 flex items-center justify-between gap-3 cursor-pointer hover:bg-indigo-800/30 transition-colors"
                  onClick={redirectToProfile}>
@@ -165,6 +221,7 @@ export default function CreatePostForm({ channelId, userImage, username }: Creat
           className="relative rounded-2xl p-4 backdrop-blur-md"
           style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-card)' }}
         >
+          {/* Form Fields (Keep Existing) */}
           <div className="flex gap-4">
               <div className="h-10 w-10 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-bold shadow-lg">
                   {userImage ? (<img src={userImage} alt="User" className="w-full h-full object-cover" />) : (<User size={20} />)}
@@ -236,4 +293,3 @@ export default function CreatePostForm({ channelId, userImage, username }: Creat
     </>
   );
 }
-

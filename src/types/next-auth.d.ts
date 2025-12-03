@@ -7,15 +7,17 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string
-      // Allow null/undefined to match Prisma schema
       username?: string | null 
+      role: string
+      walletAddress?: string | null // 🟢 Added
     } & DefaultSession["user"]
   }
 
   interface User {
     id: string
-    // Allow null/undefined to match Prisma schema
     username?: string | null
+    role: string
+    walletAddress?: string | null // 🟢 Added
   }
 }
 
@@ -23,5 +25,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string
     username?: string | null
+    role: string
+    walletAddress?: string | null // 🟢 Added
   }
 }
