@@ -21,7 +21,8 @@ export default async function PersonalFeed() {
   const posts = await getPersonalFeed(currentUserId);
 
   return (
-    <div className={styles.postsGrid}>
+    <div className={styles.feedWrapper}>
+      <div className={styles.feedStream}>
       {posts.length > 0 ? (
         posts.map((post) => (
           <PostCard 
@@ -45,6 +46,7 @@ export default async function PersonalFeed() {
           </Link>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -1,12 +1,15 @@
-/* BASE CONTAINER */
+/* src/app/home/dashboard.module.css */
+
+/* --- 1. BASE CONTAINER --- */
 .layoutContainer {
   display: flex;
   min-height: 100vh;
   position: relative;
-  /* 🛑 DELETED: overflow-x: hidden; (This was killing the sticky behavior) */
+  background-color: var(--bg-app);
+  overflow-x: hidden; 
 }
 
-/* BACKGROUND LAYERS */
+/* --- 2. BACKGROUND LAYERS --- */
 .backgroundLayer {
   position: fixed; 
   top: 0;
@@ -15,7 +18,7 @@
   height: 100%;
   z-index: 0; 
   pointer-events: none;
-  overflow: hidden; /* We handle overflow here instead */
+  overflow: hidden; 
 }
 
 .orbTeal {
@@ -27,6 +30,7 @@
   background: radial-gradient(circle, var(--orb-teal) 0%, rgba(0,0,0,0) 70%);
   filter: blur(80px);
   opacity: 0.5;
+  animation: breathe 10s infinite alternate;
 }
 
 .orbPurple {
@@ -38,76 +42,128 @@
   background: radial-gradient(circle, var(--orb-purple) 0%, rgba(0,0,0,0) 70%);
   filter: blur(90px);
   opacity: 0.5;
+  animation: breathe 12s infinite alternate-reverse;
 }
 
-/* --- 📱 MOBILE DEFAULT (< 640px) --- */
+@keyframes breathe {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.1); opacity: 0.6; }
+}
 
-/* 1. Sidebar: HIDDEN */
-.desktopSidebar {
+/* --- 3. MOBILE DEFAULT (< 640px) --- */
+/* Standard vertical stack for phones */
+
+.desktopSidebar { 
   display: none !important; 
 }
 
-/* 2. Mobile Nav: VISIBLE */
 .mobileNavWrapper {
   display: block !important;
   z-index: 50;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 
-/* 3. Main Content */
 .mainContent {
   flex: 1;
   width: 100%;
   z-index: 10;
-  padding-bottom: 90px; /* Space for Bottom Nav */
-  overflow-x: hidden; /* Handle content overflow here locally */
+  padding-bottom: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
 }
 
+/* Mobile: Simple Vertical Stack */
+.feedWrapper {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 1rem;
+}
 
-/* --- 💻 TABLET/FOLDABLE & DESKTOP (≥ 640px) --- */
+.feedStream {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* --- 4. TABLET / FOLDABLE / DESKTOP (≥ 640px) --- */
 @media (min-width: 640px) {
   
-  /* 1. Show Sidebar (STICKY FIX) */
+  /* Sidebar Overlay (Floating Glass) */
   .desktopSidebar { 
     display: block !important; 
-    flex-shrink: 0;
-    
-    /* 🛠️ FIXED: Sticky Positioning */
     position: fixed; 
     top: 0;
-    height: 100vh; /* Must define height for sticky to work */
-    align-self: flex-start; /* Prevents it from stretching with content */
-    
-    z-index: 40;
-    overflow-y: auto; /* Allows menu to scroll internally if screen is short */
+    left: 0;
+    height: 100vh;
+    width: 240px; 
+    z-index: 50; 
+    /* Shadow removed per request if preferred, or add back: box-shadow: 4px 0 30px rgba(0,0,0,0.5); */
   }
 
-  /* 2. Hide Mobile Nav */
   .mobileNavWrapper { 
     display: none !important; 
   }
 
-  /* 3. Adjust Content Padding */
   .mainContent { 
     padding-bottom: 0; 
-    padding-top: 1rem;
+    padding-top: 2rem;
+    width: 100%;
+    margin: 0;
+  }
+
+  /* 🛑 WRAPPER: Handles Width & Centering */
+  .feedWrapper {
+    width: 100%;
+    position: relative;
+    margin: 0 auto;
+    
+    /* Allow expanding to fit 3-4 columns on big screens */
+    max-width: 1600px; 
+    
+    /* TABLET MODE: 
+       We only add small padding (1rem). 
+       The Sidebar (240px) will float ON TOP of the left side.
+       The Grid will use the full width underneath. */
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* 🛑 STREAM: Handles Grid Logic */
+  .feedStream {
+    display: grid;
+    /* 240px min-width ensures 2 columns fit on Fold (~700px width) */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
   }
 }
 
-/* --- 🖥️ LARGE DESKTOP (≥ 1280px) --- */
+/* --- 5. LARGE DESKTOP (≥ 1280px) --- */
 @media (min-width: 1280px) {
+  
+  /* Right Sidebar (Suggestions) */
   .rightSidebar {
     display: block !important; 
     width: 350px;
-    flex-shrink: 0;
-    
-    /* 🛠️ FIXED: Sticky Positioning for Right Rail too */
-    position: sticky;
+    position: fixed;
     top: 0;
+    right: 0; 
     height: 100vh;
-    align-self: flex-start;
-    
+    z-index: 40;
     border-left: 1px solid var(--glass-border);
-    overflow-y: auto;
+  }
+
+  /* DESKTOP MODE:
+     Push the content wrapper inward so sidebars don't cover the grid. */
+  .feedWrapper {
+    padding-left: calc(240px + 2rem); /* Clear Left Sidebar */
+    padding-right: calc(350px + 2rem); /* Clear Right Sidebar */
   }
 }
 

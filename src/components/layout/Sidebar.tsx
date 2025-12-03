@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { 
-  Compass, User, Home, Wallet, Mountain, ChevronLeft, Menu, LogOut, LogIn,
+  Compass, User, Home, Mountain, ChevronLeft, Menu, LogOut, LogIn,
   ShieldCheck, Building2, Sparkles, Bot, Gavel, CheckCircle, Briefcase
 } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle'; 
@@ -17,26 +17,19 @@ interface SidebarProps {
     email?: string | null; 
     image?: string | null; 
     username?: string | null;
-    role?: string | null; // This now expects "STANDARD", "ADMIN", etc.
+    role?: string | null; 
   }
 }
 
-// --- CONFIGURATION (Matched to Prisma Schema) ---
+// --- CONFIGURATION ---
 const ROLE_CONFIG: Record<string, { icon: any, className: string, label: string }> = {
-  // Trust & Transparency
   GOVERNMENT:   { icon: Building2,   className: styles.badgeGov,      label: 'Official' },
   FACT_CHECKER: { icon: ShieldCheck, className: styles.badgeChecker,  label: 'Verifier' },
   BOT:          { icon: Bot,         className: styles.badgeBot,      label: 'Automated' },
-  
-  // Commercial
   BUSINESS:     { icon: Briefcase,   className: styles.badgeBiz,      label: 'Business' },
   INFLUENCER:   { icon: Sparkles,    className: styles.badgeCreator,  label: 'Creator' },
-  
-  // Management
   MODERATOR:    { icon: Gavel,       className: styles.badgeMod,      label: 'Mod' },
   ADMIN:        { icon: ShieldCheck, className: styles.badgeMod,      label: 'Admin' },
-
-  // Default
   STANDARD:     { icon: CheckCircle, className: styles.badgeStandard, label: 'Verified' },
 };
 
@@ -45,23 +38,10 @@ export function Sidebar({ user }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const prevWidth = useRef(0);
 
-  // --- ROLE LOGIC ---
-  // 1. Get role from user object or default to STANDARD (Prisma default)
   const rawRole = user?.role || 'STANDARD'; 
   const normalizedRole = rawRole.toUpperCase(); 
-  
-  // 2. Lookup Config
   const BadgeConfig = ROLE_CONFIG[normalizedRole] || ROLE_CONFIG['STANDARD'];
 
-  // ... (Rest of component remains exactly the same as previous) ...
-  // ... (Copy the Responsive Logic, Render Return, etc. from previous response) ...
-  
-  // NOTE: For brevity, I am not repeating the unchanged render HTML. 
-  // Just paste the ROLE_CONFIG and ROLE LOGIC updates above into your existing file.
-  
-  // ...
-  
-  // --- RESPONSIVE LOGIC ---
   useEffect(() => {
     if (typeof window !== 'undefined') {
         prevWidth.current = window.innerWidth;
@@ -92,22 +72,23 @@ export function Sidebar({ user }: SidebarProps) {
 
   if (!isOpen) {
       return (
-          <button 
-            onClick={() => setIsOpen(true)} 
-            className="fixed top-[100px] left-0 z-40 p-3 bg-[var(--glass-panel)] backdrop-blur-md border-y border-r border-[var(--glass-border)] rounded-r-xl shadow-lg hover:bg-[var(--glass-card-hover)] transition-all"
-          >
-              <Menu size={24} className="text-[var(--text-primary)]" />
+          <button onClick={() => setIsOpen(true)} className={styles.menuTrigger} aria-label="Open Menu">
+              <Menu size={20} strokeWidth={2.5} />
+              <span className={styles.menuText}>MENU</span>
           </button>
       );
   }
 
   return (
     <div className={styles.sidebar}>
-      <button onClick={() => setIsOpen(false)} className={styles.collapseHandle}>
+      
+      {/* Collapse Handle */}
+      <button onClick={() => setIsOpen(false)} className={styles.collapseHandle} aria-label="Collapse Menu">
         <ChevronLeft size={16} />
       </button>
 
-      <div className="mb-6 px-2 flex items-center gap-3">
+      {/* Brand Header */}
+      <div className="mb-6 px-2 flex items-center gap-3 flex-shrink-0">
         <div className="w-8 h-8 bg-gradient-to-br from-[var(--accent-primary)] to-purple-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white shadow-lg">
           <Mountain size={18} fill="currentColor" />
         </div>
@@ -116,6 +97,7 @@ export function Sidebar({ user }: SidebarProps) {
         </span>
       </div>
 
+      {/* User / Guest Card */}
       <div className={styles.userHeader}>
         {user ? (
             <Link href={`/profile/${user.username || 'me'}`} className={styles.userCard}>
@@ -127,22 +109,13 @@ export function Sidebar({ user }: SidebarProps) {
                             user.username?.[0]?.toUpperCase()
                         )}
                     </div>
-                    {/* Role Status Dot */}
-                    <div className={clsx(
-                        "absolute bottom-0 right-0 w-5 h-5 rounded-full border-[3px] border-[#050505] flex items-center justify-center shadow-sm", 
-                        BadgeConfig.className
-                    )}>
+                    <div className={clsx("absolute bottom-0 right-0 w-5 h-5 rounded-full border-[3px] border-[#050505] flex items-center justify-center shadow-sm", BadgeConfig.className)}>
                         <BadgeConfig.icon size={10} strokeWidth={3} className="text-white" />
                     </div>
                 </div>
-                
                 <div className="text-center">
-                    <p className="text-sm font-bold text-[var(--text-primary)] truncate max-w-[160px]">
-                        @{user.username || 'User'}
-                    </p>
-                    <div className={clsx(styles.rolePill, BadgeConfig.className, "mt-1")}>
-                        {BadgeConfig.label}
-                    </div>
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate max-w-[160px]">@{user.username || 'User'}</p>
+                    <div className={clsx(styles.rolePill, BadgeConfig.className, "mt-1")}>{BadgeConfig.label}</div>
                 </div>
             </Link>
         ) : (
@@ -152,30 +125,26 @@ export function Sidebar({ user }: SidebarProps) {
                         <User size={20} />
                     </div>
                     <h3 className="text-sm font-bold text-[var(--text-primary)]">Join the Truth Layer</h3>
-                    <p className="text-[10px] text-[var(--text-muted)] leading-tight mb-2">
-                        Verify information and earn trust badges.
-                    </p>
-                    <Link href="/api/auth/signin" className={styles.loginButton}>
-                        Sign In / Sign Up
-                    </Link>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-tight mb-2">Verify information and earn trust badges.</p>
+                    <Link href="/api/auth/signin" className={styles.loginButton}>Sign In / Sign Up</Link>
                 </div>
             </div>
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+      {/* Navigation Links (REMOVED: flex-1, Wallet) */}
+      <nav className="space-y-1 mb-4">
         <NavLink href="/home" icon={Home} label="Home" />
         <NavLink href="/discover" icon={Compass} label="Discover" />
         {user && (
-            <>
-                <NavLink href={`/profile/${user.username || 'me'}`} icon={User} label="Profile" />
-                <NavLink href={`/profile/${user.username || 'me'}?tab=wallet`} icon={Wallet} label="Wallet" />
-            </>
+           <NavLink href={`/profile/${user.username || 'me'}`} icon={User} label="Profile" />
+           /* Wallet Link Removed Here */
         )}
       </nav>
 
-      <div className="mt-auto pt-4 space-y-2">
-        <div className="flex items-center justify-between px-2 pt-2 border-t border-[var(--glass-border)]">
+      {/* Footer Actions (Moved directly after nav items) */}
+      <div className="space-y-2 pb-6">
+        <div className="flex items-center justify-between px-2 pt-4 border-t border-[var(--glass-border)]">
             <ThemeToggle /> 
             {user ? (
                 <Link href="/api/auth/signout" className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-red-400 hover:text-red-500 transition-colors">
@@ -190,6 +159,8 @@ export function Sidebar({ user }: SidebarProps) {
             )}
         </div>
       </div>
+
     </div>
   );
 }
+
