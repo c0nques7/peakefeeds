@@ -1,33 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* config options here */
   reactCompiler: true,
   
-  // 🟢 NEW: Webpack configuration to ignore broken test files
-  webpack: (config) => {
-    // 1. Ignore specific test files inside node_modules that cause build errors
-    config.module.rules.push({
-      test: /node_modules\/thread-stream\/test\/.*\.(js|ts|mjs)$/,
-      use: 'ignore-loader',
-    });
-
-    // 2. Mock missing dev dependencies so import checks don't fail
-    config.resolve.alias = {
-        ...config.resolve.alias,
-        'desm': false,
-        'fastbench': false,
-        'tap': false,
-        'tape': false,
-        'why-is-node-running': false,
-        'pino-elasticsearch': false,
-    };
-
-    return config;
-  },
+  // 🛑 REMOVED: webpack config (Not supported with --turbopack)
+  // The missing dependencies you installed earlier will handle the build errors now.
 
   async headers() {
     return [
       {
+        // Applies to all pages
         source: '/:path*',
         headers: [
           {
@@ -45,4 +28,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
