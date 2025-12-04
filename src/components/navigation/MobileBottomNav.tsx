@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Compass, User, Home, Wallet } from 'lucide-react'; 
+import { Compass, User, Home, LogIn, LogOut } from 'lucide-react'; 
+import { useSession, signIn, signOut } from 'next-auth/react'; // 🆕 Auth Hooks
 import styles from './MobileBottomNav.module.css';
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const { data: session } = useSession(); // 🆕 Get Session
 
   const isActive = (path: string) => {
     return pathname.startsWith(path) ? styles.navItemActive : '';
@@ -28,16 +30,37 @@ export default function MobileBottomNav() {
         </Link>
 
         {/* 3. PROFILE */}
-        <Link href="/profile/me" className={`${styles.navItem} ${isActive('/profile')}`}>
+        {/* If logged in, go to profile. If not, go to login. */}
+        <Link 
+            href={session?.user?.username ? `/profile/${session.user.username}` : '/api/auth/signin'} 
+            className={`${styles.navItem} ${isActive('/profile')}`}
+        >
             <User size={24} strokeWidth={isActive('/profile') ? 2.5 : 2} />
             <span className="text-[10px] font-medium">Profile</span>
         </Link>
 
-        {/* 4. WALLET */}
-        <Link href="/profile/me?tab=wallet" className={`${styles.navItem} ${isActive('/wallet')}`}>
-            <Wallet size={24} strokeWidth={isActive('/wallet') ? 2.5 : 2} />
-            <span className="text-[10px] font-medium">Wallet</span>
-        </Link>
+        {/* 4. AUTH ACTION (Replaces Wallet) */}
+        {session ? (
+            // LOGGED IN -> Show Sign Out
+            <button 
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className={styles.navItem}
+                type="button"
+            >
+                <LogOut size={24} />
+                <span className="text-[10px] font-medium">Sign Out</span>
+            </button>
+        ) : (
+            // LOGGED OUT -> Show Sign In
+            <button 
+                onClick={() => signIn()}
+                className={styles.navItem}
+                type="button"
+            >
+                <LogIn size={24} />
+                <span className="text-[10px] font-medium">Sign In</span>
+            </button>
+        )}
 
     </nav>
   );

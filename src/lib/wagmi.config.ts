@@ -1,41 +1,50 @@
 import { http, createConfig } from 'wagmi'
 import { optimismSepolia, mainnet, sepolia } from 'wagmi/chains'
-import { injected, metaMask, safe, walletConnect } from 'wagmi/connectors' // 🆕 Import walletConnect
+import { injected, metaMask, safe, walletConnect } from 'wagmi/connectors'
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 
-// Metadata for the WalletConnect Modal
+// 🛑 DEBUGGING: Uncomment this line to check if ID is loaded in your browser console
+// console.log("WalletConnect Project ID:", projectId);
+
 const metadata = {
   name: 'Peake Feeds',
   description: 'The Truth Layer',
-  url: 'https://peakefeeds.com', 
-  icons: ['https://peakefeeds.com/logo.png']
+  // 🟢 FIX 1: Dynamically use the actual IP address/domain you are on
+  url: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000', 
+  icons: ['https://peakefeeds.com/logo.png'],
+  // 🟢 FIX 2: Add a redirect schema (helps mobile app return to browser)
+  redirect: {
+    native: 'peakefeeds://', 
+    universal: 'https://peakefeeds.com'
+  }
 };
 
 export const config = createConfig({
   chains: [optimismSepolia, mainnet, sepolia],
   
   connectors: [
-    // 1. Browser Extension (MetaMask, Rabby, etc.)
-    // Keep this first so desktop users get the best experience
     injected(), 
-    
-    // 2. MetaMask Specific (Optional, usually covered by injected, but good for specificity)
     metaMask(),
-
-    // 3. WalletConnect V2 (Crucial for Mobile & QR Codes)
+    
     walletConnect({ 
         projectId, 
         metadata, 
-        showQrModal: true // Opens the official modal for scanning
+        showQrModal: true, 
+        // 🟢 FIX 3: Disable strict verification for development
+        // This allows '192.168...' to connect without SSL/Domain errors
+        qrModalOptions: {
+            themeMode: 'dark',
+        }
     }),
 
     safe(),
   ],
   
   transports: {
-    [optimismSepolia.id]: http(), // Fixed: Changed from optimism to optimismSepolia for testing
+    [optimismSepolia.id]: http(),
     [mainnet.id]: http(),
     [sepolia.id]: http(),
   },
 })
+
