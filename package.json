@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts"
+    "postinstall": "rm -rf node_modules/thread-stream/test"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
