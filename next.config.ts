@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            vvalue: "frame-ancestors 'self' https://www.youtube.com https://youtu.be https://vercel.live; frame-src 'self' https://www.youtube.com https://youtu.be https://vercel.live; media-src 'self' data: https://www.youtube.com https://youtu.be;",
+            value: "frame-ancestors 'self' https://www.youtube.com https://youtu.be https://vercel.live; frame-src 'self' https://www.youtube.com https://youtu.be https://vercel.live; media-src 'self' data: https://www.youtube.com https://youtu.be;",
           },
           {
             key: 'X-Frame-Options',
