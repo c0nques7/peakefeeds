@@ -1,50 +1,46 @@
-import { http, createConfig } from 'wagmi'
+import { cookieStorage, createStorage, http } from 'wagmi'
 import { optimismSepolia, mainnet, sepolia } from 'wagmi/chains'
-import { injected, metaMask, safe, walletConnect } from 'wagmi/connectors'
+import { createAppKit } from '@reown/appkit/react'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
+// 1. Get Project ID from env
+export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
 
-// 🛑 DEBUGGING: Uncomment this line to check if ID is loaded in your browser console
-// console.log("WalletConnect Project ID:", projectId);
+if (!projectId) {
+  throw new Error('Project ID is not defined')
+}
 
-const metadata = {
-  name: 'Peake Feeds',
-  description: 'The Truth Layer',
-  // 🟢 FIX 1: Dynamically use the actual IP address/domain you are on
-  url: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000', 
-  icons: ['https://peakefeeds.com/logo.png'],
-  // 🟢 FIX 2: Add a redirect schema (helps mobile app return to browser)
-  redirect: {
-    native: 'peakefeeds://', 
-    universal: 'https://peakefeeds.com'
-  }
-};
+// 2. Configure Networks
+export const networks = [optimismSepolia, mainnet, sepolia]
 
-export const config = createConfig({
-  chains: [optimismSepolia, mainnet, sepolia],
-  
-  connectors: [
-    injected(), 
-    metaMask(),
-    
-    walletConnect({ 
-        projectId, 
-        metadata, 
-        showQrModal: true, 
-        // 🟢 FIX 3: Disable strict verification for development
-        // This allows '192.168...' to connect without SSL/Domain errors
-        qrModalOptions: {
-            themeMode: 'dark',
-        }
-    }),
-
-    safe(),
-  ],
-  
-  transports: {
-    [optimismSepolia.id]: http(),
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
-  },
+// 3. Set up the Wagmi Adapter (replaces createConfig)
+export const wagmiAdapter = new WagmiAdapter({
+  storage: createStorage({
+    storage: cookieStorage
+  }),
+  ssr: true,
+  projectId,
+  networks
 })
 
+// 4. Initialize AppKit
+// This automatically handles the "Mobile vs Desktop" logic and QR codes
+export const appKit = createAppKit({
+  adapters: [wagmiAdapter],
+  networks: [optimismSepolia, mainnet, sepolia],
+  projectId,
+  metadata: {
+    name: 'Peake Feeds',
+    description: 'The Truth Layer',
+    url: 'https://peakefeeds.com', 
+    icons: ['https://peakefeeds.com/logo.png']
+  },
+  themeMode: 'dark',
+  features: {
+    analytics: true, 
+    email: false, // Disable email login (Web3 only)
+    socials: []   // Disable social login
+  }
+})
+
+export const config = wagmiAdapter.wagmiConfig
