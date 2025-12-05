@@ -139,7 +139,7 @@
 }
 
 /* Global wrapper for the video div in TSX */
-:global(.media-preview-container) {
+.mediaPreviewContainer {
     position: relative;
     z-index: 50;
 }
