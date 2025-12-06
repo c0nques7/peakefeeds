@@ -2,10 +2,24 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  reactCompiler: true,
+  reactCompiler: true, // Keep this if you are using the experimental compiler
   
-  // 🛑 REMOVED: webpack config (Not supported with --turbopack)
-  // The missing dependencies you installed earlier will handle the build errors now.
+  // ⚡️ RE-ADDED: Essential for fixing the "@metamask/sdk" build error.
+  // This is used during 'next build' (Webpack) even if you use '--turbo' for dev.
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+      'pino-pretty': false,
+    };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    return config;
+  },
 
   async headers() {
     return [
