@@ -51,8 +51,6 @@
 }
 
 /* --- 3. MOBILE DEFAULT (< 640px) --- */
-/* Standard vertical stack for phones */
-
 .desktopSidebar { 
   display: none !important; 
 }
@@ -70,7 +68,7 @@
   flex: 1;
   width: 100%;
   z-index: 10;
-  padding-bottom: 90px;
+  padding-bottom: 90px; /* Space for mobile nav */
   display: flex;
   flex-direction: column;
   align-items: center; 
@@ -94,7 +92,6 @@
 /* --- 4. TABLET / FOLDABLE / DESKTOP (≥ 640px) --- */
 @media (min-width: 640px) {
   
-  /* Sidebar Overlay (Floating Glass) */
   .desktopSidebar { 
     display: block !important; 
     position: fixed; 
@@ -103,8 +100,7 @@
     height: 100vh;
     width: 240px; 
     z-index: 50; 
-    pointer-events: none;
-    /* Shadow removed per request if preferred, or add back: box-shadow: 4px 0 30px rgba(0,0,0,0.5); */
+    pointer-events: auto; 
   }
 
   .mobileNavWrapper { 
@@ -122,24 +118,25 @@
   .feedWrapper {
     width: 100%;
     position: relative;
+    /* ⚡️ FIX: Remove the restrictive max-width so it fills 4K screens */
+    /* max-width: 1600px; <--- REMOVED */ 
+    
+    /* Optional: Set a very large max-width if you don't want it Infinite on 8k screens */
+    max-width: 2400px; 
     margin: 0 auto;
-    
-    /* Allow expanding to fit 3-4 columns on big screens */
-    max-width: 1600px; 
-    
-    /* TABLET MODE: 
-       We only add small padding (1rem). 
-       The Sidebar (240px) will float ON TOP of the left side.
-       The Grid will use the full width underneath. */
-    padding-left: 1rem;
-    padding-right: 1rem;
+
+    /* Push content right so Sidebar doesn't cover it */
+    padding-left: calc(240px + 2rem); 
+    padding-right: 2rem; 
+    box-sizing: border-box; /* Ensures padding doesn't break width */
   }
 
   /* 🛑 STREAM: Handles Grid Logic */
   .feedStream {
     display: grid;
-    /* 240px min-width ensures 2 columns fit on Fold (~700px width) */
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    /* ⚡️ FIX: Columns will now fill the wider space automatically */
+    /* Cards will be at least 300px, but stretch to fill available rows */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
     width: 100%;
   }
@@ -148,7 +145,6 @@
 /* --- 5. LARGE DESKTOP (≥ 1280px) --- */
 @media (min-width: 1280px) {
   
-  /* Right Sidebar (Suggestions) */
   .rightSidebar {
     display: block !important; 
     width: 350px;
@@ -160,11 +156,10 @@
     border-left: 1px solid var(--glass-border);
   }
 
-  /* DESKTOP MODE:
-     Push the content wrapper inward so sidebars don't cover the grid. */
+  /* DESKTOP MODE: Clear both sidebars */
   .feedWrapper {
-    padding-left: calc(240px + 2rem); /* Clear Left Sidebar */
-    padding-right: calc(350px + 2rem); /* Clear Right Sidebar */
+    /* 240px Left + 350px Right + Gap */
+    padding-left: calc(240px + 3rem);
+    padding-right: calc(350px + 3rem);
   }
 }
-

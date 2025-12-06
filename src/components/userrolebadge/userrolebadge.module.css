@@ -1,0 +1,42 @@
+.badgeBase {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 9999px; /* Pill shape */
+  
+  /* Typography */
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  user-select: none;
+  
+  /* Glassmorphism */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  /* The Animated Border */
+  border: 1px solid transparent; /* Fallback */
+  border-color: rgba(var(--badge-color), 0.3); /* Initial State */
+  animation: borderPulse 3s ease-in-out infinite;
+  
+  /* Smooth transition for hover effects if you add them later */
+  transition: all 0.3s ease;
+}
+
+/* THE NEBULA PULSE
+   1. Pulses the Border Opacity
+   2. Pulses a subtle Box Shadow Glow
+*/
+@keyframes borderPulse {
+  0%, 100% {
+    border-color: color-mix(in srgb, var(--badge-color), transparent 70%);
+    box-shadow: 0 0 0px color-mix(in srgb, var(--badge-color), transparent 100%);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--badge-color), transparent 20%);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--badge-color), transparent 80%);
+  }
+}

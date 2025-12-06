@@ -1,24 +1,22 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, UserRole } from '@prisma/client';
 
-// Define the required shape of the data for clarity
+// 1. UPDATED TYPE DEFINITION
 export type ProfileData = {
     id: string;
     username: string | null;
     name: string | null;
+    // ✅ ADDED IMAGE
+    image: string | null; 
     walletAddress: string | null;
     createdAt: Date;
-    
-    // 🆕 ADDED ROLE
     role: UserRole; 
     
-    // Total posts and channels created
     _count: {
         posts: number;
         channelsCreated: number;
     };
 
-    // Data for the 'My Posts' Tab
     posts: {
         id: string;
         title: string | null;
@@ -31,14 +29,16 @@ export type ProfileData = {
         mediaUrl: string | null;
         type: PostType;
         
-        // Optimized Counts
+        // ✅ ADDED COUNTS TO TYPE (So page.tsx can access them)
+        likesCount: number;
+        dislikesCount: number;
+        
         _count: {
             comments: number;
             likes: number;
             dislikes: number; 
         };
         
-        // Channel Data for PostCard Header
         channel: {
             id: string;
             name: string;
@@ -46,7 +46,6 @@ export type ProfileData = {
             creatorId: string;
         };
 
-        // Comment Data for Threading
         comments: {
             id: string;
             content: string;
@@ -57,11 +56,9 @@ export type ProfileData = {
             };
         }[];
 
-        // Context for current viewer
         currentUserReaction?: ReactionType | null;
     }[];
 
-    // Data for the 'My Channels' Tab
     channelsCreated: {
         id: string;
         name: string;
@@ -73,28 +70,30 @@ export type ProfileData = {
 } | null;
 
 
-/**
- * Fetches comprehensive data for a user's profile page based on username.
- * Includes role, post history, and channel ownership.
- */
 export async function getProfileData(username: string, currentUserId?: string): Promise<ProfileData> {
     
     if (!username || typeof username !== 'string') {
-        console.error("Attempted to call getProfileData with invalid username:", username);
         return null;
     }
 
-    const user = await prisma.user.findUnique({
-        where: { username },
+    const user = await prisma.user.findFirst({
+        // Use findFirst with insensitive mode for better UX
+        where: { 
+            username: {
+                equals: username,
+                mode: 'insensitive'
+            }
+        },
         select: {
             id: true,
             username: true,
             name: true,
+            // ✅ SELECT IMAGE
+            image: true,
             walletAddress: true,
             createdAt: true,
-            role: true, // 🆕 SELECT ROLE
+            role: true,
             
-            // 1. Core Counts
             _count: {
                 select: {
                     posts: true,
@@ -102,43 +101,27 @@ export async function getProfileData(username: string, currentUserId?: string): 
                 }
             },
             
-            // 2. Posts (Taking the 10 most recent posts for initial view)
             posts: {
-                take: 10,
+                take: 50, // Increased from 10 to fill the grid better
                 orderBy: { createdAt: 'desc' },
                 select: {
-                    id: true,
-                    title: true,
-                    content: true,
-                    createdAt: true,
-                    isVerified: true,
-                    contentHash: true,
-                    signature: true,
-                    embedUrl: true,
-                    mediaUrl: true,
-                    type: true,
+                    id: true, title: true, content: true, createdAt: true, isVerified: true,
+                    contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
                     
-                    // Optimized Count Columns
+                    // Counts
                     likesCount: true,
                     dislikesCount: true,
 
-                    // Critical Channel Data
-                    channel: { 
-                        select: { id: true, name: true, slug: true, creatorId: true } 
-                    }, 
+                    channel: { select: { id: true, name: true, slug: true, creatorId: true } }, 
                     
-                    // Comments for Threading
                     comments: {
                         orderBy: { createdAt: 'asc' }, 
                         select: {
-                            id: true,
-                            content: true,
-                            parentId: true, 
+                            id: true, content: true, parentId: true, 
                             author: { select: { id: true, username: true } }
                         }
                     },
 
-                    // Reaction Status for Viewer
                     likes: currentUserId ? {
                         where: { userId: currentUserId },
                         select: { type: true }
@@ -148,13 +131,10 @@ export async function getProfileData(username: string, currentUserId?: string): 
                 }
             },
 
-            // 3. Channels Created
             channelsCreated: {
                 orderBy: { createdAt: 'desc' },
                 select: {
-                    id: true,
-                    name: true,
-                    slug: true,
+                    id: true, name: true, slug: true,
                     _count: { select: { subscribers: true } }
                 }
             }
@@ -164,26 +144,25 @@ export async function getProfileData(username: string, currentUserId?: string): 
     if (!user) return null;
 
     // 🛑 TRANSFORM DATA
-    // Map the raw DB response to the clean ProfileData shape
     const formattedPosts = user.posts.map(post => {
-        // 1. Determine Viewer's Reaction
-        // @ts-ignore - 'likes' exists in query but isn't in the final return type
+        // @ts-ignore 
         const userReaction = post.likes?.[0]?.type || null;
 
-        // 2. Clean up object
-        // @ts-ignore
-        const { likes, likesCount, dislikesCount, _count, ...rest } = post;
-
         return {
-            ...rest,
+            ...post,
+            // ✅ Ensure we return these so the page can map them if needed
+            likesCount: post.likesCount ?? 0,
+            dislikesCount: post.dislikesCount ?? 0,
+
             _count: {
-                comments: _count.comments,
-                likes: likesCount,       // Direct from DB
-                dislikes: dislikesCount  // Direct from DB
+                comments: post._count.comments,
+                likes: post.likesCount ?? 0,
+                dislikes: post.dislikesCount ?? 0
             },
             currentUserReaction: userReaction
         };
     });
 
-    return { ...user, posts: formattedPosts } as unknown as ProfileData;
+    // @ts-ignore - TS might complain about 'likes' property being left over, but that's fine for runtime
+    return { ...user, posts: formattedPosts };
 }

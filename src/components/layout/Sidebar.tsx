@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -8,7 +8,7 @@ import {
   Compass, User, Home, Mountain, ChevronLeft, Menu, LogOut, LogIn,
   ShieldCheck, Building2, Sparkles, Bot, Gavel, CheckCircle, Briefcase
 } from 'lucide-react';
-import { signIn, signOut } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import ThemeToggle from '@/components/ThemeToggle'; 
 import styles from './sidebar.module.css';
 
@@ -36,41 +36,30 @@ const ROLE_CONFIG: Record<string, { icon: any, className: string, label: string 
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
-  const prevWidth = useRef(0);
+  
+  // ⚡️ SIMPLIFIED: Default to true. 
+  // On mobile, the parent CSS (.desktopSidebar) hides this component entirely anyway.
+  // We only need this state for the "Collapse" button on desktop.
+  const [isOpen, setIsOpen] = useState(true);
 
   const rawRole = user?.role || 'STANDARD'; 
   const normalizedRole = rawRole.toUpperCase(); 
   const BadgeConfig = ROLE_CONFIG[normalizedRole] || ROLE_CONFIG['STANDARD'];
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        prevWidth.current = window.innerWidth;
-        setIsOpen(window.innerWidth >= 1200);
-    }
-    const handleResize = () => {
-        const currWidth = window.innerWidth;
-        if (currWidth === prevWidth.current) return;
-        prevWidth.current = currWidth;
-        if (currWidth >= 640 && currWidth < 1200) setIsOpen(false);
-        else if (currWidth >= 1200) setIsOpen(true);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   const isActive = (path: string) => pathname === path;
 
+  // --- SUB-COMPONENT: Nav Link ---
   const NavLink = ({ href, icon: Icon, label }: { href: string, icon: any, label: string }) => {
     const active = isActive(href);
     return (
       <Link href={href} className={clsx(styles.navItem, active && styles.navItemActive)}>
-        <Icon size={20} className={clsx(active ? "text-white" : "text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]")} />
-        <span className="font-medium text-sm">{label}</span>
+        <Icon size={20} className={clsx(active ? "text-[var(--accent-secondary)]" : "text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]")} />
+        <span className={styles.navLabel}>{label}</span>
       </Link>
     );
   };
 
+  // --- CLOSED STATE (Mini Sidebar Button) ---
   if (!isOpen) {
       return (
           <button onClick={() => setIsOpen(true)} className={styles.menuTrigger} aria-label="Open Menu">
@@ -80,6 +69,7 @@ export function Sidebar({ user }: SidebarProps) {
       );
   }
 
+  // --- OPEN STATE ---
   return (
     <div className={styles.sidebar}>
       
@@ -89,11 +79,11 @@ export function Sidebar({ user }: SidebarProps) {
       </button>
 
       {/* Brand Header */}
-      <div className="mb-6 px-2 flex items-center gap-3 flex-shrink-0">
+      <div className={styles.header}>
         <div className="w-8 h-8 bg-gradient-to-br from-[var(--accent-primary)] to-purple-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white shadow-lg">
           <Mountain size={18} fill="currentColor" />
         </div>
-        <span className="font-bold text-lg tracking-tight text-[var(--text-primary)]">
+        <span className={styles.logoText}>
           PeakeFeeds
         </span>
       </div>
@@ -110,47 +100,52 @@ export function Sidebar({ user }: SidebarProps) {
                             user.username?.[0]?.toUpperCase()
                         )}
                     </div>
-                    <div className={clsx("absolute bottom-0 right-0 w-5 h-5 rounded-full border-[3px] border-[#050505] flex items-center justify-center shadow-sm", BadgeConfig.className)}>
-                        <BadgeConfig.icon size={10} strokeWidth={3} className="text-white" />
+                    
+                    {/* Role Icon Badge */}
+                    <div className={clsx("absolute bottom-0 right-0 w-6 h-6 rounded-full border-[3px] border-[var(--bg-app)] flex items-center justify-center shadow-sm", BadgeConfig.className)}>
+                        <BadgeConfig.icon size={12} strokeWidth={3} className="text-current" />
                     </div>
                 </div>
+                
                 <div className="text-center">
                     <p className="text-sm font-bold text-[var(--text-primary)] truncate max-w-[160px]">@{user.username || 'User'}</p>
-                    <div className={clsx(styles.rolePill, BadgeConfig.className, "mt-1")}>{BadgeConfig.label}</div>
+                    <div className={clsx(styles.rolePill, BadgeConfig.className)}>{BadgeConfig.label}</div>
                 </div>
             </Link>
         ) : (
-            <div className={styles.loginCard}>
+            // Guest Card
+            <div className={styles.userCard}>
                 <div className="flex flex-col items-center text-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-[var(--glass-card)] flex items-center justify-center text-[var(--accent-primary)] mb-1">
+                    <div className="w-10 h-10 rounded-full bg-[var(--glass-card-hover)] flex items-center justify-center text-[var(--accent-primary)] mb-1">
                         <User size={20} />
                     </div>
                     <h3 className="text-sm font-bold text-[var(--text-primary)]">Join the Truth Layer</h3>
                     <p className="text-[10px] text-[var(--text-muted)] leading-tight mb-2">Verify information and earn trust badges.</p>
-                    <Link href="/api/auth/signin" className={styles.loginButton}>Sign In / Sign Up</Link>
+                    <Link href="/api/auth/signin" className="px-4 py-2 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold hover:opacity-90 transition-opacity w-full">
+                        Sign In / Sign Up
+                    </Link>
                 </div>
             </div>
         )}
       </div>
 
-      {/* Navigation Links (REMOVED: flex-1, Wallet) */}
-      <nav className="space-y-1 mb-4">
+      {/* Navigation Links */}
+      <nav className={styles.navContainer}>
         <NavLink href="/home" icon={Home} label="Home" />
         <NavLink href="/discover" icon={Compass} label="Discover" />
         {user && (
            <NavLink href={`/profile/${user.username}`} icon={User} label="Profile" />
-           /* Wallet Link Removed Here */
         )}
       </nav>
 
-      {/* Footer Actions (Moved directly after nav items) */}
-      <div className="space-y-2 pb-6">
-        <div className="flex items-center justify-between px-2 pt-4 border-t border-[var(--glass-border)]">
+      {/* Footer Actions */}
+      <div className={styles.footer}>
+        <div className="flex items-center justify-between">
             <ThemeToggle /> 
             {user ? (
                 <button 
-                  onClick={() => signOut({ callbackUrl: '/' })} // Redirects to home immediately
-                  className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-500 transition-colors"
+                  onClick={() => signOut({ callbackUrl: '/' })} 
+                  className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer"
                 >
                   <LogOut size={16} />
                   <span>Sign Out</span>
@@ -167,4 +162,3 @@ export function Sidebar({ user }: SidebarProps) {
     </div>
   );
 }
-

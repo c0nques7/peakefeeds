@@ -36,6 +36,10 @@ body {
   
   --shadow-glass: 0 8px 30px rgba(124, 58, 237, 0.05);
   --shadow-card: 0 4px 20px rgba(0,0,0,0.05);
+
+  /* 🆕 NEW: Glass Consistency */
+  --blur-light: 12px;  /* For standard cards */
+  --blur-heavy: 40px;  /* For overlays, drawers, and headers */
   
   /* Background Orb Colors (Stronger for visibility on white) */
   --orb-teal: rgba(45, 212, 191, 0.25); 
@@ -44,6 +48,13 @@ body {
   /* Inputs */
   --input-bg: rgba(255, 255, 255, 0.8); 
   --input-border: rgba(124, 58, 237, 0.15);
+
+  /* 🆕 NEW: Layout Variables (The Source of Truth) */
+  --sidebar-width: 240px;
+  --max-feed-width: 1400px; 
+
+  /* 🆕 NEW: Verification Back Face (Light Mode specific) */
+  --bg-verification: linear-gradient(145deg, #f8fafc, #f1f5f9);
 }
 
 /* 🌙 DARK MODE: "Deep Nebula" */
@@ -75,6 +86,9 @@ body {
   /* Inputs */
   --input-bg: rgba(255, 255, 255, 0.05); 
   --input-border: rgba(255, 255, 255, 0.15);
+
+  /* 🆕 NEW: Verification Back Face (Dark Mode specific) */
+  --bg-verification: linear-gradient(145deg, #0a0a0a, #141414);
 }
 
 /* --- 🛡️ GLOBAL ANIMATIONS --- */
@@ -94,4 +108,14 @@ html, body {
   color: var(--text-primary);
   min-height: 100vh;
   transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* --- 🆕 GLOBAL UTILITY CLASSES --- */
+/* Replaces inline styles for headers and panels */
+.glass-panel {
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(var(--blur-heavy));
+  -webkit-backdrop-filter: blur(var(--blur-heavy));
 }

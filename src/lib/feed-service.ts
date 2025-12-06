@@ -1,21 +1,20 @@
 import { prisma } from '@/lib/db';
-import { PostType, ReactionType } from '@prisma/client';
+import { PostType, ReactionType, Prisma } from '@prisma/client';
 
-// 1. Define a Strict Type for the Feed Items
-// This ensures the component knows exactly what fields are available
+// 1. Define FeedPost Type
 export type FeedPost = {
   id: string;
   title: string | null;
   content: string;
-  createdAt: Date;
+  // ✅ FIX: Type is now 'string', not 'Date'
+  createdAt: string; 
   isVerified: boolean;
   contentHash: string | null;
   signature: string | null;
   embedUrl: string | null;
   mediaUrl: string | null;
-  type: PostType; // 👈 Strict Enum
+  type: PostType;
   
-  // Optimized Counts
   likesCount: number;
   dislikesCount: number;
 
@@ -24,8 +23,7 @@ export type FeedPost = {
     username: string | null;
     name: string | null;
     image: string | null;
-    // 🆕 ADDED ROLE TO TYPE
-    role: string | null; // Ideally use UserRole enum if imported, but string works for now
+    role: string | null;
   };
 
   channel: {
@@ -54,82 +52,56 @@ export type FeedPost = {
   currentUserReaction?: ReactionType | null;
 };
 
-// 2. GLOBAL FEED (For /discover)
+// 2. Shared Selection Logic (keeps things consistent)
+const feedSelect = {
+  id: true, title: true, content: true, createdAt: true, isVerified: true,
+  contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
+  likesCount: true, dislikesCount: true,
+  author: { 
+    select: { id: true, username: true, name: true, image: true, role: true } 
+  },
+  channel: { select: { id: true, name: true, slug: true, creatorId: true } },
+  comments: {
+    orderBy: { createdAt: 'asc' as const },
+    select: { id: true, content: true, parentId: true, author: { select: { id: true, username: true } } }
+  },
+  _count: { select: { comments: true } }
+} satisfies Prisma.PostSelect;
+
+// 3. Global Feed
 export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]> {
   const posts = await prisma.post.findMany({
     take: 20,
     orderBy: { createdAt: 'desc' },
     select: {
-      id: true, title: true, content: true, createdAt: true, isVerified: true,
-      contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
-      likesCount: true, dislikesCount: true,
-      
-      // 🛑 FIX: Fetch Role!
-      author: { 
-        select: { 
-            id: true, 
-            username: true, 
-            name: true, 
-            image: true,
-            role: true // 👈 Crucial Addition
-        } 
-      },
-
-      channel: { select: { id: true, name: true, slug: true, creatorId: true } },
-      comments: {
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, content: true, parentId: true, author: { select: { id: true, username: true } } }
-      },
-      likes: currentUserId ? { where: { userId: currentUserId }, select: { type: true } } : false,
-      _count: { select: { comments: true } }
+      ...feedSelect,
+      likes: currentUserId 
+        ? { where: { userId: currentUserId }, select: { type: true } } 
+        : undefined,
     }
   });
 
   return transformPosts(posts);
 }
 
-// 3. PERSONAL FEED (For /home)
+// 4. Personal Feed
 export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
   const posts = await prisma.post.findMany({
     where: {
-      channel: {
-        subscribers: {
-          some: { userId: userId }
-        }
-      }
+      channel: { subscribers: { some: { userId: userId } } }
     },
     take: 20,
     orderBy: { createdAt: 'desc' },
     select: {
-      id: true, title: true, content: true, createdAt: true, isVerified: true,
-      contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
-      likesCount: true, dislikesCount: true,
-      
-      // 🛑 FIX: Fetch Role Here Too!
-      author: { 
-          select: { 
-              id: true, 
-              username: true, 
-              name: true, 
-              image: true,
-              role: true 
-          } 
-      },
-
-      channel: { select: { id: true, name: true, slug: true, creatorId: true } },
-      comments: {
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, content: true, parentId: true, author: { select: { id: true, username: true } } }
-      },
+      ...feedSelect,
       likes: { where: { userId: userId }, select: { type: true } },
-      _count: { select: { comments: true } }
     }
   });
 
   return transformPosts(posts);
 }
 
-// --- HELPER: Transform Prisma Result to FeedPost ---
+// --- HELPER: Transform & Serialize ---
 function transformPosts(posts: any[]): FeedPost[] {
   return posts.map(post => {
     const userReaction = post.likes?.[0]?.type || null;
@@ -138,7 +110,10 @@ function transformPosts(posts: any[]): FeedPost[] {
       id: post.id,
       title: post.title,
       content: post.content,
-      createdAt: post.createdAt,
+      
+      // ✅ FIX: Convert Date to ISO String
+      createdAt: post.createdAt.toISOString(), 
+
       isVerified: post.isVerified,
       contentHash: post.contentHash,
       signature: post.signature,
@@ -146,13 +121,12 @@ function transformPosts(posts: any[]): FeedPost[] {
       mediaUrl: post.mediaUrl,
       type: post.type as PostType,
 
-      likesCount: post.likesCount,
-      dislikesCount: post.dislikesCount,
+      likesCount: post.likesCount ?? 0,
+      dislikesCount: post.dislikesCount ?? 0,
       
-      // Pass Author with Role
       author: {
           ...post.author,
-          role: post.author.role // Ensure this flows through
+          role: post.author.role ?? 'USER' 
       },
 
       channel: post.channel,
@@ -160,8 +134,8 @@ function transformPosts(posts: any[]): FeedPost[] {
 
       _count: {
         comments: post._count.comments,
-        likes: post.likesCount,
-        dislikes: post.dislikesCount
+        likes: post.likesCount ?? 0,
+        dislikes: post.dislikesCount ?? 0
       },
       currentUserReaction: userReaction as ReactionType | null
     };

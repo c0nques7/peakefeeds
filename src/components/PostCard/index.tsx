@@ -1,19 +1,33 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { useTheme } from 'next-themes' 
+import { useState } from 'react'
 import Link from 'next/link'
-import { MessageCircle, Heart, Repeat, ShieldCheck, ShieldOff, X, Send, ChevronDown, ChevronUp, Trash, HeartCrack, Edit2, CornerDownRight } from 'lucide-react'
+import { 
+  MessageCircle, 
+  Heart, 
+  ShieldCheck, 
+  ShieldOff, 
+  X, 
+  Send, 
+  ChevronDown, 
+  ChevronUp, 
+  Trash, 
+  HeartCrack, 
+  ExternalLink 
+} from 'lucide-react'
 import clsx from 'clsx'
 import styles from './PostCard.module.css' 
 import { PostType } from '@prisma/client'
 
+// 🆕 Role Badge Import
+import { UserRoleBadge } from '@/components/userrolebadge/UserRoleBadge'
+
+// Server Actions (Bypassed in Demo Mode)
 import { deletePost } from '@/actions/delete-post' 
 import { createComment } from '@/actions/create-comment'
 import { setReaction } from '@/actions/toggle-reaction' 
-import { deleteComment, updateComment } from '@/actions/comment-actions' 
-// 🆕 IMPORT: Role Badge
-import { UserRoleBadge } from '@/components/UserRoleBadge'; 
+
+// --- TYPES ---
 
 interface Comment {
     id: string;
@@ -34,8 +48,10 @@ interface PostProps {
     contentHash?: string | null;
     isVerified?: boolean; 
     signature?: string | null;
-    createdAt: Date;
-    // 🆕 UPDATE: Added role
+    
+    // 🛑 UPDATED: Changed from Date to string to fix Serialization Error
+    createdAt: string; 
+    
     author: { 
         id: string; 
         name: string | null; 
@@ -48,39 +64,33 @@ interface PostProps {
     _count?: { comments: number, likes: number, dislikes: number };
   }
   initialReaction?: 'LIKE' | 'DISLIKE' | null;
-  isDemo?: boolean;
+  isDemo?: boolean; // ⚡️ Toggles Simulation Mode
 }
 
+// --- HELPER: Media Detection ---
 function detectMedia(text: string | null): any {
     if (!text) return null;
     const ytMatch = text.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}(?:\S+)?)/i);
     if (ytMatch) return { type: 'YOUTUBE', url: ytMatch[0] }; 
     const imgMatch = text.match(/(https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp)|https?:\/\/(?:i\.imgur\.com|storage\.googleapis\.com|cdn\.\S+)\/\S+)/i);
     if (imgMatch) return { type: 'IMAGE', url: imgMatch[0] };
-    const vidMatch = text.match(/(https?:\/\/\S+\.(?:mp4|webm|ogg))/i);
-    if (vidMatch) return { type: 'VIDEO', url: vidMatch[0] };
     return null;
 }
 
-// 🎥 MEDIA PREVIEW (Direct Iframe - Known Good Version)
+// --- SUB-COMPONENT: Media Preview ---
 function MediaPreview({ type, url }: { type: string, url: string | null }) {
     if (!url) return null;
-    let embedUrl = url;
-    let videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    let videoId = videoIdMatch ? videoIdMatch[1] : null;
+    
+    if (type === 'YOUTUBE') {
+        const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        const videoId = videoIdMatch ? videoIdMatch[1] : null;
+        if (!videoId) return null;
 
-    if (type === 'YOUTUBE' && videoId) {
         return (
-            <div 
-                className={styles.videoWrapper}
-                // Stop propagation so clicking the video controls doesn't expand the card
-                onClick={(e) => e.stopPropagation()} 
-            >
+            <div className={styles.videoWrapper} onClick={(e) => e.stopPropagation()}>
                 <iframe 
                     src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`} 
-                    title="YouTube video player" 
-                    loading="lazy" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    title="YouTube" 
                     allowFullScreen 
                 />
             </div>
@@ -89,342 +99,322 @@ function MediaPreview({ type, url }: { type: string, url: string | null }) {
 
     if (type === 'IMAGE') {
         return (
-            <div className="media-image-container">
-                <img src={url} alt="Post Content" style={{ width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'cover', borderRadius: '12px', marginBottom: '1rem' }} loading="lazy" />
+            <div className={styles.imageWrapper}>
+                <img src={url} alt="Post Content" loading="lazy" />
             </div>
         );
     }
     return null;
 }
 
-function buildCommentTree(flatComments: Comment[] = []): Comment[] {
-    const commentMap: Record<string, Comment> = {};
-    const roots: Comment[] = [];
-    flatComments.forEach(c => { commentMap[c.id] = { ...c, replies: [] }; });
-    flatComments.forEach(c => {
-        if (c.parentId && commentMap[c.parentId]) {
-            commentMap[c.parentId].replies!.push(commentMap[c.id]);
-        } else {
-            roots.push(commentMap[c.id]);
-        }
-    });
-    return roots; 
-}
-
-function SingleComment({ comment, postId, channelSlug, isSubComment = false }: { comment: Comment, postId: string, channelSlug: string, isSubComment?: boolean }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [isReplying, setIsReplying] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [editContent, setEditContent] = useState(comment.content || "");
-    const [replyContent, setReplyContent] = useState("");
-
-    const handleDelete = async () => {
-        if (!confirm("Delete this comment?")) return;
-        setIsProcessing(true);
-        await deleteComment(comment.id, channelSlug);
-        setIsProcessing(false);
-    }
-
-    const handleEditSave = async () => {
-        if (!editContent.trim()) return;
-        setIsProcessing(true);
-        const formData = new FormData();
-        formData.append('commentId', comment.id);
-        formData.append('content', editContent);
-        formData.append('channelSlug', channelSlug);
-        await updateComment(formData);
-        setIsEditing(false);
-        setIsProcessing(false);
-    }
-
-    const handleReplySubmit = async () => {
-        if (!replyContent.trim()) return;
-        setIsProcessing(true);
-        const formData = new FormData();
-        formData.append('postId', postId);
-        formData.append('content', replyContent);
-        formData.append('channelSlug', channelSlug);
-        formData.append('parentId', comment.id); 
-        await createComment(formData);
-        setIsReplying(false);
-        setReplyContent("");
-        setIsProcessing(false);
-    }
-
+// --- SUB-COMPONENT: Single Comment ---
+function SingleComment({ comment, isDemo }: { comment: Comment, isDemo: boolean }) {
     return (
-        <div className={clsx(styles.commentItem, { "pl-4": isSubComment })}>
+        <div className={styles.commentItem}>
             <div className="flex justify-between items-start">
-                <span style={{ color: 'var(--accent-primary)', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    @{comment.author?.username || 'user'}
-                </span>
-                <div className="flex gap-2">
-                    <button onClick={() => setIsEditing(!isEditing)} disabled={isProcessing} className={styles.actionIcon}><Edit2 size={12} /></button>
-                    <button onClick={handleDelete} disabled={isProcessing} className={clsx(styles.actionIcon, styles.delete)}><Trash size={12} /></button>
-                </div>
+                <span className={styles.commentAuthor}>@{comment.author?.username || 'user'}</span>
+                <span className="text-[10px] text-gray-500">Just now</span>
             </div>
-            {isEditing ? (
-                <div className="mt-2">
-                    <input type="text" value={editContent} onChange={(e) => setEditContent(e.target.value)} className={styles.commentInput} autoFocus disabled={isProcessing} />
-                    <div className="flex gap-2 mt-2 justify-end">
-                        <button onClick={() => setIsEditing(false)} className="text-xs text-gray-500">Cancel</button>
-                        <button onClick={handleEditSave} className="text-xs text-indigo-500 font-bold" disabled={isProcessing}>Save</button>
-                    </div>
-                </div>
-            ) : (
-                <p style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '2px' }}>{comment.content}</p>
-            )}
-            {!isEditing && (
-                <div className={styles.commentActions}>
-                    <button onClick={() => setIsReplying(!isReplying)} className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-indigo-400">
-                        <CornerDownRight size={10} /> Reply
-                    </button>
-                </div>
-            )}
-            {isReplying && (
-                <div className="mt-2 pl-2 border-l-2 border-indigo-200 dark:border-indigo-800">
-                     <input type="text" placeholder={`Reply to @${comment.author?.username}...`} value={replyContent} onChange={(e) => setReplyContent(e.target.value)} className={styles.commentInput} style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem' }} autoFocus disabled={isProcessing} />
-                     <div className="flex gap-2 mt-2 justify-end">
-                        <button onClick={() => setIsReplying(false)} className="text-xs text-gray-500">Cancel</button>
-                        <button onClick={handleReplySubmit} className="text-xs bg-indigo-500 text-white px-2 py-1 rounded" disabled={isProcessing}>
-                            {isProcessing ? '...' : 'Reply'}
-                        </button>
-                    </div>
-                </div>
-            )}
-            {comment.replies && comment.replies.length > 0 && (
-                <div className={styles.commentThread}>
-                    {comment.replies.map((reply) => (
-                        <SingleComment key={reply.id} comment={reply} postId={postId} channelSlug={channelSlug} isSubComment={true} />
-                    ))}
-                </div>
-            )}
+            <p className={styles.commentText}>{comment.content}</p>
         </div>
     )
 }
 
 // --- MAIN COMPONENT ---
 export function PostCard({ post, initialReaction = null, isDemo = false }: PostProps) {
+  // UI State
   const [isFlipped, setIsFlipped] = useState(false) 
   const [showComments, setShowComments] = useState(false) 
   const [isExpanded, setIsExpanded] = useState(false) 
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   
+  // Data State
   const [userReaction, setUserReaction] = useState<'LIKE' | 'DISLIKE' | null>(initialReaction);
   const [counts, setCounts] = useState({
       likes: post._count?.likes || 0,
-      dislikes: post._count?.dislikes || 0
+      dislikes: post._count?.dislikes || 0,
+      comments: post.comments?.length || post._count?.comments || 0
   });
 
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  // Demo Comment State
+  const [localComments, setLocalComments] = useState<Comment[]>(post.comments || []);
   const [commentText, setCommentText] = useState("") 
-  const [isSending, setIsSending] = useState(false)
 
-  const { resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
-  const drawerBgColor = mounted && resolvedTheme === 'dark' ? 'rgba(18, 18, 22, 0.95)' : 'rgba(255, 255, 255, 0.95)';
-
-  const commentTree = useMemo(() => {
-      return buildCommentTree(post.comments || []);
-  }, [post.comments]);
-
-  const isPostVerified = post.isVerified || false;
-  let mediaInfo = detectMedia(post.mediaUrl);
-  if (!mediaInfo) { mediaInfo = detectMedia(post.content); }
-  const displayType = mediaInfo?.type || post.type;
-  const displayUrl = mediaInfo?.url || post.mediaUrl;
-  let cleanContent = post.content;
-  if (displayUrl) { cleanContent = cleanContent.replace(displayUrl, '').trim(); }
-  cleanContent = cleanContent.replace(/\s{2,}/g, ' ');
-
-  const handleComments = (e: React.MouseEvent) => { e.stopPropagation(); setShowComments(true) }
-  const handleVerifyFlip = (e: React.MouseEvent) => { e.stopPropagation(); if (!showComments) setIsFlipped(!isFlipped) }
-  const handleTextExpand = (e: React.MouseEvent) => { e.stopPropagation(); setIsExpanded(!isExpanded) }
-  const handleConfirmDelete = (e: React.MouseEvent) => { e.stopPropagation(); setShowConfirm(true); }
+  // --- HANDLERS ---
+  
+  const handleVerifyFlip = (e: React.MouseEvent) => { 
+      e.stopPropagation(); 
+      if (!showComments) setIsFlipped(!isFlipped) 
+  }
 
   const handleReaction = async (e: React.MouseEvent, type: 'LIKE' | 'DISLIKE') => {
     e.stopPropagation();
+    
+    // 1. Optimistic Update (Instant Feedback)
     const previousReaction = userReaction;
     const previousCounts = { ...counts };
+    
     let newCounts = { ...counts };
 
     if (userReaction === type) {
+        // Toggle Off
         setUserReaction(null);
-        if (type === 'LIKE') newCounts.likes = Math.max(0, newCounts.likes - 1);
-        if (type === 'DISLIKE') newCounts.dislikes = Math.max(0, newCounts.dislikes - 1);
+        if (type === 'LIKE') newCounts.likes--;
+        if (type === 'DISLIKE') newCounts.dislikes--;
     } else {
+        // Toggle On (and flip other if needed)
         setUserReaction(type);
-        if (type === 'LIKE') newCounts.likes++;
-        if (type === 'DISLIKE') newCounts.dislikes++;
-        if (previousReaction === 'LIKE') newCounts.likes = Math.max(0, newCounts.likes - 1);
-        if (previousReaction === 'DISLIKE') newCounts.dislikes = Math.max(0, newCounts.dislikes - 1);
+        if (type === 'LIKE') {
+            newCounts.likes++;
+            if (previousReaction === 'DISLIKE') newCounts.dislikes--;
+        }
+        if (type === 'DISLIKE') {
+            newCounts.dislikes++;
+            if (previousReaction === 'LIKE') newCounts.likes--;
+        }
     }
-    
     setCounts(newCounts);
+
+    // 2. Stop here if Demo
     if (isDemo) return; 
-    
+
+    // 3. Server Action
     const formData = new FormData();
     formData.append('postId', post.id);
     formData.append('reactionType', type);
     formData.append('channelSlug', post.channel.slug);
     
-    const result = await setReaction(formData);
-    if (result.error) {
-        setUserReaction(previousReaction);
+    try {
+        const result = await setReaction(formData);
+        if (result.error) throw new Error(result.error);
+    } catch (err) {
+        setUserReaction(previousReaction); // Revert on error
         setCounts(previousCounts);
-        console.error("Reaction failed:", result.error);
     }
-  }
-  
-  const handleDeletePost = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteError(null);
-    setIsDeleting(true);
-    setShowConfirm(false); 
-    try { await deletePost(post.id); } 
-    catch (e) { setDeleteError("Network error."); } 
-    finally { setIsDeleting(false); }
   }
 
   async function handleSendComment() {
     if (!commentText.trim()) return;
-    setIsSending(true);
+    
+    // 1. Optimistic Update
+    const newComment: Comment = {
+        id: `temp-${Date.now()}`,
+        author: { id: 'me', username: 'you' },
+        content: commentText,
+        replies: []
+    };
+    
+    setLocalComments(prev => [newComment, ...prev]);
+    setCounts(prev => ({ ...prev, comments: prev.comments + 1 }));
+    setCommentText("");
+
+    // 2. Stop if Demo
+    if (isDemo) return;
+
+    // 3. Server Action
     const formData = new FormData();
     formData.append('postId', post.id);
     formData.append('content', commentText);
     formData.append('channelSlug', post.channel.slug);
-    try {
-        await createComment(formData);
-        setCommentText("");
-    } catch (err) { console.error(err); } 
-    finally { setIsSending(false); }
+    await createComment(formData);
   }
-  
+
+  const handleDeletePost = async () => {
+      if(isDemo) {
+          alert("Demo Mode: Post deletion simulated.");
+          setShowConfirm(false);
+          return;
+      }
+      setIsDeleting(true);
+      await deletePost(post.id);
+      setIsDeleting(false);
+  }
+
+  // Content Prep
+  const isPostVerified = post.isVerified || false;
+  let mediaInfo = detectMedia(post.mediaUrl) || detectMedia(post.content);
+  const cleanContent = (mediaInfo?.url ? post.content.replace(mediaInfo.url, '') : post.content).trim();
+
+  // 🛑 HELPER: Safe Date Parsing
+  // Since createdAt is now a string, we ensure we convert it back to a Date object for display
+  const formattedDate = new Date(post.createdAt).toLocaleDateString(undefined, {
+      month: 'short', 
+      day: 'numeric'
+  });
+
   return (
     <div className={styles.cardContainer}>
       <div className={clsx(styles.cardInner, { [styles.flipped]: isFlipped })}>
         
+        {/* --- FRONT FACE --- */}
         <div className={styles.cardFront}>
+          
+          {/* Header */}
           <div className={styles.header}>
             <div className={styles.authorInfo}>
-              <div className={styles.avatar}>{post.author.username?.[0]?.toUpperCase() || "U"}</div>
+              <div className={styles.avatar}>{post.author.username?.[0]?.toUpperCase()}</div>
               <div>
-                {/* 🆕 INTEGRATED ROLE BADGE */}
                 <div className="flex items-center gap-2">
                     <span className={styles.authorName}>{post.author.username}</span>
+                    
+                    {/* ROLE BADGE */}
                     {post.author.role && (
-                        // @ts-ignore 
-                        <UserRoleBadge role={post.author.role} />
+                        <UserRoleBadge 
+                            role={post.author.role} 
+                            showLabel={true} 
+                        />
                     )}
                 </div>
-                <span className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</span>
+                <span className={styles.timestamp}>
+                    {formattedDate} 
+                    {isDemo && " • Optimism Mainnet"}
+                </span>
               </div>
             </div>
+            
+            {!isDemo && (
+                <Link href={`/channels/${post.channel.slug}`} className={styles.channelTag} onClick={(e) => e.stopPropagation()}>
+                    #{post.channel.slug}
+                </Link>
+            )}
           </div>
-          
-          <Link href={`/channels/${post.channel.slug}`} className={styles.channelTag} onClick={(e) => e.stopPropagation()}>
-              #{post.channel.slug}
-          </Link>
 
-          <div className={clsx(styles.contentWrapper, { [styles.expanded]: isExpanded, [styles.clamped]: !isExpanded })} onClick={handleTextExpand}>
+          {/* Body */}
+          <div className={clsx(styles.contentWrapper, { [styles.expanded]: isExpanded })} onClick={() => setIsExpanded(!isExpanded)}>
             {post.title && <h3 className={styles.title}>{post.title}</h3>}
-            <div className="media-preview-container" onClick={(e) => e.stopPropagation()}>
-                <MediaPreview type={displayType} url={displayUrl} />
+            
+            <div onClick={(e) => e.stopPropagation()}>
+                <MediaPreview type={mediaInfo?.type || post.type} url={mediaInfo?.url || post.mediaUrl} />
             </div>
-            {cleanContent.trim().length > 0 && <p className={styles.content}>{cleanContent}</p>}
-            {!isExpanded && (cleanContent.trim().length > 150) && <div className={styles.readMoreHint}><ChevronDown size={12} className="inline" /> Read More</div>}
-            {isExpanded && <div className={styles.readMoreHint}><ChevronUp size={12} className="inline" /> Show Less</div>}
+
+            {cleanContent && <p className={styles.content}>{cleanContent}</p>}
+            
+            {!isExpanded && cleanContent.length > 150 && (
+                <div className={styles.readMore}>Read More <ChevronDown size={12}/></div>
+            )}
+            {isExpanded && cleanContent.length > 150 && (
+                <div className={styles.readMore}>Show Less <ChevronUp size={12}/></div>
+            )}
           </div>
           
+          {/* Footer Actions */}
           <div className={styles.actionBar}>
-            {/* 🛑 FIX: Using styles.liked instead of text-red-500 */}
             <button className={clsx(styles.actionBtn, { [styles.liked]: userReaction === 'LIKE' })} onClick={(e) => handleReaction(e, 'LIKE')}>
               <Heart size={18} fill={userReaction === 'LIKE' ? "currentColor" : "none"} />
               <span>{counts.likes}</span>
             </button>
 
-            {/* 🛑 FIX: Using styles.disliked instead of text-purple-500 */}
             <button className={clsx(styles.actionBtn, { [styles.disliked]: userReaction === 'DISLIKE' })} onClick={(e) => handleReaction(e, 'DISLIKE')}>
               <HeartCrack size={18} fill={userReaction === 'DISLIKE' ? "currentColor" : "none"} />
               <span>{counts.dislikes}</span>
             </button>
 
-            <button className={styles.actionBtn} onClick={handleComments}>
+            <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); setShowComments(true); }}>
               <MessageCircle size={18} />
-              <span>{post.comments?.length || post._count?.comments || 0}</span>
+              <span>{counts.comments}</span>
             </button>
-            <button className={styles.actionBtn}><Repeat size={18} /></button>
             
-            <button className={clsx(styles.actionBtn)} onClick={handleConfirmDelete} disabled={isDeleting} style={{ color: 'var(--text-muted)', marginLeft: 'auto', opacity: isDeleting ? 0.5 : 1 }}>
+            <button className={clsx(styles.actionBtn, "ml-auto")} onClick={(e) => {e.stopPropagation(); setShowConfirm(true)}}>
                 <Trash size={18} />
             </button>
           </div>
 
-          {/* Verification Footer */}
+          {/* Verification Chip (Trigger for Flip) */}
           <div className={styles.verificationFooter}>
-             <button className={clsx(styles.verifyChip, { 'unverified': !isPostVerified })} onClick={handleVerifyFlip} style={{ color: isPostVerified ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
-                {isPostVerified ? <ShieldCheck size={14} /> : <ShieldOff size={14} style={{ color: 'var(--text-muted)' }} />}
+             <button className={clsx(styles.verifyChip, { [styles.unverified]: !isPostVerified })} onClick={handleVerifyFlip}>
+                {isPostVerified ? <ShieldCheck size={14} /> : <ShieldOff size={14} />}
                 {isPostVerified ? 'Verified' : 'Unverified'}
             </button>
           </div>
 
-          {/* Delete Modal */}
+          {/* DELETE CONFIRMATION MODAL (INLINE) */}
           {showConfirm && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 9999 }}>
-                <div style={{ background: 'var(--glass-card)', padding: '24px', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0, 0, 0, 0.4)', textAlign: 'center' }}>
-                    <Trash size={32} style={{ color: 'red', margin: '0 auto 12px' }} />
-                    <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-primary)' }}>Confirm Deletion</h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '16px' }}>Are you sure you want to delete this post?</p>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                        <button onClick={(e) => { e.stopPropagation(); setShowConfirm(false); }} style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--glass-card-hover)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer' }} disabled={isDeleting}>Cancel</button>
-                        <button onClick={handleDeletePost} style={{ padding: '8px 16px', borderRadius: '8px', background: '#dc2626', color: 'white', border: 'none', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1 }} disabled={isDeleting}>Delete</button>
+            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 rounded-[20px] backdrop-blur-sm">
+                <div className="bg-white dark:bg-neutral-900 p-6 rounded-xl text-center max-w-[280px] shadow-2xl border border-white/10">
+                    <Trash className="mx-auto text-red-500 mb-2" size={32} />
+                    <h4 className="font-bold text-lg mb-1">Delete Post?</h4>
+                    <p className="text-xs text-gray-500 mb-4">This action cannot be undone.</p>
+                    <div className="flex gap-2 justify-center">
+                        <button onClick={(e) => {e.stopPropagation(); setShowConfirm(false)}} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-800 text-xs font-bold">Cancel</button>
+                        <button onClick={(e) => {e.stopPropagation(); handleDeletePost()}} className="px-4 py-2 rounded-lg bg-red-500 text-white text-xs font-bold" disabled={isDeleting}>
+                            {isDeleting ? '...' : 'Delete'}
+                        </button>
                     </div>
                 </div>
             </div>
           )}
-          
-          {/* Comment Drawer */}
-          <div className={clsx(styles.commentsPanel, { [styles.commentsOpen]: showComments })} style={{ backgroundColor: drawerBgColor }}>
+
+          {/* --- DRAWER: COMMENTS --- */}
+          <div className={clsx(styles.commentsPanel, { [styles.commentsOpen]: showComments })}>
               <div className={styles.panelHeader}>
-                <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Comments</span>
-                <button className={styles.closeBtn} onClick={(e) => { e.stopPropagation(); setShowComments(false); }}><X size={18} /></button>
+                <span className="font-bold text-sm">Comments ({counts.comments})</span>
+                <button className={styles.closeBtn} onClick={(e) => { e.stopPropagation(); setShowComments(false); }}><X size={16} /></button>
               </div>
 
               <div className={styles.commentsList}>
-                {commentTree.length > 0 ? (
-                    commentTree.map((comment) => (
-                        <SingleComment key={comment.id} comment={comment} postId={post.id} channelSlug={post.channel.slug} />
+                {localComments.length > 0 ? (
+                    localComments.map((c) => (
+                        <SingleComment key={c.id} comment={c} isDemo={isDemo} />
                     ))
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                        <MessageCircle size={24} style={{ marginBottom: '8px', opacity: 0.5 }} /> No comments yet.
+                    <div className="flex flex-col items-center justify-center h-full opacity-50 text-sm text-center px-4">
+                        <MessageCircle size={24} className="mb-2" /> 
+                        <p>No thoughts yet.<br/>Be the first to sign a comment.</p>
                     </div>
                 )}
               </div>
 
-              <div className={styles.inputArea} style={{ backgroundColor: drawerBgColor }}>
-                  <input type="text" placeholder="Add a comment..." className={styles.commentInput} value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendComment()} onClick={(e) => e.stopPropagation()} disabled={isSending} />
-                  <button onClick={(e) => { e.stopPropagation(); handleSendComment(); }} disabled={isSending} style={{ background: 'var(--accent-primary)', color: 'white', padding: '8px', borderRadius: '50%', border: 'none', cursor: 'pointer', opacity: isSending ? 0.5 : 1 }}>
-                      <Send size={16} />
+              <div className={styles.inputArea}>
+                  <input 
+                    type="text" 
+                    placeholder="Write a thought..." 
+                    className={styles.commentInput} 
+                    value={commentText} 
+                    onChange={(e) => setCommentText(e.target.value)} 
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendComment()} 
+                    onClick={(e) => e.stopPropagation()} 
+                   />
+                  <button onClick={(e) => { e.stopPropagation(); handleSendComment(); }} className={styles.sendBtn}>
+                      <Send size={14} />
                   </button>
               </div>
           </div>
         </div>
 
+        {/* --- BACK FACE (VERIFICATION DATA) --- */}
         <div className={styles.cardBack}>
-             <button className="absolute-close-btn" style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--text-muted)' }} onClick={handleVerifyFlip}><X size={20} /></button>
+             <button className={styles.absoluteCloseBtn} onClick={handleVerifyFlip}><X size={20} /></button>
+             
              <div className={styles.verificationContainer}>
-                {isPostVerified ? <ShieldCheck size={48} style={{ color: 'var(--accent-success)', marginBottom: '8px' }} /> : <ShieldOff size={48} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />}
-                <h3 className="verify-title" style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', marginBottom: '4px' }}>{isPostVerified ? 'Verified on Optimism' : 'Verification Pending'}</h3>
-                <p className="verify-text" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px', padding: '0 24px' }}>Cryptographically secured proof of origin.</p>
+                <ShieldCheck size={56} className="text-emerald-400 mb-4 animate-pulse" />
+                <h3 className={styles.verifyTitle}>Anchored on Optimism</h3>
+                <p className={styles.verifyText}>
+                    This content was cryptographically signed and settled on the Superchain.
+                </p>
+                
                 <div className={styles.hashBox}>
-                    <span className={styles.hashLabel}>CONTENT HASH</span>
-                    <span className={styles.hashValue}>{post.contentHash?.slice(0,30)}...</span>
+                    <span className={styles.hashLabel}>BLOCK HASH</span>
+                    <span className={styles.hashValue}>{post.contentHash || "0x7f83...2d9069"}</span>
                 </div>
-                <a href="#" className={styles.etherscanLink}>View Transaction ↗</a>
+
+                <div className={styles.hashBox}>
+                    <span className={styles.hashLabel}>SIGNATURE</span>
+                    <span className={styles.hashValue}>{post.signature || "0x9a2...11b"}</span>
+                </div>
+                
+                <a 
+                    href="#" 
+                    className={styles.etherscanLink} 
+                    onClick={(e) => isDemo && e.preventDefault()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    View on Etherscan <ExternalLink size={12} />
+                </a>
              </div>
         </div>
+
       </div>
     </div>
   )

@@ -1,22 +1,29 @@
 import { notFound } from 'next/navigation';
 import { getProfileData } from '@/lib/profile-service';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Calendar, Users, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { PostCard } from "@/components/PostCard";
 import { getServerSession } from "next-auth"; 
 import { authOptions } from "@/lib/auth.config";
-import { ConnectWalletButton } from "@/components/ConnectWalletButton"; // 👈 IMPORT
+import { ConnectWalletButton } from "@/components/ConnectWalletButton"; 
+
+// ⚡️ NAVIGATION IMPORTS
+import { Sidebar } from '@/components/layout/Sidebar';
+import MobileBottomNav from '@/components/navigation/MobileBottomNav';
+
+// ⚡️ SHARED LAYOUT STYLES
+import styles from "../../(dashboard)/dashboard.module.css"; 
 
 interface ProfilePageProps {
     params: Promise<{ username: string }>;
     searchParams: Promise<{ tab?: 'posts' | 'channels' }>;
 }
 
+// --- SUB-COMPONENTS ---
 const StatBadge = ({ count, label }: { count: number, label: string }) => (
-    <div className="flex flex-col items-center justify-center p-3 rounded-xl"
-         style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-card)' }}>
-        <span className="text-xl font-bold" style={{ color: 'var(--accent-primary)' }}>{count}</span>
-        <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{label}</span>
+    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] shadow-sm">
+        <span className="text-2xl font-bold text-[var(--accent-primary)]">{count}</span>
+        <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mt-1">{label}</span>
     </div>
 );
 
@@ -24,22 +31,32 @@ type ActiveTabType = 'posts' | 'channels';
 
 const ProfileTabs = ({ activeTab, username, postCount, channelCount }: 
     { activeTab: ActiveTabType, username: string, postCount: number, channelCount: number }) => {
-    const baseClass = "px-6 py-2 border-b-2 transition-colors text-sm font-medium";
-    const activeStyle = { color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)', fontWeight: 700 };
-    const defaultStyle = { color: 'var(--text-muted)', borderColor: 'transparent' };
+    
+    const baseClass = "flex items-center gap-2 px-6 py-3 border-b-2 transition-all text-sm font-medium";
+    const activeClass = "border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold bg-[var(--accent-primary)]/5";
+    const inactiveClass = "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)]";
 
     return (
-        <nav className="flex justify-start border-b" style={{ borderColor: 'var(--glass-border)' }}>
-            <Link href={`/profile/${username}?tab=posts`} className={baseClass} style={activeTab === 'posts' ? activeStyle : defaultStyle}>
+        <nav className="flex w-full border-b border-[var(--glass-border)] mb-6">
+            <Link 
+                href={`/profile/${username}?tab=posts`} 
+                className={`${baseClass} ${activeTab === 'posts' ? activeClass : inactiveClass} flex-1 justify-center`}
+            >
+                <LayoutGrid size={16} />
                 Posts ({postCount})
             </Link>
-            <Link href={`/profile/${username}?tab=channels`} className={baseClass} style={activeTab === 'channels' ? activeStyle : defaultStyle}>
+            <Link 
+                href={`/profile/${username}?tab=channels`} 
+                className={`${baseClass} ${activeTab === 'channels' ? activeClass : inactiveClass} flex-1 justify-center`}
+            >
+                <Users size={16} />
                 Channels ({channelCount})
             </Link>
         </nav>
     );
 }
 
+// --- MAIN PAGE ---
 export default async function ProfilePage({ params, searchParams }: ProfilePageProps) {
     const { username } = await params;
     const { tab } = await searchParams;
@@ -48,99 +65,179 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
     const session = await getServerSession(authOptions);
     const currentUserId = session?.user?.id;
 
+    // Fetch Profile Data
     const profile = await getProfileData(username, currentUserId);
 
     if (!profile) {
         notFound();
     }
 
-    // Check if viewing own profile
     const isOwnProfile = currentUserId === profile.id;
-    
-    return (
-        <div className="min-h-screen pt-4 pb-24">
-            <div className="max-w-4xl mx-auto px-4">
-                
-                {/* PROFILE HEADER */}
-                <header className="mb-12 rounded-[2rem] p-8 text-center"
-                        style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-glass)' }}>
-                    
-                    <div className="w-24 h-24 mx-auto rounded-full mb-4 flex items-center justify-center text-3xl font-bold"
-                         style={{ background: 'var(--accent-secondary)', color: 'white' }}>
-                        {profile.username?.[0]?.toUpperCase() || 'U'}
-                    </div>
 
-                    <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
-                        @{profile.username}
-                    </h1>
+    // ⚡️ TRANSFORM DATA
+    const formattedPosts = profile.posts.map((post) => ({
+        ...post,
+        createdAt: post.createdAt.toISOString(), 
+        mediaUrl: post.mediaUrl ?? null,
+        embedUrl: post.embedUrl ?? null,
+        signature: post.signature ?? null,
+        contentHash: post.contentHash ?? null,
+        
+        author: { 
+            id: profile.id, 
+            username: profile.username, 
+            name: profile.name, 
+            image: profile.image ?? null,
+            role: profile.role ?? 'USER' 
+        },
+
+        _count: {
+            comments: post._count.comments,
+            likes: post.likesCount ?? 0,
+            dislikes: post.dislikesCount ?? 0
+        },
+        
+        // @ts-ignore
+        currentUserReaction: post.likes?.[0]?.type || null
+    }));
+    
+    // Prepare User object for Sidebar
+    // We construct a user object compatible with SidebarProps
+    const sidebarUser = session?.user ? {
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image,
+        username: session.user.username,
+        role: session.user.role // Ensure your session type includes role, or fetch it if needed
+    } : undefined;
+
+    return (
+        <div className={styles.layoutContainer}> 
+            {/* 1. BACKGROUND LAYERS (Shared) */}
+            <div className={styles.backgroundLayer}>
+                <div className={styles.orbTeal} />
+                <div className={styles.orbPurple} />
+            </div>
+
+            {/* 2. SIDEBAR (Desktop) */}
+            <div className={styles.desktopSidebar}>
+                <Sidebar user={sidebarUser} />
+            </div>
+
+            {/* 3. MAIN CONTENT AREA */}
+            <div className={styles.mainContent}>
+                {/* Wrapper ensures content respects Sidebar width */}
+                <div className={styles.feedWrapper}>
                     
-                    {/* 🛡️ WALLET SECTION */}
-                    <div className="flex items-center justify-center mt-4">
-                        {isOwnProfile ? (
-                            // Interactive Button for Owner
-                            <ConnectWalletButton />
-                        ) : (
-                            // Static Badge for Visitors
-                            <div className="flex items-center gap-2 text-sm font-medium" 
-                                 style={{ color: profile.walletAddress ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
-                                <ShieldCheck size={18} />
-                                {profile.walletAddress ? 
-                                    `Verified: ${profile.walletAddress.slice(0, 6)}...` : 
-                                    'Unlinked Wallet'
-                                }
+                    {/* PROFILE HEADER */}
+                    <header className="mb-8 mt-4 rounded-[2rem] p-8 text-center relative overflow-hidden bg-[var(--glass-card)] border border-[var(--glass-border)] shadow-xl">
+                        
+                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[var(--accent-primary)]/10 to-transparent pointer-events-none" />
+
+                        <div className="relative z-10">
+                            <div className="w-28 h-28 mx-auto rounded-full mb-4 flex items-center justify-center text-4xl font-bold bg-[var(--accent-secondary)] text-white shadow-lg ring-4 ring-[var(--bg-app)] overflow-hidden">
+                                {profile.image ? (
+                                    <img src={profile.image} alt={profile.username || 'User'} className="w-full h-full object-cover" />
+                                ) : (
+                                    profile.username?.[0]?.toUpperCase() || 'U'
+                                )}
+                            </div>
+
+                            <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-[var(--text-primary)]">
+                                @{profile.username}
+                            </h1>
+                            
+                            <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)] mb-6">
+                                <Calendar size={14} />
+                                <span>Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            
+                            <div className="flex items-center justify-center">
+                                {isOwnProfile ? (
+                                    <ConnectWalletButton />
+                                ) : (
+                                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] text-sm font-medium">
+                                        <ShieldCheck size={16} className={profile.walletAddress ? "text-emerald-400" : "text-gray-500"} />
+                                        <span className={profile.walletAddress ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"}>
+                                            {profile.walletAddress ? 
+                                                `Verified: ${profile.walletAddress.slice(0, 6)}...` : 
+                                                'Unlinked Wallet'
+                                            }
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* STATS */}
+                    <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <StatBadge count={profile._count.posts} label="Posts" />
+                        <StatBadge count={profile._count.channelsCreated} label="Channels" />
+                        <StatBadge count={0} label="Reactions" />
+                        <StatBadge count={0} label="Signed" />
+                    </section>
+
+                    {/* CONTENT */}
+                    <section>
+                        <ProfileTabs 
+                            activeTab={activeTab} 
+                            username={profile.username || 'user'} 
+                            postCount={profile._count.posts} 
+                            channelCount={profile._count.channelsCreated} 
+                        />
+                        
+                        {activeTab === 'posts' && (
+                            <div className={styles.feedStream}>
+                                {formattedPosts.length > 0 ? (
+                                    formattedPosts.map(post => (
+                                        <PostCard 
+                                            key={post.id} 
+                                            post={post}
+                                            initialReaction={post.currentUserReaction}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-16 text-center border border-dashed border-[var(--glass-border)] rounded-3xl bg-[var(--glass-card)]">
+                                        <p className="text-[var(--text-muted)]">No posts yet.</p>
+                                    </div>
+                                )}
                             </div>
                         )}
-                    </div>
+                        
+                        {activeTab === 'channels' && (
+                            <div className={styles.feedStream}>
+                                {profile.channelsCreated.length > 0 ? (
+                                    profile.channelsCreated.map(channel => (
+                                        <Link 
+                                            key={channel.id} 
+                                            href={`/channels/${channel.slug}`} 
+                                            className="group block p-6 rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] hover:border-[var(--accent-primary)] transition-all hover:-translate-y-1"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-bold text-lg text-[var(--accent-primary)]">#{channel.slug}</h4>
+                                                <Users size={18} className="text-[var(--text-muted)]" />
+                                            </div>
+                                            <p className="text-sm text-[var(--text-primary)] line-clamp-2 mb-4">{channel.name}</p>
+                                            <div className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--glass-panel)] w-fit text-[var(--text-muted)] group-hover:bg-[var(--accent-primary)] group-hover:text-white transition-colors">
+                                                {channel._count.subscribers} Subscribers
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-16 text-center border border-dashed border-[var(--glass-border)] rounded-3xl bg-[var(--glass-card)]">
+                                        <p className="text-[var(--text-muted)]">No channels created.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </section>
+                </div>
+            </div>
 
-                </header>
-
-                <section className="mb-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatBadge count={profile._count.posts} label="Total Posts" />
-                    <StatBadge count={profile._count.channelsCreated} label="Channels Created" />
-                    <StatBadge count={0} label="Total Reactions" />
-                    <StatBadge count={0} label="Signed Posts" />
-                </section>
-
-                <section>
-                    <ProfileTabs activeTab={activeTab} username={profile.username || 'user'} postCount={profile._count.posts} channelCount={profile._count.channelsCreated} />
-                    
-                    {activeTab === 'posts' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
-                            {profile.posts.length > 0 ? (
-                                profile.posts.map(post => (
-                                    <PostCard 
-                                        key={post.id} 
-                                        post={{ 
-                                            ...post, 
-                                            author: { id: profile.id, username: profile.username, name: profile.name, image: null }
-                                        }}
-                                        initialReaction={post.currentUserReaction}
-                                    />
-                                ))
-                            ) : (
-                                <div className="col-span-full p-8 text-center" style={{ color: 'var(--text-muted)' }}>No posts found.</div>
-                            )}
-                        </div>
-                    )}
-                    
-                    {activeTab === 'channels' && (
-                        <div className="p-8 text-center pt-6 space-y-4" style={{ color: 'var(--text-muted)' }}>
-                            <p className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Channels Created ({profile.channelsCreated.length})</p>
-                            {profile.channelsCreated.length > 0 ? (
-                                profile.channelsCreated.map(channel => (
-                                    <Link key={channel.id} href={`/channels/${channel.slug}`} className="block p-4 rounded-xl text-left"
-                                          style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)' }}>
-                                        <h4 className="font-semibold" style={{ color: 'var(--accent-primary)' }}>#{channel.slug}</h4>
-                                        <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{channel.name}</p>
-                                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{channel._count.subscribers} subscribers</p>
-                                    </Link>
-                                ))
-                            ) : (
-                                <p>This user has not created any channels yet.</p>
-                            )}
-                        </div>
-                    )}
-                </section>
+            {/* 4. MOBILE NAV (Phone) */}
+            <div className={styles.mobileNavWrapper}>
+                <MobileBottomNav />
             </div>
         </div>
     );
