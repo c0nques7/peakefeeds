@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@walletconnect/ethereum-providers': false,
+      '@walletconnect/ethereum-provider': false,
       '@react-native-async-storage/async-storage': false,
       'pino-pretty': false,
     };
