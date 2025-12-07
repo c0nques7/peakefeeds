@@ -3,10 +3,13 @@
 import { useState, Suspense } from "react"
 import ThemeLogo from "@/components/ThemeLogo" 
 import styles from "./landing.module.css"
-import { Hexagon, Layers, ShieldCheck, Mail, Check, AlertCircle } from "lucide-react"
+import { Hexagon, Layers, ShieldCheck, Mail, Check, AlertCircle, Copy } from "lucide-react"
 import { PostCard } from "@/components/PostCard"
 import { subscribeToWaitlist } from "@/actions/subscribe-waitlist"
 import { useSearchParams } from "next/navigation"
+
+// 🟢 UPDATED: Developer Wallet Address
+const DEV_WALLET = "0x6714a4e8ba4f584f1ad3b242d34628cd6d146f98"; 
 
 // --- 1. CLIENT FORM COMPONENT ---
 function WaitlistForm() {
@@ -71,21 +74,47 @@ function WaitlistForm() {
     );
 }
 
+// --- 2. DONATION COMPONENT (NEW) ---
+function DonationFooter() {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(DEV_WALLET);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="mt-8 flex flex-col items-center gap-2">
+            <p className="text-sm text-[var(--text-muted)] font-medium">
+                Donate to the Developer here
+            </p>
+            <button 
+                onClick={handleCopy}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] hover:bg-[var(--glass-card-hover)] transition-all group cursor-pointer"
+            >
+                <span className="font-mono text-xs text-[var(--accent-primary)] break-all sm:break-normal">
+                    {DEV_WALLET}
+                </span>
+                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-[var(--text-muted)] group-hover:text-white" />}
+            </button>
+            {copied && <span className="text-[10px] text-emerald-400 animate-in fade-in">Address Copied!</span>}
+        </div>
+    );
+}
+
 export default function LandingPage() {
 
-  // --- 2. MOCK DATA (UPDATED WITH ROLE) ---
-  // --- 2. MOCK DATA (FIXED) ---
+  // --- 3. MOCK DATA ---
   const demoPost = {
     id: "demo-hero-1",
     title: "The algorithm is broken.",
     content: "You are looking at a verified thought. It wasn't curated by a black box. It was cryptographically signed on Optimism and anchored to Ethereum. This is what clarity looks like. #TheTruthLayer",
-    
-    // ✅ FIX: Convert Date to ISO String to match PostCard type
+
     createdAt: new Date().toISOString(),
-    
-    type: "TEXT" as const, // Ensure this matches your Prisma PostType enum string
+
+    type: "TEXT" as const, 
     mediaUrl: null,
-    // mediaHash: null, // You can remove this if PostCard doesn't use it, or keep it if it's optional
     embedUrl: null, 
     contentHash: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069", 
     isVerified: true, 
@@ -95,7 +124,8 @@ export default function LandingPage() {
         name: "PeakeFeeds", 
         username: "peake_official",
         image: null,
-        role: "BUSINESS" 
+        role: "BUSINESS",
+        walletAddress: DEV_WALLET 
     },
     channel: { 
         id: "official-channel-id",
@@ -212,6 +242,9 @@ export default function LandingPage() {
         <p className={styles.footerText}>
           Built on <span className={styles.footerHighlight}>Next.js</span> • Powered by <span className={styles.footerHighlightRed}>Ethereum</span> and <span className={styles.footerHighlightRed}>Optimism</span>
         </p>
+        
+        {/* 🟢 NEW: Donation Call to Action */}
+        <DonationFooter />
       </footer>
     </div>
   )
