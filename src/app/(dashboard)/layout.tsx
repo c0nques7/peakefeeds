@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
-import { Sidebar } from "@/components/Sidebar"; // Adjusted path to match component
+import { Sidebar } from "@/components/layout/Sidebar"; // Adjusted path to match component
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
-import styles from "../home/dashboard.module.css"; // Pointing to your main CSS module
+import styles from "../(dashboard)/dashboard.module.css"; // Pointing to your main CSS module
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);

@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  
+  turbopack: {},
   // 1. WEBPACK CONFIG (Keeps your build working)
   webpack: (config) => {
     config.resolve.alias = {

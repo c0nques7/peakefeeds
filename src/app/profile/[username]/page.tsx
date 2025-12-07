@@ -9,7 +9,7 @@ import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { SearchBar } from "@/components/SearchBar"; // Keep SearchBar here
 
 // Shared Layout Styles
-import styles from "../../home/dashboard.module.css"; 
+import styles from "../../(dashboard)/dashboard.module.css"; 
 
 interface ProfilePageProps {
     params: Promise<{ username: string }>;

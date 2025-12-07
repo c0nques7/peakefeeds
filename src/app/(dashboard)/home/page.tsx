@@ -1,10 +1,11 @@
-import { getPersonalFeed } from "@/lib/feed-service";
+// 1. Import the type definition
+import { getPersonalFeed, type FeedPost } from "@/lib/feed-service"; 
 import { PostCard } from "@/components/PostCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import Link from "next/link";
 import { SearchBar } from "@/components/SearchBar"; 
-import styles from "./dashboard.module.css";
+import styles from "../../(dashboard)/dashboard.module.css";
 
 export default async function PersonalFeed() {
   const session = await getServerSession(authOptions);
@@ -26,7 +27,9 @@ export default async function PersonalFeed() {
     );
   }
 
-  let posts = [];
+  // ⚡️ FIX: Explicitly type the array so TypeScript knows what to expect
+  let posts: FeedPost[] = [];
+  
   try {
     posts = await getPersonalFeed(currentUserId);
   } catch (error) {

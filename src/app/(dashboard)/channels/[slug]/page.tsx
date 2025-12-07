@@ -8,7 +8,7 @@ import { SubscribeButton } from "@/components/SubscribeButton";
 import { SearchBar } from "@/components/SearchBar"; 
 
 // ⚡️ SHARED LAYOUT STYLES
-import styles from "../../home/dashboard.module.css"; 
+import styles from "../../../(dashboard)/dashboard.module.css"; 
 
 interface ChannelPageProps {
   params: Promise<{ slug: string }>;
