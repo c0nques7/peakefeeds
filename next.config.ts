@@ -2,14 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  reactCompiler: true, // Keep this if you are using the experimental compiler
+  reactCompiler: true,
   
-  // ⚡️ RE-ADDED: Essential for fixing the "@metamask/sdk" build error.
-  // This is used during 'next build' (Webpack) even if you use '--turbo' for dev.
+  // 1. WEBPACK CONFIG (Keeps your build working)
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@walletconnect/ethereum-provider': false,
       '@react-native-async-storage/async-storage': false,
       'pino-pretty': false,
     };
@@ -22,10 +20,10 @@ const nextConfig: NextConfig = {
     return config;
   },
 
+  // 2. HEADERS (Security)
   async headers() {
     return [
       {
-        // Applies to all pages
         source: '/:path*',
         headers: [
           {
@@ -39,7 +37,19 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
-  }
+  },
+
+  // 3. ⚡️ REWRITES (The Magic Alias)
+  async rewrites() {
+    return [
+      {
+        // When user visits /c/anything...
+        source: '/c/:slug*',
+        // ...serve them /channels/anything
+        destination: '/channels/:slug*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
