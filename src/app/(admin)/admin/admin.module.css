@@ -1,0 +1,95 @@
+/* src/app/(admin)/admin.module.css */
+
+/* --- 1. ADMIN LAYOUT --- */
+.adminContainer {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden; /* Prevent body scroll, we scroll main */
+}
+
+/* Hardened Glass Sidebar */
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  background: rgba(10, 10, 15, 0.85); /* Darker, more solid than feed */
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.mainContent {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 2rem;
+  z-index: 10;
+}
+
+/* --- 2. ADMIN COMPONENTS --- */
+
+/* High-Density Data Card (Hardened Glass) */
+.glassPanel {
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  overflow: hidden; /* For tables */
+}
+
+/* Table Styles */
+.tableHeader {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--glass-border);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.tableRow {
+  border-bottom: 1px solid var(--glass-border);
+  transition: background 0.2s;
+}
+
+.tableRow:hover {
+  background: var(--glass-card-hover);
+}
+
+/* Status Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.badgeGreen { background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2); }
+.badgeRed   { background: rgba(239, 68, 68, 0.1);  color: #f87171; border-color: rgba(239, 68, 68, 0.2); }
+.badgeBlue  { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.2); }
+.badgeGold  { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-color: rgba(245, 158, 11, 0.2); }
+
+/* --- 3. BACKGROUND EFFECTS (Subtler for Admin) --- */
+.orbAdmin {
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, var(--orb-purple) 0%, rgba(0,0,0,0) 70%);
+  filter: blur(120px);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
