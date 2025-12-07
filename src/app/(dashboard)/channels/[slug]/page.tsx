@@ -5,10 +5,10 @@ import { authOptions } from "@/lib/auth.config";
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm"; 
 import { SubscribeButton } from "@/components/SubscribeButton";
+import { SearchBar } from "@/components/SearchBar"; 
 
-// ⚡️ IMPORT THE SHARED LAYOUT STYLES
-// Make sure this path points to your actual CSS file location
-import styles from "@/app/(dashboard)/dashboard.module.css"; 
+// ⚡️ SHARED LAYOUT STYLES
+import styles from "../../home/dashboard.module.css"; 
 
 interface ChannelPageProps {
   params: Promise<{ slug: string }>;
@@ -25,15 +25,13 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     select: {
       id: true, name: true, description: true, slug: true, creatorId: true,
       _count: { select: { subscribers: true } },
-
-      // Check subscription status
+      
       subscribers: {
         where: { userId: currentUserId },
         select: { userId: true }, 
         take: 1, 
       },
 
-      // Fetch Posts
       posts: {
         orderBy: { createdAt: 'desc' },
         select: {
@@ -42,9 +40,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
             likesCount: true, dislikesCount: true,
             
             author: { 
-                select: { 
-                    id: true, name: true, username: true, image: true, role: true 
-                } 
+                select: { id: true, name: true, username: true, image: true, role: true } 
             },
             channel: { select: { id: true, name: true, slug: true, creatorId: true } },
             comments: {
@@ -69,17 +65,14 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     notFound();
   }
 
-  // 2. Data Transformation (Fixes Date & Nulls)
+  // 2. Transform Data (Fix Dates & Nulls)
   const formattedPosts = channel.posts.map((post) => {
       // @ts-ignore
       const userReaction = post.likes?.[0]?.type || null;
       
       return {
           ...post,
-          // ⚡️ FIX: Convert Date to String for Client Component
           createdAt: post.createdAt.toISOString(),
-          
-          // ⚡️ FIX: Handle Nulls safely
           mediaUrl: post.mediaUrl ?? null,
           embedUrl: post.embedUrl ?? null,
           signature: post.signature ?? null,
@@ -103,12 +96,16 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const isCreator = channel.creatorId === currentUserId;
 
   return (
-    // ⚡️ FIX: Use standard wrapper for Sidebar offset & Layout
     <div className={styles.feedWrapper}>
       
+      {/* 🔍 SEARCH BAR */}
+      <div className="mb-6 w-full pt-4 relative z-20">
+        <SearchBar />
+      </div>
+      
       {/* CHANNEL HEADER */}
-      <div className="mb-10 relative z-10 pt-4"> 
-        <div className="backdrop-blur-xl rounded-[2rem] p-8 text-center shadow-xl border border-[var(--glass-border)] bg-[var(--glass-card)]">
+      <div className="mb-10 relative z-10"> 
+        <div className="backdrop-blur-xl rounded-[2rem] p-8 text-center shadow-xl border border-[var(--glass-border)] bg-[var(--glass-card)] w-full">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-[var(--text-primary)]">
             {channel.name}
           </h1>
@@ -138,7 +135,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
         </div>
       </div>
 
-      {/* CREATE POST FORM (If Logged In) */}
+      {/* CREATE POST FORM */}
       {currentUserId && (
           <div className="mb-8 rounded-2xl p-4 shadow-lg border border-[var(--glass-border)] bg-[var(--glass-panel)]">
               <CreatePostForm 
@@ -150,7 +147,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           </div>
       )}
 
-      {/* FEED STREAM (Grid) */}
+      {/* FEED STREAM */}
       <div className={styles.feedStream}>
           {formattedPosts.length === 0 ? (
             <div className="col-span-full p-16 border border-dashed border-[var(--glass-border)] rounded-3xl text-center text-[var(--text-muted)] bg-[var(--glass-card)]">
@@ -161,7 +158,6 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
             formattedPosts.map(post => (
                 <PostCard 
                     key={post.id} 
-                    // ⚡️ Types now match perfectly
                     post={post} 
                     initialReaction={post.currentUserReaction}
                 />
