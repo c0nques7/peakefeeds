@@ -1,47 +1,51 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
-import { Sidebar } from "@/components/layout/Sidebar"; 
-import { RightSidebar } from "@/components/layout/RightSidebar"; 
-import { Providers } from "@/components/Providers"; 
+import { Sidebar } from "@/components/Sidebar"; // Adjusted path to match component
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
-import styles from "./dashboard.module.css"; 
+import styles from "../home/dashboard.module.css"; // Pointing to your main CSS module
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  const user = session?.user;
+  
+  // Prepare user data for Sidebar props
+  const user = session?.user ? {
+    name: session.user.name,
+    email: session.user.email,
+    image: session.user.image,
+    username: session.user.username,
+    role: session.user.role 
+  } : undefined;
 
   return (
     <div className={styles.layoutContainer}>
 
-      {/* 1. BACKGROUND LAYER (Fixed & Animated) */}
+      {/* 1. BACKGROUND LAYER (Global) */}
       <div className={styles.backgroundLayer}>
           <div className={styles.orbTeal} />
           <div className={styles.orbPurple} />
       </div>
 
-      {/* 2. LEFT SIDEBAR (Desktop/Tablet Only) */}
-      {/* Hidden on Mobile via styles.desktopSidebar display:none */}
+      {/* 2. LEFT SIDEBAR (Desktop) */}
       <aside className={styles.desktopSidebar}>
         <Sidebar user={user} /> 
       </aside>
 
-      {/* 3. MAIN CONTENT (Scrollable Center) */}
+      {/* 3. MAIN CONTENT */}
       <main className={styles.mainContent}>
-        <div className={styles.feedWrapper}>
-          <Providers>
-            {children}
-          </Providers>
-        </div>
+        {/* Render the specific page content here */}
+        {children}
       </main>
 
-      {/* 4. RIGHT SIDEBAR (Large Desktop Only) */}
-      {/* Our CSS should hide this on Tablet (768px) and show on XL (1280px) */}
+      {/* 4. RIGHT SIDEBAR (Large Desktop) */}
+      {/* Ensure you have a RightSidebar component created, or remove this if not ready */}
       <aside className={styles.rightSidebar}>
-        <RightSidebar />
+         {/* <RightSidebar /> */} 
+         <div className="p-6 text-[var(--text-muted)] text-sm">
+            <p>Trending & Suggestions coming soon.</p>
+         </div>
       </aside>
 
-      {/* 5. BOTTOM NAV (Mobile Only) */}
-      {/* Hidden on Desktop via styles.mobileNavWrapper display:none */}
+      {/* 5. BOTTOM NAV (Mobile) */}
       <div className={styles.mobileNavWrapper}>
         <MobileBottomNav />
       </div>
@@ -49,4 +53,3 @@ export default async function DashboardLayout({ children }: { children: React.Re
     </div>
   );
 }
-
