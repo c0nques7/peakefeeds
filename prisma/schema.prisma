@@ -83,11 +83,11 @@ enum ReportTargetType {
 }
 
 enum PenaltyType {
-  WARNING             // Just a notification
-  STRIKE_1_TIMEOUT    // 24hr mute
-  STRIKE_2_SUSPENSION // 7-day ban
-  PERMANENT_BAN       // Account locked
-  CONTENT_REMOVAL     // Content gone, no strike
+  WARNING               // Just a notification
+  STRIKE_1_TIMEOUT      // 24hr mute
+  STRIKE_2_SUSPENSION   // 7-day ban
+  PERMANENT_BAN         // Account locked
+  CONTENT_REMOVAL       // Content gone, no strike
 }
 
 // --------------------------------------
@@ -95,39 +95,39 @@ enum PenaltyType {
 // --------------------------------------
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  username      String?   @unique
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
+  id              String    @id @default(cuid())
+  name            String?
+  username        String?   @unique
+  email           String?   @unique
+  emailVerified   DateTime?
+  image           String?
+  passwordHash    String?
   
   // 🛡️ Web3 Identity
-  walletAddress String?   @unique
+  walletAddress   String?   @unique
 
   // GLOBAL ROLE
-  role          UserRole  @default(STANDARD)
+  role            UserRole  @default(STANDARD)
 
   // 🛡️ SAFETY & STANDING (The Justice System)
-  strikeCount   Int       @default(0)
-  isBanned      Boolean   @default(false)
-  mutedUntil    DateTime? // If set, user cannot post/comment
+  strikeCount     Int       @default(0)
+  isBanned        Boolean   @default(false)
+  mutedUntil      DateTime? // If set, user cannot post/comment
 
   // BUSINESS MANAGEMENT
-  managerId     String?
-  manager       User?     @relation("BusinessManagement", fields: [managerId], references: [id])
-  managedUsers  User[]    @relation("BusinessManagement")
+  managerId       String?
+  manager         User?     @relation("BusinessManagement", fields: [managerId], references: [id])
+  managedUsers    User[]    @relation("BusinessManagement")
   
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // --- Relations ---
-  accounts      Account[]
-  sessions      Session[]
+  accounts        Account[]
+  sessions        Session[]
 
   // Content Creation
-  channelsCreated Channel[]       @relation("CreatedChannels")
+  channelsCreated Channel[]        @relation("CreatedChannels")
   posts           Post[]
   comments        Comment[]
   
@@ -145,6 +145,10 @@ model User {
   
   // Monetization
   adsWatched      AdView[]
+
+  // 🚀 GROWTH ENGINE (New for Invite System)
+  invitesIssued   InviteCode[] @relation("IssuedInvites")
+  inviteUsed      InviteCode?  @relation("UsedInvite")
 }
 
 model Channel {
@@ -159,7 +163,7 @@ model Channel {
 
   // --- Relations ---
   creatorId   String
-  creator     User            @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
+  creator     User             @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
   
   subscribers Subscription[]
   posts       Post[]
@@ -187,31 +191,31 @@ model Subscription {
 // --------------------------------------
 
 model Post {
-  id            String    @id @default(cuid())
-  title         String?
-  content       String    @db.Text
+  id              String    @id @default(cuid())
+  title           String?
+  content         String    @db.Text
   
   // Media Handling
-  type          PostType  @default(TEXT)
-  mediaUrl      String?
-  embedUrl      String?   
-  mediaHash     String?
+  type            PostType  @default(TEXT)
+  mediaUrl        String?
+  embedUrl        String?   
+  mediaHash       String?
   
   // 🛡️ THE TRUTH LAYER (Verification)
-  isVerified         Boolean   @default(false)
+  isVerified           Boolean   @default(false)
   
   // 1. The Data Integrity
-  contentHash        String?   // SHA256(Content + Salt)
-  salt               String?   // Random pepper for GDPR compliance
-  signature          String?   // User's cryptographic signature
+  contentHash          String?   // SHA256(Content + Salt)
+  salt                 String?   // Random pepper for GDPR compliance
+  signature            String?   // User's cryptographic signature
   
   // 2. The Blockchain Anchor
-  verificationTx     String?   // The Optimism Transaction Hash (0x...)
-  verificationSource String?   // "WALLET" | "HYPELAB" | "GOOGLE" (Who paid gas?)
+  verificationTx       String?   // The Optimism Transaction Hash (0x...)
+  verificationSource   String?   // "WALLET" | "HYPELAB" | "GOOGLE" (Who paid gas?)
 
   // Post Reactions (Cached Counts)
-  likesCount    Int       @default(0)
-  dislikesCount Int       @default(0)
+  likesCount      Int       @default(0)
+  dislikesCount   Int       @default(0)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -244,11 +248,11 @@ model Comment {
 
   // Author
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   // Parent Post
   postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   // Threading
   parentId  String?
@@ -266,17 +270,17 @@ model Reaction {
   type      ReactionType @default(LIKE) 
   
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   
   @@unique([userId, postId])
   @@index([postId])
 }
 
 // --------------------------------------
-// 6. Safety & Moderation (NEW)
+// 6. Safety & Moderation (The Justice System)
 // --------------------------------------
 
 model Report {
@@ -291,17 +295,17 @@ model Report {
 
   // The Reporter
   reporterId String
-  reporter   User   @relation("ReportedBy", fields: [reporterId], references: [id])
+  reporter   User    @relation("ReportedBy", fields: [reporterId], references: [id])
   
   // Sparse Fields (Polymorphic Target)
-  postId     String?
-  post       Post?   @relation(fields: [postId], references: [id], onDelete: SetNull)
+  postId      String?
+  post        Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
 
   reportedProfileId String?
-  reportedProfile   User?   @relation("ProfileReported", fields: [reportedProfileId], references: [id])
+  reportedProfile   User?    @relation("ProfileReported", fields: [reportedProfileId], references: [id])
 
-  channelId  String?
-  channel    Channel? @relation(fields: [channelId], references: [id])
+  channelId   String?
+  channel     Channel? @relation(fields: [channelId], references: [id])
 
   // Resolution
   resolverId String?
@@ -338,7 +342,7 @@ model Penalty {
 }
 
 // --------------------------------------
-// 7. Ad Framework (NEW)
+// 7. Ad Framework (Paused for GTM Phase)
 // --------------------------------------
 
 model AdView {
@@ -358,17 +362,26 @@ model AdView {
 }
 
 // --------------------------------------
-// 8. Marketing & Waitlist
+// 8. Marketing & Waitlist (UPDATED)
 // --------------------------------------
 
+enum WaitlistStatus {
+  PENDING
+  INVITED
+  REGISTERED
+}
+
 model Waitlist {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  joinedAt  DateTime @default(now())
+  id        String         @id @default(cuid())
+  email     String         @unique
+  joinedAt  DateTime       @default(now())
   
-  source    String?  
-  medium    String?  
-  campaign  String?  
+  status    WaitlistStatus @default(PENDING)
+  
+  // Marketing Attribution
+  source    String?   
+  medium    String?   
+  campaign  String?   
 }
 
 // --------------------------------------
@@ -410,3 +423,22 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// --------------------------------------
+// 10. The Invite System (NEW)
+// --------------------------------------
+
+model InviteCode {
+  id        String   @id @default(cuid())
+  code      String   @unique // e.g., "PEAKE-7X92"
+  createdAt DateTime @default(now())
+
+  // The "Velvet Rope" Logic
+  usedAt    DateTime? 
+  
+  // Relations
+  issuerId  String?   // Null = System generated (for Waitlist batches)
+  issuer    User?     @relation("IssuedInvites", fields: [issuerId], references: [id])
+
+  usedById  String?   @unique
+  usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id])
+}

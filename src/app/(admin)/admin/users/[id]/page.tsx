@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 import { UserRoleSelector } from "./_components/role-selector";
 import { BanButton } from "./_components/ban-button";
 import { ResetPasswordButton } from "./_components/reset-password-button";
+// 🟢 Import the new Email Triggers component
+import { EmailTriggers } from "./_components/email-triggers";
+
 import styles from "@/app/(admin)/admin/admin.module.css"; 
-import { ArrowLeft, Shield, AlertTriangle, Calendar, Lock } from "lucide-react";
+import { ArrowLeft, Shield, AlertTriangle, Calendar, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -48,7 +51,11 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
       {/* GRID LAYOUT */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT COLUMN: CONTROLS */}
         <div className="space-y-6">
+          
+          {/* Permissions Card */}
           <div className={styles.glassPanel}>
             <div className="p-4 border-b border-[var(--glass-border)]">
               <h3 className="font-bold text-white flex items-center gap-2">
@@ -62,18 +69,32 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
+          {/* Security & Access Card */}
           <div className={styles.glassPanel}>
             <div className="p-4 border-b border-[var(--glass-border)]">
               <h3 className="font-bold text-white flex items-center gap-2">
                 <Lock size={18} className="text-blue-400" />
-                Security
+                Security & Access
               </h3>
             </div>
-            <div className="p-4 space-y-2">
-               <ResetPasswordButton userId={user.id} />
+            <div className="p-4 space-y-4">
+               {/* 1. Password Reset */}
+               <div className="space-y-2">
+                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Recovery</label>
+                 <ResetPasswordButton userId={user.id} />
+               </div>
+
+               {/* 2. 🟢 Manual Email Triggers (Debug Tools) */}
+               <div className="space-y-2 pt-2 border-t border-[var(--glass-border)]">
+                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase flex items-center gap-2">
+                    <Mail size={12} /> Email Tools (Debug)
+                 </label>
+                 <EmailTriggers userId={user.id} />
+               </div>
             </div>
           </div>
 
+          {/* Risk Profile Card */}
           <div className={styles.glassPanel}>
             <div className="p-4 border-b border-[var(--glass-border)]">
               <h3 className="font-bold text-white flex items-center gap-2">
@@ -94,6 +115,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
+        {/* RIGHT COLUMN: HISTORY */}
         <div className={`lg:col-span-2 ${styles.glassPanel}`}>
           <div className="p-4 border-b border-[var(--glass-border)]">
             <h3 className="font-bold text-white flex items-center gap-2">

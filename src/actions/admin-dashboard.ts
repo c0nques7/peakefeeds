@@ -4,41 +4,36 @@ import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/rbac";
 
 export async function getAdminDashboardStats() {
-  // 1. Gatekeeper: Ensure only Admin/Mods can run this query
   await requireStaff();
 
-  // 2. Run independent queries in parallel for performance
+  // Run queries in parallel for speed
   const [
-    pendingReports,
-    totalUsers,
-    bannedUsers,
-    recentSignups
+    waitlistCount,   // DEMAND: People waiting in line
+    totalUsers,      // SUPPLY: Active registered users
+    totalPosts,      // ENGAGEMENT: Content velocity
+    pendingReports   // SAFETY: Work for moderators
   ] = await Promise.all([
-    // Count reports that are PENDING
-    prisma.report.count({ 
+    // 1. Demand
+    prisma.waitlist.count({ 
       where: { status: "PENDING" } 
     }),
     
-    // Count total registered users
+    // 2. Supply
     prisma.user.count(),
     
-    // Count users who are banned
-    prisma.user.count({ 
-      where: { isBanned: true } 
+    // 3. Engagement
+    prisma.post.count(),
+
+    // 4. Safety
+    prisma.report.count({ 
+      where: { status: "PENDING" } 
     }),
-    
-    // Count users created in the last 24 hours
-    prisma.user.count({
-      where: {
-        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      }
-    })
   ]);
 
   return {
-    pendingReports,
+    waitlistCount,
     totalUsers,
-    bannedUsers,
-    recentSignups
+    totalPosts,
+    pendingReports
   };
 }

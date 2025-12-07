@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Search, Filter, Shield } from "lucide-react";
 import styles from "../admin.module.css";
 import { UserRole } from "@prisma/client";
+// 🟢 Import the new Create Button
+import { CreateUserButton } from "./_components/create-user-button"; 
 
 export default async function AdminUsersPage({
   searchParams,
@@ -26,28 +28,36 @@ export default async function AdminUsersPage({
           <p className="text-[var(--text-muted)]">Manage roles, permissions, and bans.</p>
         </div>
 
-        <form className="flex gap-2 w-full md:w-auto">
-          <div className="relative group">
-            <Search className="absolute left-3 top-2.5 text-[var(--text-muted)] group-focus-within:text-[var(--accent-primary)]" size={18} />
-            <input
-              name="q"
-              defaultValue={query}
-              placeholder="Search users..."
-              className="pl-10 pr-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent-primary)] w-full md:w-64 transition-all"
-            />
-          </div>
-          
-          <select 
-            name="role" 
-            defaultValue={role}
-            className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer"
-          >
-            <option value="ALL">All Roles</option>
-            {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
+        {/* Action Area: Create Button + Search Form */}
+        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-stretch md:items-center">
+            
+            {/* 🟢 The New Create Button */}
+            <CreateUserButton />
+            
+            {/* Search & Filter Form */}
+            <form className="flex gap-2 flex-1 md:flex-none">
+              <div className="relative group flex-1 md:flex-none">
+                <Search className="absolute left-3 top-2.5 text-[var(--text-muted)] group-focus-within:text-[var(--accent-primary)]" size={18} />
+                <input
+                  name="q"
+                  defaultValue={query}
+                  placeholder="Search users..."
+                  className="pl-10 pr-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent-primary)] w-full md:w-64 transition-all"
+                />
+              </div>
+              
+              <select 
+                name="role" 
+                defaultValue={role}
+                className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer"
+              >
+                <option value="ALL">All Roles</option>
+                {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
 
-          <button type="submit" className="hidden">Submit</button>
-        </form>
+              <button type="submit" className="hidden">Submit</button>
+            </form>
+        </div>
       </div>
 
       {/* DATA TABLE */}
@@ -65,12 +75,15 @@ export default async function AdminUsersPage({
           <tbody className="divide-y divide-[var(--glass-border)]">
             {users.map((user) => (
               <tr key={user.id} className={styles.tableRow}>
+                {/* Identity */}
                 <td className="p-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-white">@{user.username || "Anon"}</span>
                     <span className="text-xs text-[var(--text-muted)] font-mono">{user.email}</span>
                   </div>
                 </td>
+
+                {/* Role */}
                 <td className="p-4">
                   <span className={`
                     ${styles.badge} 
@@ -82,10 +95,14 @@ export default async function AdminUsersPage({
                     {user.role}
                   </span>
                 </td>
+
+                {/* Stats */}
                 <td className="p-4 text-sm text-[var(--text-muted)]">
                   <div>{user._count.posts} Posts</div>
                   <div className="text-xs opacity-70">Joined {new Date(user.createdAt).toLocaleDateString()}</div>
                 </td>
+
+                {/* Safety Standing */}
                 <td className="p-4">
                   <div className="flex items-center gap-2">
                     {user.isBanned ? (
@@ -105,6 +122,8 @@ export default async function AdminUsersPage({
                     )}
                   </div>
                 </td>
+
+                {/* Actions */}
                 <td className="p-4 text-right">
                   <Link 
                     href={`/admin/users/${user.id}`}
@@ -126,6 +145,7 @@ export default async function AdminUsersPage({
         )}
       </div>
 
+      {/* PAGINATION */}
       <div className="flex justify-between items-center text-sm text-[var(--text-muted)]">
         <span>Page {page} of {totalPages}</span>
         <div className="flex gap-2">
