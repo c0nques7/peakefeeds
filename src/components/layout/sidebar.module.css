@@ -1,26 +1,38 @@
+/* sidebar.module.css */
+
 /* --- CONTAINER (Open State) --- */
 .sidebar {
+  /* 🟢 LAYOUT FIX: Keeps sidebar pinned and prevents pushing content */
+  position: fixed;
+  top: 0;
+  left: 0;
   height: 100vh;
-  
-  /* ⚡️ FIX: Match the dashboard.module.css width (was 220px) */
   width: 240px; 
   
-  /* Use Theme Variable for background so it works in Light/Dark mode */
-  background: var(--glass-card); 
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid var(--glass-border);
+  /* 🟢 READABILITY FIX: 
+     1. Use 'glass-panel' (usually more opaque than card) 
+     2. Increase blur to 40px to smooth out background noise 
+  */
+  background: var(--glass-panel); 
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
   
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
-  z-index: 40;
+  z-index: 100; /* Ensures it sits above main content */
   
-  /* Scroll handling */
   overflow-y: auto; 
   overflow-x: hidden;
-
-  /* 🟢 INTERACTION FIX: Ensure the menu itself captures clicks */
   pointer-events: auto;
+  
+  /* Smooth Slide-in Animation */
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 /* --- RESPONSIVE TRIGGER (Closed State) --- */
@@ -31,20 +43,18 @@
   transform: translateY(-50%);
   z-index: 50;
 
-  /* Size */
   height: 120px;
   width: 42px;
   border-radius: 0 16px 16px 0;
 
-  /* Layout */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
 
-  /* Styling - Updated to use Theme Vars */
-  background: var(--glass-card);
+  /* Use glass-panel here too for consistency */
+  background: var(--glass-panel);
   backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-left: none;
@@ -52,12 +62,11 @@
   color: var(--accent-secondary);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
   pointer-events: auto;
 }
 
 .menuTrigger:hover {
-  transform: translateY(-50%) translateX(4px); /* Slide out slightly */
+  transform: translateY(-50%) translateX(4px);
   background: var(--glass-card-hover);
   color: var(--accent-primary);
 }
@@ -69,7 +78,7 @@
 .menuText {
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  transform: rotate(180deg); /* Reads bottom-to-top */
+  transform: rotate(180deg);
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.15em;
@@ -86,7 +95,7 @@
 
   width: 24px;
   height: 48px;
-  border-radius: 12px 0 0 12px; /* Inverted radius for inside edge */
+  border-radius: 12px 0 0 12px;
 
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
@@ -125,7 +134,7 @@
   color: var(--text-primary);
 }
 
-/* --- USER PROFILE (Top & Centered) --- */
+/* --- USER PROFILE --- */
 .userHeader {
   padding: 0 1rem 1.5rem 1rem;
   border-bottom: 1px solid var(--glass-border);
@@ -140,6 +149,7 @@
   gap: 8px;
   padding: 16px;
   
+  /* Slightly darker background for the card inside the sidebar for contrast */
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
@@ -163,12 +173,13 @@
   margin-top: 4px;
 }
 
-/* Keeping your badge colors is fine, they look specific to your design system */
 .badgeGov { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
 .badgeChecker { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
 .badgeCreator { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); }
 .badgeMod { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
 .badgeBot { background: rgba(113, 113, 122, 0.2); color: #a1a1aa; border: 1px solid rgba(113, 113, 122, 0.4); }
+.badgeBiz { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+.badgeStandard { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4); }
 
 /* --- NAV ITEMS --- */
 .navContainer {

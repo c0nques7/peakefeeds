@@ -1,15 +1,6 @@
-import { requireStaff } from "@/lib/rbac";
-import Link from "next/link";
-import { 
-  ShieldAlert, 
-  Users, 
-  LayoutDashboard, 
-  LogOut,
-  Activity
-} from "lucide-react";
-import styles from "@/app/(admin)/admin/admin.module.css";
-
-// Assuming global CSS variables (bg-app, text-primary) are available via globals.css
+import { requireStaff } from "@/lib/rbac"; // Preserving your existing import path
+import { AdminSidebar } from "./_components/admin-sidebar"; // The new Client Component
+import styles from "@/app/(admin)/admin/admin.module.css"; // Preserving your existing CSS path
 
 export default async function AdminLayout({
   children,
@@ -24,47 +15,19 @@ export default async function AdminLayout({
       {/* Background Orb */}
       <div className={styles.orbAdmin} />
 
-      {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <div className="p-6 border-b border-[var(--glass-border)]">
-          <h1 className="text-xl font-bold tracking-wider flex items-center gap-2">
-            <ShieldAlert className="text-[var(--accent-primary)]" />
-            <span className="text-white">PEAKE<span className="text-[var(--accent-primary)]">ADMIN</span></span>
-          </h1>
-        </div>
+      {/* 🟢 UPDATED: We replaced the static <aside> with the responsive 
+        <AdminSidebar /> component. This handles the mobile hamburger 
+        menu state which requires 'use client'.
+      */}
+      <AdminSidebar />
 
-        <nav className="flex-1 p-4 space-y-1">
-          <NavLink href="/admin" icon={<LayoutDashboard size={18} />} label="Mission Control" />
-          <NavLink href="/admin/moderation" icon={<Activity size={18} />} label="Moderation Queue" />
-          <NavLink href="/admin/users" icon={<Users size={18} />} label="User Registry" />
-        </nav>
-
-        <div className="p-4 border-t border-[var(--glass-border)]">
-          <Link href="/home" className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--glass-card-hover)] transition-all text-sm font-medium">
-            <LogOut size={18} />
-            <span>Exit to App</span>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className={styles.mainContent}>
-        <div className="max-w-7xl mx-auto">
+        {/* Added padding-bottom to prevent content from being hidden behind mobile navs if needed */}
+        <div className="max-w-7xl mx-auto pb-20 md:pb-0">
           {children}
         </div>
       </main>
     </div>
-  );
-}
-
-function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  return (
-    <Link 
-      href={href} 
-      className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--glass-card-hover)] hover:translate-x-1 transition-all"
-    >
-      {icon}
-      <span className="font-medium text-sm">{label}</span>
-    </Link>
   );
 }
