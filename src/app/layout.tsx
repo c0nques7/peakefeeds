@@ -5,7 +5,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Web3Provider } from "@/components/providers/Web3Provider"; 
 import { Providers } from "@/components/Providers"; 
-import ClientLayout from '@/components/ClientLayout' 
+import ClientLayout from '@/components/layout/ClientLayout' 
 
 const inter = Inter({ subsets: ['latin'] })
 

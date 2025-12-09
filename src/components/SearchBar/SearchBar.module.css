@@ -106,10 +106,15 @@
     border-radius: 1rem;
     text-decoration: none;
     transition: background 0.2s;
+    cursor: pointer;
 }
 
-.resultItem:hover {
+/* 🆕 Unified Active State (Hover OR Keyboard Selection) */
+.resultItem:hover,
+.resultItem.active {
     background: var(--glass-card-hover);
+    /* Optional: Add a subtle glow border for keyboard focus */
+    box-shadow: inset 0 0 0 1px var(--glass-border); 
 }
 
 .channelName {
@@ -140,9 +145,12 @@
     background: rgba(45, 212, 191, 0.05); 
     border: 1px dashed var(--glass-border);
     transition: all 0.2s;
+    cursor: pointer;
 }
 
-.createLink:hover {
+/* 🆕 Create Link Active State */
+.createLink:hover,
+.createLink.active {
     background: rgba(45, 212, 191, 0.1);
     border-color: var(--accent-primary);
     transform: scale(1.01);

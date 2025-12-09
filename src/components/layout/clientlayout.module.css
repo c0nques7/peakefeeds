@@ -1,0 +1,29 @@
+/* src/components/ClientLayout.module.css */
+
+.toggleWrapper {
+  /* GLOBAL POSITIONING */
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 1000; /* Ensure it sits above landing page nav and mobile elements */
+  
+  /* 📱 MOBILE DEFAULT ( < 640px ) */
+  /* By default, this div is visible (display: block). 
+     This ensures it shows on ALL pages for mobile users. */
+}
+
+/* 💻 DESKTOP LOGIC ( >= 640px ) */
+@media (min-width: 640px) {
+  
+  /* 1. Default Desktop State: HIDDEN */
+  /* We hide this because the Sidebar is now visible on /home, /profile, etc. */
+  .toggleWrapper {
+    display: none;
+  }
+
+  /* 2. Exception: Landing Page */
+  /* If the 'landingMode' class is applied via React, we force it to show. */
+  .toggleWrapper.landingMode {
+    display: block;
+  }
+}

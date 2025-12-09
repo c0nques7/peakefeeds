@@ -36,10 +36,6 @@ const ROLE_CONFIG: Record<string, { icon: any, className: string, label: string 
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  
-  // ⚡️ SIMPLIFIED: Default to true. 
-  // On mobile, the parent CSS (.desktopSidebar) hides this component entirely anyway.
-  // We only need this state for the "Collapse" button on desktop.
   const [isOpen, setIsOpen] = useState(true);
 
   const rawRole = user?.role || 'STANDARD'; 
@@ -59,13 +55,19 @@ export function Sidebar({ user }: SidebarProps) {
     );
   };
 
-  // --- CLOSED STATE (Mini Sidebar Button) ---
+  // --- CLOSED STATE (Mini Sidebar + Toggle) ---
   if (!isOpen) {
       return (
-          <button onClick={() => setIsOpen(true)} className={styles.menuTrigger} aria-label="Open Menu">
-              <Menu size={20} strokeWidth={2.5} />
-              <span className={styles.menuText}>MENU</span>
-          </button>
+          <div className={styles.collapsedControls}>
+              <button onClick={() => setIsOpen(true)} className={styles.menuTrigger} aria-label="Open Menu">
+                  <Menu size={20} strokeWidth={2.5} />
+                  <span className={styles.menuText}>MENU</span>
+              </button>
+              
+              <div className={styles.collapsedThemeWrapper}>
+                 <ThemeToggle />
+              </div>
+          </div>
       );
   }
 
@@ -73,7 +75,6 @@ export function Sidebar({ user }: SidebarProps) {
   return (
     <div className={styles.sidebar}>
       
-      {/* Collapse Handle */}
       <button onClick={() => setIsOpen(false)} className={styles.collapseHandle} aria-label="Collapse Menu">
         <ChevronLeft size={16} />
       </button>
@@ -83,9 +84,7 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="w-8 h-8 bg-gradient-to-br from-[var(--accent-primary)] to-purple-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white shadow-lg">
           <Mountain size={18} fill="currentColor" />
         </div>
-        <span className={styles.logoText}>
-          PeakeFeeds
-        </span>
+        <span className={styles.logoText}>PeakeFeeds</span>
       </div>
 
       {/* User / Guest Card */}
@@ -100,20 +99,16 @@ export function Sidebar({ user }: SidebarProps) {
                             user.username?.[0]?.toUpperCase()
                         )}
                     </div>
-                    
-                    {/* Role Icon Badge */}
                     <div className={clsx("absolute bottom-0 right-0 w-6 h-6 rounded-full border-[3px] border-[var(--bg-app)] flex items-center justify-center shadow-sm", BadgeConfig.className)}>
                         <BadgeConfig.icon size={12} strokeWidth={3} className="text-current" />
                     </div>
                 </div>
-                
                 <div className="text-center">
                     <p className="text-sm font-bold text-[var(--text-primary)] truncate max-w-[160px]">@{user.username || 'User'}</p>
                     <div className={clsx(styles.rolePill, BadgeConfig.className)}>{BadgeConfig.label}</div>
                 </div>
             </Link>
         ) : (
-            // Guest Card
             <div className={styles.userCard}>
                 <div className="flex flex-col items-center text-center gap-2">
                     <div className="w-10 h-10 rounded-full bg-[var(--glass-card-hover)] flex items-center justify-center text-[var(--accent-primary)] mb-1">
@@ -138,10 +133,12 @@ export function Sidebar({ user }: SidebarProps) {
         )}
       </nav>
 
-      {/* Footer Actions */}
+      {/* Footer Actions (Restored ThemeToggle) */}
       <div className={styles.footer}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
+            {/* 🟢 RESTORED: Theme Toggle */}
             <ThemeToggle /> 
+
             {user ? (
                 <button 
                   onClick={() => signOut({ callbackUrl: '/' })} 
