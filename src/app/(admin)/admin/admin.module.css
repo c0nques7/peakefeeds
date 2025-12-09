@@ -7,44 +7,93 @@
   background-color: var(--bg-app);
   color: var(--text-primary);
   position: relative;
-  overflow: hidden; /* Prevent body scroll, we scroll main */
+  overflow: hidden; 
+  flex-direction: column; /* Mobile Default: Stack vertical */
 }
 
-/* Hardened Glass Sidebar */
+/* --- RESPONSIVE SIDEBAR --- */
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
   width: 260px;
-  height: 100vh;
-  background: rgba(10, 10, 15, 0.85); /* Darker, more solid than feed */
+  background: rgba(10, 10, 15, 0.95); /* Opaque on mobile so you can't see content behind */
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
+  z-index: 100;
+  transition: transform 0.3s ease-in-out;
+  
+  /* Mobile: Hidden by default (Slide out to the left) */
+  transform: translateX(-100%);
+}
+
+.sidebarOpen {
+  transform: translateX(0); /* Slide in */
+}
+
+/* The Top Bar visible only on Mobile */
+.mobileHeader {
   display: flex;
-  flex-direction: column;
-  z-index: 50;
-  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--glass-card);
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 40;
 }
 
 .mainContent {
   flex: 1;
-  height: 100vh;
-  overflow-y: auto;
-  position: relative;
-  padding: 2rem;
+  height: 100vh; /* Fixed height container */
+  overflow-y: auto; /* Scroll INSIDE this container */
+  padding: 1rem;
   z-index: 10;
+  padding-top: 2rem;
 }
 
-/* --- 2. ADMIN COMPONENTS --- */
+/* --- 2. TABLE RESPONSIVENESS --- */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto; /* Enable horizontal scroll */
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+  border-radius: 1rem;
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+}
 
-/* High-Density Data Card (Hardened Glass) */
+/* --- 3. DESKTOP OVERRIDES (≥ 768px) --- */
+@media (min-width: 768px) {
+  .adminContainer {
+    flex-direction: row; /* Side-by-side */
+  }
+
+  .sidebar {
+    position: relative;
+    transform: translateX(0) !important; /* Always visible */
+    background: rgba(10, 10, 15, 0.5); /* Semi-transparent */
+    height: 100vh;
+  }
+
+  .mobileHeader {
+    display: none; /* Hide toggle button on desktop */
+  }
+  
+  .mainContent {
+    padding: 2rem;
+  }
+}
+
+/* --- 4. SHARED COMPONENTS --- */
 .glassPanel {
   background: var(--glass-card);
   border: 1px solid var(--glass-border);
   border-radius: 1rem;
   backdrop-filter: blur(12px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  overflow: hidden; /* For tables */
+  overflow: hidden; 
 }
 
-/* Table Styles */
 .tableHeader {
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid var(--glass-border);
@@ -64,7 +113,6 @@
   background: var(--glass-card-hover);
 }
 
-/* Status Badges */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -80,7 +128,6 @@
 .badgeBlue  { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.2); }
 .badgeGold  { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-color: rgba(245, 158, 11, 0.2); }
 
-/* --- 3. BACKGROUND EFFECTS (Subtler for Admin) --- */
 .orbAdmin {
   position: absolute;
   top: -20%;

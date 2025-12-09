@@ -29,14 +29,16 @@ export default async function AdminUsersPage({
         </div>
 
         {/* Action Area: Create Button + Search Form */}
-        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-stretch md:items-center">
+        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-stretch md:items-end">
             
             {/* 🟢 The New Create Button */}
-            <CreateUserButton />
+            <div className="w-full md:w-auto">
+               <CreateUserButton />
+            </div>
             
-            {/* Search & Filter Form */}
-            <form className="flex gap-2 flex-1 md:flex-none">
-              <div className="relative group flex-1 md:flex-none">
+            {/* Search & Filter Form (Responsive Layout from Script A) */}
+            <form className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+              <div className="relative group w-full md:w-auto">
                 <Search className="absolute left-3 top-2.5 text-[var(--text-muted)] group-focus-within:text-[var(--accent-primary)]" size={18} />
                 <input
                   name="q"
@@ -49,7 +51,7 @@ export default async function AdminUsersPage({
               <select 
                 name="role" 
                 defaultValue={role}
-                className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer"
+                className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer w-full md:w-auto"
               >
                 <option value="ALL">All Roles</option>
                 {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
@@ -60,14 +62,15 @@ export default async function AdminUsersPage({
         </div>
       </div>
 
-      {/* DATA TABLE */}
-      <div className={styles.glassPanel}>
-        <table className="w-full text-left border-collapse">
+      {/* DATA TABLE (Horizontal Scroll Wrapper from Script A) */}
+      <div className={styles.tableWrapper}>
+        <table className="w-full text-left border-collapse min-w-[800px] md:min-w-0">
           <thead>
             <tr>
               <th className={`p-4 ${styles.tableHeader}`}>User Identity</th>
               <th className={`p-4 ${styles.tableHeader}`}>Role</th>
-              <th className={`p-4 ${styles.tableHeader}`}>Stats</th>
+              {/* Hide Stats on Mobile to save space */}
+              <th className={`p-4 ${styles.tableHeader} hidden md:table-cell`}>Stats</th>
               <th className={`p-4 ${styles.tableHeader}`}>Safety Standing</th>
               <th className={`p-4 ${styles.tableHeader} text-right`}>Actions</th>
             </tr>
@@ -96,8 +99,8 @@ export default async function AdminUsersPage({
                   </span>
                 </td>
 
-                {/* Stats */}
-                <td className="p-4 text-sm text-[var(--text-muted)]">
+                {/* Stats (Hidden on Mobile) */}
+                <td className="p-4 text-sm text-[var(--text-muted)] hidden md:table-cell">
                   <div>{user._count.posts} Posts</div>
                   <div className="text-xs opacity-70">Joined {new Date(user.createdAt).toLocaleDateString()}</div>
                 </td>
