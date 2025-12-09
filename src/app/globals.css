@@ -48,6 +48,11 @@ body {
   /* Inputs */
   --input-bg: rgba(255, 255, 255, 0.8); 
   --input-border: rgba(124, 58, 237, 0.15);
+  
+  /* 🆕 NEW: Layout Constants */
+  /* This controls the minimum width of a card before it wraps to the next line */
+  --feed-card-min-width: 240px; 
+  --feed-gap: 1.5rem;
 
   /* 🆕 NEW: Layout Variables (The Source of Truth) */
   --sidebar-width: 240px;

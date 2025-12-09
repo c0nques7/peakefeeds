@@ -4,8 +4,8 @@
 .postsGrid {
   /* Inherit the responsive grid structure */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(var(--feed-card-min-width), 1fr));
+  gap: var(--feed-gap);
   width: 100%;
 }
 

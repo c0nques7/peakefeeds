@@ -139,8 +139,8 @@
   .feedStream {
     display: grid;
     /* 240px min-width ensures 2 columns fit on Fold (~700px width) */
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(var(--feed-card-min-width), 1fr));
+    gap: var(--feed-gap);
     width: 100%;
   }
 }
