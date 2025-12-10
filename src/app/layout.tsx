@@ -12,6 +12,9 @@ import { SupportProvider } from '@/context/SupportContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  // 🆕 FIXED: Set the base URL for all relative links
+  metadataBase: new URL('https://peakefeeds.com'), 
+
   title: {
     template: '%s | Peake Feeds',
     default: 'Peake Feeds | The Truth Layer', 
@@ -19,12 +22,12 @@ export const metadata: Metadata = {
   description: 'The first social platform verified by Ethereum. Join the migration to clarity.',
   openGraph: {
     title: 'Peake Feeds | The Truth Layer',
-    description: 'The first social platform verified by Ethereum.. Join the migration to clarity.',
+    description: 'The first social platform verified by Ethereum. Join the migration to clarity.',
     url: 'https://peakefeeds.com',
     siteName: 'Peake Feeds',
     images: [
       {
-        url: '/peake-logo-dark.png', 
+        url: '/peake-logo-dark.png', // Next.js now knows to prepend metadataBase here
         width: 1200,
         height: 630,
         alt: 'Peake Feeds - The Truth Layer',

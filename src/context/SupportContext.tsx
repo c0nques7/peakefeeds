@@ -31,7 +31,7 @@ interface SupportContextType {
   addMessageToTicket: (ticketId: string, msg: ChatMessage) => Promise<void>;
   resolveTicket: (ticketId: string) => Promise<void>;
   setTicketSeverity: (ticketId: string, level: number) => Promise<void>;
-  refreshTickets: () => void; // Manual refresh button
+  refreshTickets: () => void;
 }
 
 const SupportContext = createContext<SupportContextType | undefined>(undefined)
@@ -40,7 +40,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // 1. LOAD TICKETS FROM DB
+  // 1. FETCH TICKETS
   const fetchTickets = async () => {
     const res = await getTicketsAction()
     if (res.success && res.data) {
@@ -49,35 +49,35 @@ export function SupportProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }
 
-  // Initial Load
+  // 2. POLLING & INITIAL LOAD
   useEffect(() => {
+    // Initial fetch
     fetchTickets()
+
+    // Poll DB every 5 seconds to get updates (User messages appearing for Admin, and vice versa)
+    const interval = setInterval(() => {
+        fetchTickets()
+    }, 5000)
+
+    return () => clearInterval(interval)
   }, [])
 
-  // 2. ACTIONS (Updated to be Async)
+  // 3. ACTIONS
   
   const createTicket = async (initialMsg: string) => {
-    // Optimistic UI Update
-    const tempId = Math.random().toString(36).substr(2, 9)
-    const newTicket: Ticket = {
-      id: tempId, 
-      status: 'open', severity: 0, unreadAdminCount: 0,
-      messages: [{ sender: 'user', text: initialMsg, timestamp: Date.now() }]
-    }
-    setTickets(prev => [newTicket, ...prev])
-
     // DB Call
     const res = await createTicketAction(initialMsg)
+    
     if (res.success && res.ticketId) {
-       // Replace temp ID with real ID
-       setTickets(prev => prev.map(t => t.id === tempId ? { ...t, id: res.ticketId! } : t))
+       // We force a refresh immediately to ensure state is in sync
+       await fetchTickets()
        return res.ticketId
     }
     return null
   }
 
   const addMessageToTicket = async (ticketId: string, msg: ChatMessage) => {
-    // Optimistic Update
+    // Optimistic Update (makes it feel instant)
     setTickets(prev => prev.map(t => {
       if (t.id !== ticketId) return t
       return { ...t, messages: [...t.messages, msg] }
@@ -85,6 +85,9 @@ export function SupportProvider({ children }: { children: ReactNode }) {
 
     // DB Call
     await addMessageAction(ticketId, msg.text, msg.sender)
+    
+    // Background refresh to confirm consistency
+    fetchTickets()
   }
 
   const resolveTicket = async (ticketId: string) => {
