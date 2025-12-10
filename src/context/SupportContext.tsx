@@ -1,6 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, ReactNode } from 'react'
+import useSWR from 'swr' // Smart polling library
 import { 
   getTicketsAction, 
   createTicketAction, 
@@ -37,67 +38,79 @@ interface SupportContextType {
 const SupportContext = createContext<SupportContextType | undefined>(undefined)
 
 export function SupportProvider({ children }: { children: ReactNode }) {
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  // 1. FETCH TICKETS
-  const fetchTickets = async () => {
-    const res = await getTicketsAction()
-    if (res.success && res.data) {
-      setTickets(res.data)
-    }
-    setIsLoading(false)
-  }
-
-  // 2. POLLING & INITIAL LOAD
-  useEffect(() => {
-    // Initial fetch
-    fetchTickets()
-
-    // Poll DB every 5 seconds to get updates (User messages appearing for Admin, and vice versa)
-    const interval = setInterval(() => {
-        fetchTickets()
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  // 3. ACTIONS
   
+  // 1. SMART POLLING WITH SWR
+  // Key: 'support-tickets' (unique identifier for caching)
+  // Fetcher: Your server action
+  const { data: tickets = [], mutate, isLoading } = useSWR(
+    'support-tickets', 
+    async () => {
+      const res = await getTicketsAction()
+      return res.success && res.data ? res.data : []
+    },
+    {
+      refreshInterval: 10000, // Poll every 10 seconds (Safe for DB)
+      revalidateOnFocus: true, // Instant refresh when admin tabs back in
+      dedupingInterval: 2000,  // Prevent duplicate calls
+      fallbackData: [],        // Initial safe state
+    }
+  )
+
+  // 2. ACTIONS (With Optimistic UI Updates)
+
   const createTicket = async (initialMsg: string) => {
-    // DB Call
+    // Call DB
     const res = await createTicketAction(initialMsg)
     
     if (res.success && res.ticketId) {
-       // We force a refresh immediately to ensure state is in sync
-       await fetchTickets()
+       // Force re-fetch immediately to see the new ticket
+       await mutate() 
        return res.ticketId
     }
     return null
   }
 
   const addMessageToTicket = async (ticketId: string, msg: ChatMessage) => {
-    // Optimistic Update (makes it feel instant)
-    setTickets(prev => prev.map(t => {
-      if (t.id !== ticketId) return t
-      return { ...t, messages: [...t.messages, msg] }
-    }))
+    // OPTIMISTIC UPDATE: Update UI immediately before DB confirms
+    await mutate(async (currentTickets: Ticket[] = []) => {
+        return currentTickets.map(t => {
+            if (t.id !== ticketId) return t;
+            return { 
+                ...t, 
+                messages: [...t.messages, msg],
+                // If user sent it, locally increment badge so they see it instantly
+                unreadAdminCount: msg.sender === 'user' ? t.unreadAdminCount + 1 : 0
+            };
+        });
+    }, false); // false = do NOT revalidate (fetch DB) yet, wait for our explicit call
 
-    // DB Call
+    // Call DB
     await addMessageAction(ticketId, msg.text, msg.sender)
     
-    // Background refresh to confirm consistency
-    fetchTickets()
+    // Re-fetch to confirm sync with server
+    mutate() 
   }
 
   const resolveTicket = async (ticketId: string) => {
-    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status: 'resolved' } : t))
+    // Optimistic
+    mutate(
+      (current) => current?.map(t => t.id === ticketId ? { ...t, status: 'resolved' } : t), 
+      false
+    )
+    
     await resolveTicketAction(ticketId)
+    mutate() // Re-sync
   }
 
   const setTicketSeverity = async (ticketId: string, level: number) => {
-    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, severity: level } : t))
+    // Optimistic
+    mutate(
+      (current) => current?.map(t => t.id === ticketId ? { ...t, severity: level } : t), 
+      false
+    )
+
     await updateSeverityAction(ticketId, level)
+    mutate() // Re-sync
   }
 
   return (
@@ -108,7 +121,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
       addMessageToTicket, 
       resolveTicket, 
       setTicketSeverity,
-      refreshTickets: fetchTickets 
+      refreshTickets: () => mutate() // Allows manual refresh button
     }}>
       {children}
     </SupportContext.Provider>

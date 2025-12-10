@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image' // 🆕 Added for Link Preview
 import { 
   MessageCircle, 
   Heart, 
@@ -19,10 +20,10 @@ import clsx from 'clsx'
 import styles from './PostCard.module.css' 
 import { PostType } from '@prisma/client'
 
-// 🆕 Role Badge Import
+// Role Badge
 import { UserRoleBadge } from '@/components/userrolebadge/UserRoleBadge'
 
-// Server Actions (Bypassed in Demo Mode)
+// Server Actions
 import { deletePost } from '@/actions/delete-post' 
 import { createComment } from '@/actions/create-comment'
 import { setReaction } from '@/actions/toggle-reaction' 
@@ -49,7 +50,12 @@ interface PostProps {
     isVerified?: boolean; 
     signature?: string | null;
     
-    // 🛑 UPDATED: Changed from Date to string to fix Serialization Error
+    // 🆕 NEW: Link Metadata Fields
+    linkTitle?: string | null;
+    linkDescription?: string | null;
+    linkImage?: string | null;
+    linkDomain?: string | null;
+
     createdAt: string; 
     
     author: { 
@@ -64,7 +70,7 @@ interface PostProps {
     _count?: { comments: number, likes: number, dislikes: number };
   }
   initialReaction?: 'LIKE' | 'DISLIKE' | null;
-  isDemo?: boolean; // ⚡️ Toggles Simulation Mode
+  isDemo?: boolean; 
 }
 
 // --- HELPER: Media Detection ---
@@ -137,7 +143,6 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
       comments: post.comments?.length || post._count?.comments || 0
   });
 
-  // Demo Comment State
   const [localComments, setLocalComments] = useState<Comment[]>(post.comments || []);
   const [commentText, setCommentText] = useState("") 
 
@@ -151,19 +156,15 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
   const handleReaction = async (e: React.MouseEvent, type: 'LIKE' | 'DISLIKE') => {
     e.stopPropagation();
     
-    // 1. Optimistic Update (Instant Feedback)
     const previousReaction = userReaction;
     const previousCounts = { ...counts };
-    
     let newCounts = { ...counts };
 
     if (userReaction === type) {
-        // Toggle Off
         setUserReaction(null);
         if (type === 'LIKE') newCounts.likes--;
         if (type === 'DISLIKE') newCounts.dislikes--;
     } else {
-        // Toggle On (and flip other if needed)
         setUserReaction(type);
         if (type === 'LIKE') {
             newCounts.likes++;
@@ -176,10 +177,8 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
     }
     setCounts(newCounts);
 
-    // 2. Stop here if Demo
     if (isDemo) return; 
 
-    // 3. Server Action
     const formData = new FormData();
     formData.append('postId', post.id);
     formData.append('reactionType', type);
@@ -189,7 +188,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
         const result = await setReaction(formData);
         if (result.error) throw new Error(result.error);
     } catch (err) {
-        setUserReaction(previousReaction); // Revert on error
+        setUserReaction(previousReaction);
         setCounts(previousCounts);
     }
   }
@@ -197,7 +196,6 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
   async function handleSendComment() {
     if (!commentText.trim()) return;
     
-    // 1. Optimistic Update
     const newComment: Comment = {
         id: `temp-${Date.now()}`,
         author: { id: 'me', username: 'you' },
@@ -209,10 +207,8 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
     setCounts(prev => ({ ...prev, comments: prev.comments + 1 }));
     setCommentText("");
 
-    // 2. Stop if Demo
     if (isDemo) return;
 
-    // 3. Server Action
     const formData = new FormData();
     formData.append('postId', post.id);
     formData.append('content', commentText);
@@ -231,17 +227,18 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
       setIsDeleting(false);
   }
 
-  // Content Prep
+  // --- CONTENT PREP ---
   const isPostVerified = post.isVerified || false;
   let mediaInfo = detectMedia(post.mediaUrl) || detectMedia(post.content);
-  const cleanContent = (mediaInfo?.url ? post.content.replace(mediaInfo.url, '') : post.content).trim();
+  const rawContent = (mediaInfo?.url ? post.content.replace(mediaInfo.url, '') : post.content).trim();
+  const formattedDate = new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
-  // 🛑 HELPER: Safe Date Parsing
-  // Since createdAt is now a string, we ensure we convert it back to a Date object for display
-  const formattedDate = new Date(post.createdAt).toLocaleDateString(undefined, {
-      month: 'short', 
-      day: 'numeric'
-  });
+  // 🆕 TRUNCATION LOGIC (For Long Text)
+  const MAX_LENGTH = 280;
+  const isLongText = rawContent.length > MAX_LENGTH;
+  const displayContent = isExpanded || !isLongText 
+    ? rawContent 
+    : `${rawContent.slice(0, MAX_LENGTH)}...`;
 
   return (
     <div className={styles.cardContainer}>
@@ -257,13 +254,8 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
               <div>
                 <div className="flex items-center gap-2">
                     <span className={styles.authorName}>{post.author.username}</span>
-                    
-                    {/* ROLE BADGE */}
                     {post.author.role && (
-                        <UserRoleBadge 
-                            role={post.author.role} 
-                            showLabel={true} 
-                        />
+                        <UserRoleBadge role={post.author.role} showLabel={true} />
                     )}
                 </div>
                 <span className={styles.timestamp}>
@@ -281,21 +273,74 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
           </div>
 
           {/* Body */}
-          <div className={clsx(styles.contentWrapper, { [styles.expanded]: isExpanded })} onClick={() => setIsExpanded(!isExpanded)}>
+          <div className={styles.contentWrapper}>
             {post.title && <h3 className={styles.title}>{post.title}</h3>}
             
             <div onClick={(e) => e.stopPropagation()}>
                 <MediaPreview type={mediaInfo?.type || post.type} url={mediaInfo?.url || post.mediaUrl} />
             </div>
 
-            {cleanContent && <p className={styles.content}>{cleanContent}</p>}
+            {/* 🆕 TEXT CONTENT (With Read More) */}
+            {rawContent && (
+                <p className={styles.content}>
+                    {displayContent}
+                    {isLongText && !isExpanded && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
+                            className="ml-2 text-[var(--accent-primary)] hover:underline text-xs font-bold cursor-pointer inline-flex items-center gap-0.5"
+                        >
+                            Read More <ChevronDown size={10} />
+                        </button>
+                    )}
+                    {isExpanded && isLongText && (
+                         <button 
+                            onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}
+                            className="ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs font-bold cursor-pointer inline-flex items-center gap-0.5"
+                        >
+                            Show Less <ChevronUp size={10} />
+                        </button>
+                    )}
+                </p>
+            )}
+
+            {/* 🆕 LINK PREVIEW CARD (Visible if post.type is LINK and metadata exists) */}
+            {post.type === 'LINK' && post.linkTitle && (
+                <a 
+                    href={post.mediaUrl || '#'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()} // Prevent card flip
+                    className="block mt-3 group border border-[var(--glass-border)] rounded-xl overflow-hidden bg-black/20 hover:border-[var(--accent-primary)] transition-all"
+                >
+                    {post.linkImage && (
+                        <div className="relative h-48 w-full overflow-hidden bg-gray-900">
+                            <Image 
+                                src={post.linkImage} 
+                                alt={post.linkTitle}
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                unoptimized
+                            />
+                        </div>
+                    )}
+                    <div className="p-3 bg-black/40 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)] flex items-center gap-1">
+                                {post.linkDomain || 'EXTERNAL LINK'} <ExternalLink size={10} />
+                            </span>
+                        </div>
+                        <h4 className="font-bold text-[var(--text-primary)] mb-1 leading-snug group-hover:text-[var(--accent-primary)] transition-colors">
+                            {post.linkTitle}
+                        </h4>
+                        {post.linkDescription && (
+                            <p className="text-xs text-[var(--text-muted)] line-clamp-2 leading-relaxed">
+                                {post.linkDescription}
+                            </p>
+                        )}
+                    </div>
+                </a>
+            )}
             
-            {!isExpanded && cleanContent.length > 150 && (
-                <div className={styles.readMore}>Read More <ChevronDown size={12}/></div>
-            )}
-            {isExpanded && cleanContent.length > 150 && (
-                <div className={styles.readMore}>Show Less <ChevronUp size={12}/></div>
-            )}
           </div>
           
           {/* Footer Actions */}
@@ -328,7 +373,7 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
             </button>
           </div>
 
-          {/* DELETE CONFIRMATION MODAL (INLINE) */}
+          {/* DELETE CONFIRMATION MODAL */}
           {showConfirm && (
             <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 rounded-[20px] backdrop-blur-sm">
                 <div className="bg-white dark:bg-neutral-900 p-6 rounded-xl text-center max-w-[280px] shadow-2xl border border-white/10">
@@ -385,36 +430,23 @@ export function PostCard({ post, initialReaction = null, isDemo = false }: PostP
         {/* --- BACK FACE (VERIFICATION DATA) --- */}
         <div className={styles.cardBack}>
              <button className={styles.absoluteCloseBtn} onClick={handleVerifyFlip}><X size={20} /></button>
-             
              <div className={styles.verificationContainer}>
                 <ShieldCheck size={56} className="text-emerald-400 mb-4 animate-pulse" />
                 <h3 className={styles.verifyTitle}>Anchored on Optimism</h3>
-                <p className={styles.verifyText}>
-                    This content was cryptographically signed and settled on the Superchain.
-                </p>
-                
+                <p className={styles.verifyText}>This content was cryptographically signed and settled on the Superchain.</p>
                 <div className={styles.hashBox}>
                     <span className={styles.hashLabel}>BLOCK HASH</span>
                     <span className={styles.hashValue}>{post.contentHash || "0x7f83...2d9069"}</span>
                 </div>
-
                 <div className={styles.hashBox}>
                     <span className={styles.hashLabel}>SIGNATURE</span>
                     <span className={styles.hashValue}>{post.signature || "0x9a2...11b"}</span>
                 </div>
-                
-                <a 
-                    href="#" 
-                    className={styles.etherscanLink} 
-                    onClick={(e) => isDemo && e.preventDefault()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <a href="#" className={styles.etherscanLink} onClick={(e) => isDemo && e.preventDefault()} target="_blank" rel="noopener noreferrer">
                     View on Etherscan <ExternalLink size={12} />
                 </a>
              </div>
         </div>
-
       </div>
     </div>
   )

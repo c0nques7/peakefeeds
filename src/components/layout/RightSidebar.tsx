@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight, Hash, ShieldCheck } from "lucide-react";
+import styles from "@/app/home/dashboard.module.css"; 
 
 export function RightSidebar() {
   return (
-    <div className="h-full p-6 w-[350px] hidden xl:flex flex-col gap-6 sticky top-0 h-screen overflow-y-auto border-l border-[var(--glass-border)] bg-[var(--glass-panel)] backdrop-blur-md">
+    // 1. Use the CSS Module class for layout (Visibility, Fixed Position, Width)
+    // 2. Use Tailwind for internal styling (Flex col, Padding, Glass effect)
+    <aside className={`${styles.rightSidebar} flex flex-col gap-6 p-6 overflow-y-auto bg-[var(--glass-panel)] backdrop-blur-md`}>
 
        {/* --- BLOCK 1: TRENDING --- */}
        <div className="rounded-2xl p-4 border border-[var(--glass-border)] bg-[var(--glass-card)] shadow-sm">
@@ -59,7 +62,6 @@ export function RightSidebar() {
           <span className="hover:underline cursor-pointer">© 2025 PeakeFeeds</span>
        </div>
 
-    </div>
+    </aside>
   )
 }
-

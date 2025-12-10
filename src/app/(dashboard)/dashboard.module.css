@@ -57,6 +57,11 @@
   display: none !important; 
 }
 
+/* 🆕 ADDED: Hide Right Sidebar by default on Mobile/Tablet */
+.rightSidebar {
+  display: none;
+}
+
 .mobileNavWrapper {
   display: block !important;
   z-index: 50;
@@ -104,7 +109,6 @@
     width: 240px; 
     z-index: 50; 
     pointer-events: none;
-    /* Shadow removed per request if preferred, or add back: box-shadow: 4px 0 30px rgba(0,0,0,0.5); */
   }
 
   .mobileNavWrapper { 
@@ -127,10 +131,7 @@
     /* Allow expanding to fit 3-4 columns on big screens */
     max-width: 1600px; 
     
-    /* TABLET MODE: 
-       We only add small padding (1rem). 
-       The Sidebar (240px) will float ON TOP of the left side.
-       The Grid will use the full width underneath. */
+    /* TABLET MODE: Sidebar floats on top, grid goes underneath */
     padding-left: 1rem;
     padding-right: 1rem;
   }
@@ -148,7 +149,7 @@
 /* --- 5. LARGE DESKTOP (≥ 1280px) --- */
 @media (min-width: 1280px) {
   
-  /* Right Sidebar (Suggestions) */
+  /* Right Sidebar (Suggestions) - ONLY visible here */
   .rightSidebar {
     display: block !important; 
     width: 350px;
@@ -160,8 +161,7 @@
     border-left: 1px solid var(--glass-border);
   }
 
-  /* DESKTOP MODE:
-     Push the content wrapper inward so sidebars don't cover the grid. */
+  /* DESKTOP MODE: Push content inward to reveal sidebars */
   .feedWrapper {
     padding-left: calc(240px + 2rem); /* Clear Left Sidebar */
     padding-right: calc(350px + 2rem); /* Clear Right Sidebar */

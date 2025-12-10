@@ -203,6 +203,11 @@ model Post {
   mediaUrl        String?
   embedUrl        String?   
   mediaHash       String?
+
+  linkTitle       String?
+  linkDescription String?   @db.Text
+  linkImage       String?
+  linkDomain      String?   // e.g. "nytimes.com"
   
   // 🛡️ THE TRUTH LAYER (Verification)
   isVerified           Boolean   @default(false)
