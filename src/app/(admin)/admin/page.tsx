@@ -1,6 +1,6 @@
 import { getAdminDashboardStats } from "@/actions/admin-dashboard";
 import Link from "next/link";
-import { Users, ShieldAlert, UserPlus, Ticket, ShieldCheck, ArrowRight } from "lucide-react";
+import { Users, ShieldAlert, UserPlus, Ticket, ShieldCheck, ArrowRight, MessageSquare } from "lucide-react";
 import styles from "./admin.module.css";
 
 export default async function AdminDashboardPage() {
@@ -24,31 +24,27 @@ export default async function AdminDashboardPage() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* 1. Demand (Waitlist) */}
         <GlassStat 
           label="Waitlist Demand" 
-          // @ts-ignore - handled by server action update
+          // @ts-ignore
           value={stats.waitlistCount?.toLocaleString() || "0"} 
           icon={<Ticket size={24} className="text-indigo-400" />}
           trend="Potential Users"
           href="/admin/waitlist"
         />
         
-        {/* 2. Supply (Total Users) */}
         <GlassStat 
           label="Total Users" 
           value={stats.totalUsers.toLocaleString()} 
           icon={<Users size={24} className="text-blue-400" />}
         />
 
-        {/* 3. Velocity (New Signups) */}
         <GlassStat 
           label="New Signups (24h)" 
           value={stats.recentSignups} 
           icon={<UserPlus size={24} className="text-purple-400" />}
         />
 
-        {/* 4. Safety (Reports) */}
         <GlassStat 
           label="Pending Reports" 
           value={stats.pendingReports} 
@@ -58,10 +54,10 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      {/* Priority Action Area */}
+      {/* Priority Action Area - Now with 3 Panels (Safety, Air Lock, Support) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* ACTION 1: SAFETY */}
+        {/* 1. SAFETY QUEUE */}
         <div className={styles.glassPanel}>
           <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center">
             <h3 className="text-lg font-bold text-white">Safety Queue</h3>
@@ -94,7 +90,7 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* ACTION 2: GROWTH (THE AIR LOCK) */}
+        {/* 2. THE AIR LOCK */}
         <div className={styles.glassPanel}>
           <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center">
             <h3 className="text-lg font-bold text-white">The Air Lock</h3>
@@ -126,6 +122,32 @@ export default async function AdminDashboardPage() {
                   <p className="text-sm">Waitlist empty.</p>
                </div>
             )}
+          </div>
+        </div>
+
+        {/* 3. SUPPORT CHANNELS (NEW) */}
+        <div className={`${styles.glassPanel} lg:col-span-2`}>
+          <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center">
+            <h3 className="text-lg font-bold text-white">Support Channels</h3>
+          </div>
+          <div className="p-6">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-pink-500/10 border border-pink-500/20">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-pink-500/20 rounded-full text-pink-400">
+                  <MessageSquare size={20} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-pink-100">Help Bot Escalations</h4>
+                  <p className="text-sm text-pink-200/70">View live tickets from users requesting human assistance.</p>
+                </div>
+              </div>
+              <Link 
+                href="/admin/support"
+                className="px-4 py-2 rounded-lg bg-pink-500 text-white font-bold text-sm hover:bg-pink-600 transition-colors shadow-lg shadow-pink-500/20 flex items-center gap-2"
+              >
+                Open Support Console <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
         </div>
 

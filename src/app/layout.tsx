@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { headers } from 'next/headers' // 🆕 1. Import headers
+import { headers } from 'next/headers' 
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Web3Provider } from "@/components/providers/Web3Provider"; 
 import { Providers } from "@/components/Providers"; 
 import ClientLayout from '@/components/layout/ClientLayout' 
+// 🆕 1. Import the Support Context Provider
+import { SupportProvider } from '@/context/SupportContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -39,13 +41,11 @@ export const metadata: Metadata = {
   },
 };
 
-// 🆕 2. Make RootLayout async to await headers()
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // 🆕 3. Get cookies for AppKit hydration
   const headersData = await headers();
   const cookies = headersData.get('cookie');
 
@@ -58,12 +58,14 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* 🆕 4. Pass cookies to Web3Provider */}
           <Web3Provider cookies={cookies}>
             <Providers>
-              <ClientLayout>
-                {children}
-              </ClientLayout>
+              {/* 🆕 2. WRAP EVERYTHING HERE */}
+              <SupportProvider>
+                <ClientLayout>
+                  {children}
+                </ClientLayout>
+              </SupportProvider>
             </Providers>
           </Web3Provider>
         </ThemeProvider>

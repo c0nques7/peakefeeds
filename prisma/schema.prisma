@@ -83,11 +83,11 @@ enum ReportTargetType {
 }
 
 enum PenaltyType {
-  WARNING               // Just a notification
-  STRIKE_1_TIMEOUT      // 24hr mute
-  STRIKE_2_SUSPENSION   // 7-day ban
-  PERMANENT_BAN         // Account locked
-  CONTENT_REMOVAL       // Content gone, no strike
+  WARNING                 // Just a notification
+  STRIKE_1_TIMEOUT        // 24hr mute
+  STRIKE_2_SUSPENSION     // 7-day ban
+  PERMANENT_BAN           // Account locked
+  CONTENT_REMOVAL         // Content gone, no strike
 }
 
 // --------------------------------------
@@ -138,7 +138,7 @@ model User {
   // Moderation Relations
   reportsFiled    Report[]  @relation("ReportedBy")
   reportsResolved Report[]  @relation("ResolvedBy")
-  reportsAgainst  Report[]  @relation("ProfileReported") // Reports filed against this user (Impersonation)
+  reportsAgainst  Report[]  @relation("ProfileReported") // Reports filed against this user
   
   penaltiesReceived Penalty[] @relation("ReceivedPenalties")
   penaltiesIssued   Penalty[] @relation("IssuedPenalties")
@@ -146,28 +146,31 @@ model User {
   // Monetization
   adsWatched      AdView[]
 
-  // 🚀 GROWTH ENGINE (New for Invite System)
+  // 🚀 GROWTH ENGINE
   invitesIssued   InviteCode[] @relation("IssuedInvites")
   inviteUsed      InviteCode?  @relation("UsedInvite")
+
+  // 🆘 SUPPORT SYSTEM (NEW)
+  supportTickets  SupportTicket[]
 }
 
 model Channel {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  description String?
-  tags        String[]
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  description   String?
+  tags          String[]
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // --- Relations ---
-  creatorId   String
-  creator     User             @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId     String
+  creator       User             @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
   
-  subscribers Subscription[]
-  posts       Post[]
-  reports     Report[] // Reports filed against this channel (Trademark/Brand Safety)
+  subscribers   Subscription[]
+  posts         Post[]
+  reports       Report[] // Reports filed against this channel
 
   @@index([name])
 }
@@ -214,8 +217,8 @@ model Post {
   verificationSource   String?   // "WALLET" | "HYPELAB" | "GOOGLE" (Who paid gas?)
 
   // Post Reactions (Cached Counts)
-  likesCount      Int       @default(0)
-  dislikesCount   Int       @default(0)
+  likesCount       Int       @default(0)
+  dislikesCount    Int       @default(0)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -284,34 +287,34 @@ model Reaction {
 // --------------------------------------
 
 model Report {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   
-  reason    ReportReason
-  details   String?      @db.Text
-  status    ReportStatus @default(PENDING)
+  reason     ReportReason
+  details    String?      @db.Text
+  status     ReportStatus @default(PENDING)
   targetType ReportTargetType
 
   // The Reporter
   reporterId String
-  reporter   User    @relation("ReportedBy", fields: [reporterId], references: [id])
+  reporter   User     @relation("ReportedBy", fields: [reporterId], references: [id])
   
-  // Sparse Fields (Polymorphic Target)
-  postId      String?
-  post        Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  // Sparse Fields
+  postId       String?
+  post         Post?     @relation(fields: [postId], references: [id], onDelete: SetNull)
 
   reportedProfileId String?
-  reportedProfile   User?    @relation("ProfileReported", fields: [reportedProfileId], references: [id])
+  reportedProfile   User?     @relation("ProfileReported", fields: [reportedProfileId], references: [id])
 
-  channelId   String?
-  channel     Channel? @relation(fields: [channelId], references: [id])
+  channelId    String?
+  channel      Channel? @relation(fields: [channelId], references: [id])
 
   // Resolution
   resolverId String?
   resolver   User?  @relation("ResolvedBy", fields: [resolverId], references: [id])
   
-  // If this report resulted in a penalty
+  // Penalty
   penalty    Penalty?
 
   @@index([status])
@@ -319,50 +322,50 @@ model Report {
 }
 
 model Penalty {
-  id          String      @id @default(cuid())
-  createdAt   DateTime    @default(now())
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
   
-  type        PenaltyType
-  reason      String      @db.Text 
+  type          PenaltyType
+  reason        String      @db.Text 
   
-  expiresAt   DateTime?   // Null = Permanent
-  isActive    Boolean     @default(true)
+  expiresAt     DateTime?   // Null = Permanent
+  isActive      Boolean     @default(true)
 
   // Relations
-  userId      String      // The offender
-  user        User        @relation("ReceivedPenalties", fields: [userId], references: [id])
+  userId        String      // The offender
+  user          User        @relation("ReceivedPenalties", fields: [userId], references: [id])
   
-  issuerId    String      // The Moderator
-  issuer      User        @relation("IssuedPenalties", fields: [issuerId], references: [id])
+  issuerId      String      // The Moderator
+  issuer        User        @relation("IssuedPenalties", fields: [issuerId], references: [id])
   
-  reportId    String?     @unique
-  report      Report?     @relation(fields: [reportId], references: [id])
+  reportId      String?     @unique
+  report        Report?     @relation(fields: [reportId], references: [id])
 
   @@index([userId])
 }
 
 // --------------------------------------
-// 7. Ad Framework (Paused for GTM Phase)
+// 7. Ad Framework
 // --------------------------------------
 
 model AdView {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
 
-  provider    String   // "HYPELAB", "GOOGLE", "UNITY"
+  provider  String   // "HYPELAB", "GOOGLE", "UNITY"
   
   // Monetization Data
-  txHash      String?  // If we sponsored gas, track it here
-  revenueEst  Float?   // Estimated earning from this view (USD)
+  txHash     String? // If we sponsored gas, track it here
+  revenueEst Float?  // Estimated earning from this view (USD)
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
 
 // --------------------------------------
-// 8. Marketing & Waitlist (UPDATED)
+// 8. Marketing & Waitlist
 // --------------------------------------
 
 enum WaitlistStatus {
@@ -379,9 +382,9 @@ model Waitlist {
   status    WaitlistStatus @default(PENDING)
   
   // Marketing Attribution
-  source    String?   
-  medium    String?   
-  campaign  String?   
+  source    String?    
+  medium    String?    
+  campaign  String?    
 }
 
 // --------------------------------------
@@ -424,21 +427,60 @@ model VerificationToken {
 }
 
 // --------------------------------------
-// 10. The Invite System (NEW)
+// 10. The Invite System
 // --------------------------------------
 
 model InviteCode {
   id        String   @id @default(cuid())
-  code      String   @unique // e.g., "PEAKE-7X92"
+  code      String   @unique
   createdAt DateTime @default(now())
 
-  // The "Velvet Rope" Logic
   usedAt    DateTime? 
   
-  // Relations
-  issuerId  String?   // Null = System generated (for Waitlist batches)
+  issuerId  String?  
   issuer    User?     @relation("IssuedInvites", fields: [issuerId], references: [id])
 
   usedById  String?   @unique
   usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id])
+}
+
+// --------------------------------------
+// 11. Support System
+// --------------------------------------
+
+model SupportTicket {
+  id              String   @id @default(cuid())
+  status          String   @default("open") // "open", "resolved", "closed"
+  
+  // PRIORITY SCALE (0-5)
+  severity        Int      @default(0) 
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Link to a registered user
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  
+  // The conversation history
+  messages        TicketMessage[]
+
+  @@index([status])
+  @@index([userId])
+}
+
+model TicketMessage {
+  id              String        @id @default(cuid())
+  text            String        @db.Text
+  sender          String        // "user", "admin", "bot"
+  createdAt       DateTime      @default(now())
+  
+  // Relationship to the ticket
+  ticketId        String
+  ticket          SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  // Optional: If you want to know WHICH admin replied
+  adminId         String?       
+  
+  @@index([ticketId])
 }

@@ -1,0 +1,281 @@
+/* components/HelpBot.module.css */
+
+/* --- CONTAINER & LAYOUT --- */
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* --- TRIGGER BUTTON (The Pill) --- */
+.triggerButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 52; /* Ensures button stays on top */
+}
+
+.triggerButton:hover {
+  transform: scale(1.05);
+  background-color: #333;
+}
+
+.triggerButton.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.icon {
+  background: rgba(255, 255, 255, 0.2);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* --- CHAT WINDOW --- */
+.chatWindow {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 340px;
+  height: 500px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  
+  /* Transition State: Hidden */
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  pointer-events: none; /* Critical: lets you click the button underneath */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom right;
+}
+
+/* Transition State: Open */
+.chatWindow.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* --- HEADER --- */
+.header {
+  background-color: #000;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.botInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+}
+
+.botName {
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.status {
+  font-size: 0.7rem;
+  color: #4ade80; /* Green dot */
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.closeButton:hover {
+  opacity: 0.8;
+}
+
+/* --- CHAT BODY --- */
+.body {
+  flex: 1;
+  padding: 1rem;
+  background-color: #f3f4f6;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Scrollbar styling for Webkit (Chrome/Safari) */
+.body::-webkit-scrollbar {
+  width: 6px;
+}
+.body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+/* --- MESSAGES --- */
+.messageRow {
+  display: flex;
+  width: 100%;
+}
+
+.messageRow.bot {
+  justify-content: flex-start;
+}
+
+.messageRow.user {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.bot .bubble {
+  background: white;
+  color: #333;
+  border-bottom-left-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.user .bubble {
+  background: #000;
+  color: white;
+  border-bottom-right-radius: 2px;
+}
+
+/* --- ACTIONS (FAQs & Buttons) --- */
+.actionArea {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.faqChip {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.faqChip:hover {
+  background: #f9fafb;
+  border-color: #000;
+  color: #000;
+}
+
+/* Return to Menu Button */
+.menuButton {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.menuButton:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111;
+}
+
+/* --- INPUT AREA --- */
+.inputArea {
+  padding: 0.75rem;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 99px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: #000;
+}
+
+.sendButton {
+  background: #000;
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  transition: background-color 0.2s;
+}
+
+.sendButton:hover {
+  background-color: #333;
+}
+
+.sendButton:disabled {
+  background: #e5e7eb;
+  cursor: not-allowed;
+}

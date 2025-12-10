@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation' 
 import ThemeToggle from '@/components/ThemeToggle'
+// 1. Import your HelpBot component
+import HelpBot from '@/components/help/HelpBot' 
 import styles from './clientlayout.module.css'
 import clsx from 'clsx'
 
@@ -10,30 +12,35 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [hasMounted, setHasMounted] = useState(false)
   const pathname = usePathname()
   
-  // Hydration fix
   useEffect(() => {
     setHasMounted(true)
   }, [])
   
-  if (!hasMounted) {
-    return null 
-  }
-
   // Logic: Check if we are strictly on the landing page
   const isLanding = pathname === '/';
 
   return (
     <>
-      {/* THEME TOGGLE WRAPPER 
-        - Mobile: Always Visible
-        - Desktop: Hidden by default (via CSS), unless 'landingMode' is active
+      {/* HYDRATION GUARD: 
+         We only wrap the client-specific interactive elements (Toggle & Bot) 
+         with the mounted check. {children} renders immediately.
       */}
-      <div className={clsx(
-          styles.toggleWrapper,
-          { [styles.landingMode]: isLanding }
-      )}>
-        <ThemeToggle />
-      </div>
+      {hasMounted && (
+        <>
+          {/* THEME TOGGLE WRAPPER (Top Right) */}
+          <div className={clsx(
+              styles.toggleWrapper,
+              { [styles.landingMode]: isLanding }
+          )}>
+            <ThemeToggle />
+          </div>
+
+          {/* HELP BOT WRAPPER (Bottom Right) */}
+          <div className={styles.botWrapper}>
+            <HelpBot />
+          </div>
+        </>
+      )}
 
       {children}
     </>
