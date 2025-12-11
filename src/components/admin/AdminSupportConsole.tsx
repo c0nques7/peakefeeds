@@ -1,36 +1,84 @@
 'use client'
 
 import { useState } from 'react'
-import { useSupport } from '@/context/SupportContext'
+import useSWR from 'swr' // 1. Import SWR
+import { useSupport, Ticket } from '@/context/SupportContext'
+import { getAllTicketsAction } from '@/actions/support' // 2. Import Admin Action
 import { MessageSquare, Send, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import styles from '@/app/(admin)/admin/admin.module.css'
 import clsx from 'clsx'
 
 export default function AdminSupportConsole() {
-  const { tickets, addMessageToTicket, resolveTicket, setTicketSeverity } = useSupport()
+  // 3. Removed 'tickets' from context. We only get actions now.
+  const { addMessageToTicket, resolveTicket, setTicketSeverity } = useSupport()
+  
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [reply, setReply] = useState('')
 
-  // Sort tickets: Critical (High Severity) first, then by recency
+  // 4. LOCAL POLLING: Only runs when this component is mounted!
+  const { data: tickets = [], mutate } = useSWR(
+    'admin-all-tickets', 
+    async () => {
+        const res = await getAllTicketsAction()
+        // @ts-ignore - Fixing serialization mismatch (Date vs String)
+        return res.success ? res.data as Ticket[] : []
+    },
+    { 
+      refreshInterval: 10000, // Poll every 10s
+      revalidateOnFocus: true
+    }
+  )
+
+  // Sort: Critical (High Severity) first, then by recency
   const activeTickets = tickets
     .filter(t => t.status === 'open' || t.id === selectedTicketId)
-    .sort((a, b) => b.severity - a.severity) // High severity on top
+    .sort((a, b) => b.severity - a.severity)
 
   const currentTicket = tickets.find(t => t.id === selectedTicketId)
 
-  const handleSend = () => {
+  // 5. HELPER: Optimistic Updates using 'mutate'
+  // This updates the UI instantly without waiting for the DB
+  const handleSend = async () => {
     if (!currentTicket || !reply.trim()) return
-    addMessageToTicket(currentTicket.id, { sender: 'admin', text: reply, timestamp: Date.now() })
+    
+    const newMsg = { sender: 'admin', text: reply, timestamp: Date.now() }
+
+    // @ts-ignore
+    await mutate(current => current?.map(t => {
+        if(t.id !== currentTicket.id) return t;
+        // @ts-ignore
+        return { ...t, messages: [...t.messages, newMsg] }
+    }), false)
+    
+    // API Call
+    // @ts-ignore
+    await addMessageToTicket(currentTicket.id, newMsg)
     setReply('')
+    mutate() // Re-sync with DB
   }
 
-  // Helper to color-code severity
+  const handleResolve = async () => {
+     if(!currentTicket) return;
+     // Optimistic
+     mutate(curr => curr?.map(t => t.id === currentTicket.id ? {...t, status: 'resolved'} : t), false);
+     await resolveTicket(currentTicket.id);
+     mutate();
+  }
+
+  const handleSeverity = async (level: number) => {
+     if(!currentTicket) return;
+     mutate(curr => curr?.map(t => t.id === currentTicket.id ? {...t, severity: level} : t), false);
+     await setTicketSeverity(currentTicket.id, level);
+     mutate();
+  }
+
   const getSeverityColor = (level: number) => {
     if (level >= 4) return "text-red-500 border-red-500/50 bg-red-500/10";
     if (level >= 2) return "text-orange-400 border-orange-500/50 bg-orange-500/10";
     return "text-blue-400 border-blue-500/50 bg-blue-500/10";
   }
 
+  // --- RENDER ---
   return (
     <div className={clsx(styles.glassPanel, "h-[600px] flex flex-col overflow-hidden")}>
       
@@ -71,7 +119,7 @@ export default function AdminSupportConsole() {
                   selectedTicketId === ticket.id ? "bg-white/10" : "opacity-70"
                 )}
               >
-                {/* Active Indicator Strip */}
+                {/* Active Indicator */}
                 {selectedTicketId === ticket.id && (
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-pink-500"></div>
                 )}
@@ -79,25 +127,20 @@ export default function AdminSupportConsole() {
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs text-white/60">#{ticket.id}</span>
-                    {/* Severity Badge in List */}
                     {ticket.severity > 0 && (
                        <span className={clsx("text-[10px] px-1.5 rounded border", getSeverityColor(ticket.severity))}>
                          Lvl {ticket.severity}
                        </span>
                     )}
                   </div>
-                  {ticket.unreadAdminCount > 0 && (
-                    <span className="bg-pink-500 text-white text-[10px] px-1.5 rounded-full">
-                      {ticket.unreadAdminCount}
-                    </span>
-                  )}
                 </div>
                 <p className="text-sm text-white line-clamp-1 mb-1">
                   {ticket.messages[ticket.messages.length - 1]?.text}
                 </p>
                 <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
                   <Clock size={10} />
-                  <span>{new Date(ticket.messages[ticket.messages.length - 1]?.timestamp).toLocaleTimeString()}</span>
+                  {/* Handle Date object or Timestamp number safely */}
+                  <span>{new Date(ticket.messages[ticket.messages.length - 1]?.timestamp || Date.now()).toLocaleTimeString()}</span>
                 </div>
               </div>
             ))
@@ -121,7 +164,7 @@ export default function AdminSupportConsole() {
                     {[0, 1, 2, 3, 4, 5].map((level) => (
                       <button
                         key={level}
-                        onClick={() => setTicketSeverity(currentTicket.id, level)}
+                        onClick={() => handleSeverity(level)}
                         className={clsx(
                           "w-6 h-6 text-xs rounded border transition-all flex items-center justify-center font-mono",
                           currentTicket.severity === level 
@@ -138,7 +181,7 @@ export default function AdminSupportConsole() {
 
                 {currentTicket.status !== 'resolved' && (
                   <button 
-                    onClick={() => resolveTicket(currentTicket.id)}
+                    onClick={handleResolve}
                     className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors border border-emerald-500/30 px-3 py-1 rounded-full hover:bg-emerald-500/10"
                   >
                     <CheckCircle size={14} /> Mark Resolved
@@ -158,6 +201,7 @@ export default function AdminSupportConsole() {
                     )}>
                       {msg.text}
                     </div>
+                    {/* @ts-ignore */}
                     <span className="text-[10px] text-white/30 mt-1 uppercase tracking-wider">{msg.sender}</span>
                   </div>
                 ))}
@@ -189,7 +233,6 @@ export default function AdminSupportConsole() {
             </div>
           )}
         </div>
-
       </div>
     </div>
   )

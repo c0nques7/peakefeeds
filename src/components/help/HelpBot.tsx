@@ -3,7 +3,10 @@
 import { useState, useRef, useEffect } from 'react'
 import styles from './HelpBot.module.css'
 import clsx from 'clsx'
+import useSWR from 'swr' // 1. Import SWR
 import { useSupport } from '@/context/SupportContext'
+import { getTicketAction } from '@/actions/support' // 2. Import User Fetcher
+import { Ticket } from '@/context/SupportContext'
 
 const FAQ_DATA = [
     { q: "How do I connect my cryptocurrency wallet?", a: "Click the 'Connect Wallet' button in the top navigation bar. We currently support MetaMask, Coinbase Wallet, and WalletConnect." },
@@ -21,13 +24,12 @@ type Message = {
 }
 
 export default function HelpBot() {
-  const { createTicket, addMessageToTicket, tickets } = useSupport()
+  // 3. REMOVED 'tickets' from context. We only get actions now.
+  const { createTicket, addMessageToTicket } = useSupport()
   
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [isTicketMode, setIsTicketMode] = useState(false)
-  
-  // Track the ID of the current active ticket for this user session
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
 
   const [messages, setMessages] = useState<Message[]>([
@@ -36,30 +38,36 @@ export default function HelpBot() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // --- LISTENER: WATCH FOR ADMIN REPLIES ---
+  // 4. LOCAL POLLING: Only poll if we have an Active Ticket ID
+  const { data: ticketData } = useSWR(
+    activeTicketId ? `ticket-${activeTicketId}` : null, // Conditional Fetch key
+    async () => {
+        if(!activeTicketId) return null;
+        const res = await getTicketAction(activeTicketId);
+        // @ts-ignore
+        return res.success ? res.data as Ticket : null;
+    },
+    { refreshInterval: 5000 } // Poll every 5s
+  );
+
+  // 5. LISTENER: Watch SWR Data (instead of Context)
   useEffect(() => {
-    if (!activeTicketId) return
-
-    const ticketInContext = tickets.find(t => t.id === activeTicketId)
-    if (!ticketInContext) return
-
-    // Get the last message from the updated context
-    const lastMsg = ticketInContext.messages[ticketInContext.messages.length - 1]
+    if (!ticketData) return;
     
-    // If it's from an admin and we haven't rendered it yet, show it
+    // Check for new messages from Admin
+    const lastMsg = ticketData.messages[ticketData.messages.length - 1];
     if (lastMsg && lastMsg.sender === 'admin') {
-       const alreadyExists = messages.some(m => m.text === lastMsg.text && m.type === 'admin')
-       
-       if (!alreadyExists) {
-         setMessages(prev => [...prev, {
-           id: Date.now(),
-           type: 'admin',
-           text: lastMsg.text
-         }])
-       }
+         // Dedupe logic
+         const alreadyExists = messages.some(m => m.text === lastMsg.text && m.type === 'admin')
+         if (!alreadyExists) {
+             setMessages(prev => [...prev, {
+                id: Date.now(),
+                type: 'admin',
+                text: lastMsg.text
+             }])
+         }
     }
-  }, [tickets, activeTicketId, messages])
-
+  }, [ticketData, messages]);
 
   // --- HANDLERS ---
   
@@ -85,14 +93,13 @@ export default function HelpBot() {
     if (!input.trim()) return
     const userText = input.trim()
     
-    // 1. Optimistic UI update for user message
+    // Optimistic UI Update
     const newMsg: Message = { id: Date.now(), type: 'user', text: userText }
     setMessages(prev => [...prev, newMsg])
     setInput('')
 
-    // 2. Logic Branch
     if (activeTicketId) {
-      // --- ALREADY IN TICKET MODE (Ongoing Conversation) ---
+      // --- ALREADY IN TICKET MODE ---
       await addMessageToTicket(activeTicketId, { 
         sender: 'user', 
         text: userText, 
@@ -103,15 +110,15 @@ export default function HelpBot() {
 
     if (isTicketMode) {
       // --- CREATING FIRST TICKET ---
-      // We await the server action to ensure the ticket is real
       const newTicketId = await createTicket(userText)
       
       if (newTicketId) {
-        setActiveTicketId(newTicketId)
+        setActiveTicketId(newTicketId) // Triggers SWR polling
+        
         setMessages(prev => [...prev, { 
           id: Date.now() + 1, 
           type: 'bot', 
-          text: "✅ Connected! An admin has been notified. You can continue typing here, and their replies will appear below." 
+          text: "✅ Connected! An admin has been notified. You can continue typing here." 
         }])
         setIsTicketMode(false) 
       } else {
@@ -156,8 +163,8 @@ export default function HelpBot() {
             <div className={styles.botInfo}>
                 <div className={styles.avatar}>🤖</div>
                 <div className={styles.headerText}>
-                <span className={styles.botName}>Help Bot</span>
-                <span className={styles.status}>Online</span>
+                  <span className={styles.botName}>Help Bot</span>
+                  <span className={styles.status}>Online</span>
                 </div>
             </div>
             <button onClick={() => setIsOpen(false)} className={styles.closeButton}>✕</button>

@@ -1,10 +1,12 @@
 'use server'
 
-import { prisma } from "@/lib/db" // Ensure this path matches your project
-import { Ticket, ChatMessage } from "@/context/SupportContext"
+import { prisma } from "@/lib/db"
+import { Ticket } from "@/context/SupportContext"
 
-// 1. Fetch all tickets
-export async function getTicketsAction() {
+// --- 1. FETCHING ACTIONS (Split for Security & Performance) ---
+
+// ADMIN ONLY: Fetch ALL tickets for the dashboard
+export async function getAllTicketsAction() {
   try {
     const tickets = await prisma.supportTicket.findMany({
       orderBy: { updatedAt: 'desc' },
@@ -20,7 +22,7 @@ export async function getTicketsAction() {
       id: t.id,
       status: t.status as 'open' | 'resolved',
       severity: t.severity,
-      unreadAdminCount: 0, // Simplified for now
+      unreadAdminCount: 0, 
       messages: t.messages.map(m => ({
         sender: m.sender as 'user' | 'admin' | 'bot',
         text: m.text,
@@ -33,7 +35,42 @@ export async function getTicketsAction() {
   }
 }
 
-// 2. Create a new ticket
+// USER ONLY: Fetch a SINGLE ticket (For HelpBot polling)
+export async function getTicketAction(ticketId: string) {
+  try {
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: ticketId },
+      include: { 
+        messages: { 
+          orderBy: { createdAt: 'asc' } 
+        } 
+      }
+    })
+    
+    if (!ticket) return { success: false, error: "Ticket not found" }
+    
+    // Map to Ticket Type
+    const mappedTicket: Ticket = {
+      id: ticket.id,
+      status: ticket.status as 'open' | 'resolved',
+      severity: ticket.severity,
+      unreadAdminCount: 0,
+      messages: ticket.messages.map(m => ({
+        sender: m.sender as 'user' | 'admin' | 'bot',
+        text: m.text,
+        timestamp: m.createdAt.getTime()
+      }))
+    }
+    
+    return { success: true, data: mappedTicket }
+  } catch (error) {
+    return { success: false, error: "Failed to load ticket" }
+  }
+}
+
+
+// --- 2. MUTATION ACTIONS ---
+
 export async function createTicketAction(initialMsg: string) {
   try {
     const ticket = await prisma.supportTicket.create({
@@ -54,7 +91,6 @@ export async function createTicketAction(initialMsg: string) {
   }
 }
 
-// 3. Add Message
 export async function addMessageAction(ticketId: string, text: string, sender: 'user' | 'admin' | 'bot') {
   try {
     await prisma.ticketMessage.create({
@@ -65,7 +101,7 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
       }
     })
     
-    // Update timestamp of ticket so it jumps to top
+    // Update timestamp so it jumps to top of Admin list
     await prisma.supportTicket.update({
       where: { id: ticketId },
       data: { updatedAt: new Date() }
@@ -77,7 +113,6 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
   }
 }
 
-// 4. Update Severity
 export async function updateSeverityAction(ticketId: string, severity: number) {
   try {
     await prisma.supportTicket.update({
@@ -90,7 +125,6 @@ export async function updateSeverityAction(ticketId: string, severity: number) {
   }
 }
 
-// 5. Resolve Ticket
 export async function resolveTicketAction(ticketId: string) {
   try {
     await prisma.supportTicket.update({
