@@ -1,54 +1,55 @@
-import { prisma } from "@/lib/db"; // Ensure this matches your actual db import path (could be "@/lib/prisma")
-import { NotificationType } from "@prisma/client";
+'use server'
 
-interface CreateNotificationParams {
-  type: NotificationType;
-  actorId: string;
-  recipientId: string;
-  postId?: string;
-  commentId?: string;
-  ticketId?: string;
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth.config"
+import { prisma } from "@/lib/db"
+
+// FETCH: Get recent notifications
+export async function getNotifications(limit = 20) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return { error: "Unauthorized" }
+
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { userId: session.user.id },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        actor: { select: { username: true, image: true } },
+        post: { select: { content: true } },
+        comment: { select: { content: true } },
+        ticket: { select: { id: true, status: true } }
+      }
+    })
+
+    const unreadCount = await prisma.notification.count({
+      where: { userId: session.user.id, isRead: false }
+    })
+
+    return { success: true, data: notifications, unreadCount }
+  } catch (error) {
+    return { error: "Failed to load notifications" }
+  }
 }
 
-export async function createNotification({
-  type,
-  actorId,
-  recipientId,
-  postId,
-  commentId,
-  ticketId,
-}: CreateNotificationParams) {
-  try {
-    // 1. SELF-ACTION CHECK: Don't notify if user interacts with their own content
-    if (actorId === recipientId) return;
+// UPDATE: Mark single item as read
+export async function markAsRead(id: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return
 
-    // 2. DUPLICATE CHECK: Prevent spamming
-    const existing = await prisma.notification.findFirst({
-      where: {
-        type,
-        actorId,
-        userId: recipientId, // 🟢 FIX: Map 'recipientId' to the DB field 'userId'
-        postId,
-        commentId,
-        ticketId,
-        isRead: false, 
-      },
-    });
+  await prisma.notification.update({
+    where: { id },
+    data: { isRead: true }
+  })
+}
 
-    if (existing) return; 
-
-    // 3. CREATE
-    await prisma.notification.create({
-      data: {
-        type,
-        actorId,
-        userId: recipientId, // 🟢 This was already correct
-        postId,
-        commentId,
-        ticketId,
-      },
-    });
-  } catch (error) {
-    console.error("Failed to create notification:", error);
-  }
+// UPDATE: Mark ALL as read
+export async function markAllRead() {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) return
+  
+    await prisma.notification.updateMany({
+      where: { userId: session.user.id, isRead: false },
+      data: { isRead: true }
+    })
 }
