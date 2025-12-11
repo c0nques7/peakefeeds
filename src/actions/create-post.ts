@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db'; 
 import { revalidatePath } from 'next/cache';
 import { generateContentHash, recoverSignerAddress } from "@/lib/verification"; 
+import { fetchLinkMetadata } from "@/lib/metadata"; // 🆕 Import Utility
 
 const FinalPostSchema = z.object({
   content: z.string().min(1).max(2000),
@@ -35,12 +36,6 @@ export async function createPost(
 
   const session = await getServerSession(authOptions);
   
-  // DEBUG LOG 1: Check Session
-  console.log("👤 Session User:", { 
-      id: session?.user?.id, 
-      wallet: session?.user?.walletAddress // <--- CHECK IF THIS IS UNDEFINED
-  });
-
   if (!session?.user?.id) {
     return { message: "You must be signed in to post." };
   }
@@ -69,45 +64,32 @@ export async function createPost(
       return await savePost({ content, channelId, authorId: session.user.id });
   }
 
-  // Case: WALLET/AD
-  // DEBUG LOG 2: Check Incoming Cryptographic Data
-  console.log("🔐 Verification Data:", { verificationMethod, contentHash, salt, signatureExists: !!signature });
-
-  // 1. Check for Missing Data
+  // Case: WALLET/AD - Verification Logic
   if (!contentHash || !salt || !signature) {
-      console.error("❌ Missing crypto fields");
       return { message: "Verification failed: Missing cryptographic data." };
   }
 
-  // 2. Check for Wallet in Session
   if (!session.user.walletAddress) {
-      console.error("❌ No wallet in session. User needs to relogin.");
       return { message: "Session out of sync. Please Sign Out and Sign In again." };
   }
 
-  // 3. Re-calculate Hash
+  // Integrity Check
   const serverRecalculatedHash = generateContentHash(content, salt);
-  
   if (serverRecalculatedHash !== contentHash) {
-      console.error("❌ Hash Mismatch:", { client: contentHash, server: serverRecalculatedHash });
       return { message: "Verification failed: Content integrity compromised." };
   }
 
-  // 4. Recover Address
+  // Signature Check
   const recoveredAddress = await recoverSignerAddress(contentHash, signature);
-  console.log("🕵️ Recovered Signer:", recoveredAddress);
-
   if (!recoveredAddress) {
       return { message: "Verification failed: Invalid signature." };
   }
 
-  // 5. Match Address
-  // Normalize strings for comparison
+  // Ownership Check
   const sessionWallet = session.user.walletAddress.toLowerCase();
   const signerWallet = recoveredAddress.toLowerCase();
 
   if (signerWallet !== sessionWallet) {
-      console.error("❌ Address Mismatch:", { session: sessionWallet, signer: signerWallet });
       return { message: "Verification failed: Signature wallet does not match profile wallet." };
   }
 
@@ -139,6 +121,13 @@ interface PostData {
 
 async function savePost(data: PostData): Promise<CreatePostState> {
     try {
+        // 🆕 1. DETECT LINK METADATA
+        const metadata = await fetchLinkMetadata(data.content);
+        
+        // Determine Post Type
+        // If we found a valid title in metadata, treat it as a LINK post
+        const postType = metadata.title ? "LINK" : "TEXT"; 
+
         const newPost = await prisma.post.create({
             data: {
                 content: data.content,
@@ -149,9 +138,14 @@ async function savePost(data: PostData): Promise<CreatePostState> {
                 salt: data.salt,
                 signature: data.signature,
                 verificationSource: data.verificationSource,
-                type: "TEXT",
-                mediaUrl: null,
-                mediaHash: null,
+                
+                // 🆕 2. SAVE DYNAMIC TYPE & METADATA
+                type: postType,
+                mediaUrl: metadata.url, // Save the URL as mediaUrl
+                linkTitle: metadata.title,
+                linkDescription: metadata.description,
+                linkImage: metadata.image,
+                linkDomain: metadata.domain,
             }
         });
 

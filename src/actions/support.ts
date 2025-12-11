@@ -1,9 +1,12 @@
 'use server'
 
+import { getServerSession } from "next-auth" // 🆕
+import { authOptions } from "@/lib/auth.config" // 🆕
 import { prisma } from "@/lib/db"
+import { revalidatePath } from "next/cache" // 🆕
 import { Ticket } from "@/context/SupportContext"
 
-// --- 1. FETCHING ACTIONS (Split for Security & Performance) ---
+// --- 1. FETCHING ACTIONS ---
 
 // ADMIN ONLY: Fetch ALL tickets for the dashboard
 export async function getAllTicketsAction() {
@@ -17,7 +20,6 @@ export async function getAllTicketsAction() {
       }
     })
 
-    // Map Prisma result to our Context Type
     return { success: true, data: tickets.map(t => ({
       id: t.id,
       status: t.status as 'open' | 'resolved',
@@ -49,7 +51,6 @@ export async function getTicketAction(ticketId: string) {
     
     if (!ticket) return { success: false, error: "Ticket not found" }
     
-    // Map to Ticket Type
     const mappedTicket: Ticket = {
       id: ticket.id,
       status: ticket.status as 'open' | 'resolved',
@@ -72,11 +73,16 @@ export async function getTicketAction(ticketId: string) {
 // --- 2. MUTATION ACTIONS ---
 
 export async function createTicketAction(initialMsg: string) {
+  // 🆕 1. GET SESSION
+  const session = await getServerSession(authOptions)
+  const userId = session?.user?.id || null 
+
   try {
     const ticket = await prisma.supportTicket.create({
       data: {
         status: 'open',
         severity: 0,
+        userId: userId, // 👈 CRITICAL FIX: Link the ticket to the user
         messages: {
           create: {
             text: initialMsg,
@@ -85,6 +91,13 @@ export async function createTicketAction(initialMsg: string) {
         }
       }
     })
+
+    // 🆕 2. REVALIDATE
+    if (userId) {
+        revalidatePath('/messages') // Update the User's Inbox
+    }
+    revalidatePath('/admin/support') // Update Admin Console
+
     return { success: true, ticketId: ticket.id }
   } catch (error) {
     return { success: false, error }
@@ -101,12 +114,17 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
       }
     })
     
-    // Update timestamp so it jumps to top of Admin list
+    // Update timestamp so it jumps to top of Admin list AND User Inbox
     await prisma.supportTicket.update({
       where: { id: ticketId },
       data: { updatedAt: new Date() }
     })
     
+    // 🆕 REVALIDATE
+    revalidatePath(`/messages/${ticketId}`)
+    revalidatePath('/messages') // Refresh the list order
+    revalidatePath('/admin/support')
+
     return { success: true }
   } catch (error) {
     return { success: false, error }
@@ -119,6 +137,7 @@ export async function updateSeverityAction(ticketId: string, severity: number) {
       where: { id: ticketId },
       data: { severity }
     })
+    revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
     return { success: false, error }
@@ -131,6 +150,11 @@ export async function resolveTicketAction(ticketId: string) {
       where: { id: ticketId },
       data: { status: 'resolved' }
     })
+    
+    // 🆕 REVALIDATE
+    revalidatePath('/messages')
+    revalidatePath('/admin/support')
+    
     return { success: true }
   } catch (error) {
     return { success: false, error }

@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { 
   Compass, User, Home, Mountain, ChevronLeft, Menu, LogOut, LogIn,
-  ShieldCheck, Building2, Sparkles, Bot, Gavel, CheckCircle, Briefcase
+  ShieldCheck, Building2, Sparkles, Bot, Gavel, CheckCircle, Briefcase, 
+  Bell, MessageCircle 
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { toast } from 'sonner'; 
 import ThemeToggle from '@/components/ThemeToggle'; 
 import styles from './sidebar.module.css';
 
@@ -36,13 +38,87 @@ const ROLE_CONFIG: Record<string, { icon: any, className: string, label: string 
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(true);
+  
+  // State
+  const [isOpen, setIsOpen] = useState(false); 
+  const [isIntro, setIsIntro] = useState(false); 
+  const [showHints, setShowHints] = useState(false); // 🆕 Checkbox State
 
   const rawRole = user?.role || 'STANDARD'; 
   const normalizedRole = rawRole.toUpperCase(); 
   const BadgeConfig = ROLE_CONFIG[normalizedRole] || ROLE_CONFIG['STANDARD'];
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname.startsWith(path);
+
+  // --- ONBOARDING LOGIC ---
+  useEffect(() => {
+    if (!user) return;
+
+    // Check LocalStorage on mount
+    const hasSeenIntro = localStorage.getItem('peake_intro_complete');
+    
+    // Sync Checkbox State (If "seen" is null/false, then hints are ON)
+    setShowHints(!hasSeenIntro);
+
+    if (!hasSeenIntro) {
+      setTimeout(() => {
+        toast('Welcome to the Truth Layer', {
+          description: 'Would you like a quick visual tour of the navigation?',
+          action: {
+            label: 'Show Me',
+            onClick: () => runIntroSequence()
+          },
+          cancel: {
+            label: 'No Thanks',
+            onClick: () => disableHints() // Use helper
+          },
+          duration: Infinity 
+        });
+      }, 1000);
+    } 
+  }, [user]);
+
+  const runIntroSequence = () => {
+    // 1. Reset state to ensure animation plays even if already open
+    setIsOpen(true);   
+    setIsIntro(true);  
+    
+    // 2. Play Sequence
+    setTimeout(() => {
+      setIsOpen(false); 
+      setIsIntro(false); 
+      // We do NOT disable hints here automatically anymore, 
+      // unless you want it to be a "one-time only" thing.
+      // If we want the checkbox to stay checked, we don't set localStorage here.
+      // BUT, usually "intro" implies one-time. 
+      // Let's set it to 'true' (disabled) so it doesn't annoy them next refresh.
+      disableHints();
+    }, 600);
+  };
+
+  // Helper to turn OFF hints
+  const disableHints = () => {
+    localStorage.setItem('peake_intro_complete', 'true');
+    setShowHints(false);
+  };
+
+  // Helper to turn ON hints
+  const enableHints = () => {
+    localStorage.removeItem('peake_intro_complete');
+    setShowHints(true);
+    runIntroSequence(); // Demonstrate immediately
+  };
+
+  // Toggle Handler
+  const toggleHints = () => {
+    if (showHints) {
+        disableHints();
+        toast.info("Menu visuals disabled.");
+    } else {
+        enableHints();
+        toast.success("Menu visuals enabled.");
+    }
+  };
 
   // --- SUB-COMPONENT: Nav Link ---
   const NavLink = ({ href, icon: Icon, label }: { href: string, icon: any, label: string }) => {
@@ -55,7 +131,7 @@ export function Sidebar({ user }: SidebarProps) {
     );
   };
 
-  // --- CLOSED STATE (Mini Sidebar + Toggle) ---
+  // --- CLOSED STATE ---
   if (!isOpen) {
       return (
           <div className={styles.collapsedControls}>
@@ -63,7 +139,6 @@ export function Sidebar({ user }: SidebarProps) {
                   <Menu size={20} strokeWidth={2.5} />
                   <span className={styles.menuText}>MENU</span>
               </button>
-              
               <div className={styles.collapsedThemeWrapper}>
                  <ThemeToggle />
               </div>
@@ -73,7 +148,7 @@ export function Sidebar({ user }: SidebarProps) {
 
   // --- OPEN STATE ---
   return (
-    <div className={styles.sidebar}>
+    <div className={clsx(styles.sidebar, isIntro && styles.introHighlight)}> 
       
       <button onClick={() => setIsOpen(false)} className={styles.collapseHandle} aria-label="Collapse Menu">
         <ChevronLeft size={16} />
@@ -128,22 +203,37 @@ export function Sidebar({ user }: SidebarProps) {
       <nav className={styles.navContainer}>
         <NavLink href="/home" icon={Home} label="Home" />
         <NavLink href="/discover" icon={Compass} label="Discover" />
+        
         {user && (
-           <NavLink href={`/profile/${user.username}`} icon={User} label="Profile" />
+            <>
+               <NavLink href="/notifications" icon={Bell} label="Activity" />
+               <NavLink href="/messages" icon={MessageCircle} label="Messages" />
+               <NavLink href={`/profile/${user.username}`} icon={User} label="Profile" />
+            </>
         )}
       </nav>
 
-      {/* Footer Actions (Restored ThemeToggle) */}
+      {/* Footer Actions */}
       <div className={styles.footer}>
-        <div className="flex items-center justify-between w-full">
-            {/* 🟢 RESTORED: Theme Toggle */}
+        
+        {/* 🆕 SETTINGS CHECKBOX */}
+        {user && (
+            <label className={styles.settingsRow}>
+                <input 
+                    type="checkbox" 
+                    className={styles.checkbox}
+                    checked={showHints}
+                    onChange={toggleHints}
+                />
+                <span>Enable Visual Hints</span>
+            </label>
+        )}
+
+        <div className="flex items-center justify-between w-full pt-2 border-t border-[var(--glass-border)]">
             <ThemeToggle /> 
 
             {user ? (
-                <button 
-                  onClick={() => signOut({ callbackUrl: '/' })} 
-                  className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer"
-                >
+                <button onClick={() => signOut({ callbackUrl: '/' })} className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer">
                   <LogOut size={16} />
                   <span>Sign Out</span>
                 </button>
@@ -155,7 +245,6 @@ export function Sidebar({ user }: SidebarProps) {
             )}
         </div>
       </div>
-
     </div>
   );
 }

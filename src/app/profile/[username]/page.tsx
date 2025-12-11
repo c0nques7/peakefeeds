@@ -6,7 +6,8 @@ import { PostCard } from "@/components/PostCard";
 import { getServerSession } from "next-auth"; 
 import { authOptions } from "@/lib/auth.config";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton"; 
-import { SearchBar } from "@/components/SearchBar"; // Keep SearchBar here
+import { SearchBar } from "@/components/SearchBar"; 
+import MessageButton from "@/components/messaging/MessageButton"; // 🆕 1. Import Message Button
 
 // Shared Layout Styles
 import styles from "../../(dashboard)/dashboard.module.css"; 
@@ -80,6 +81,12 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
         signature: post.signature ?? null,
         contentHash: post.contentHash ?? null,
         
+        // 🆕 Add Link Metadata fields if they exist in your Prisma return type
+        // linkTitle: post.linkTitle ?? null,
+        // linkDescription: post.linkDescription ?? null,
+        // linkImage: post.linkImage ?? null,
+        // linkDomain: post.linkDomain ?? null,
+        
         author: { 
             id: profile.id, 
             username: profile.username, 
@@ -129,18 +136,25 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                         <span>Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
                     </div>
                     
-                    <div className="flex items-center justify-center">
+                    {/* 🆕 ACTION AREA (Wallet + Message) */}
+                    <div className="flex items-center justify-center gap-3">
                         {isOwnProfile ? (
                             <ConnectWalletButton />
                         ) : (
-                            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] text-sm font-medium">
-                                <ShieldCheck size={16} className={profile.walletAddress ? "text-emerald-400" : "text-gray-500"} />
-                                <span className={profile.walletAddress ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"} >
-                                    {profile.walletAddress ? `Verified: ${profile.walletAddress.slice(0, 6)}...` : 'Unlinked Wallet'}
-                                </span>
-                            </div>
+                            <>
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] text-sm font-medium">
+                                    <ShieldCheck size={16} className={profile.walletAddress ? "text-emerald-400" : "text-gray-500"} />
+                                    <span className={profile.walletAddress ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"} >
+                                        {profile.walletAddress ? `Verified` : 'Unlinked'}
+                                    </span>
+                                </div>
+                                
+                                {/* 🆕 MESSAGE BUTTON */}
+                                <MessageButton recipientId={profile.id} />
+                            </>
                         )}
                     </div>
+
                 </div>
             </header>
 

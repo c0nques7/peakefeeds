@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { ReactionType } from '@prisma/client';
+import { createNotification } from "@/lib/notifications"; // 1. Import
 
 const ReactionSchema = z.object({
   postId: z.string(),
@@ -30,16 +31,25 @@ export async function setReaction(formData: FormData) {
   const newType = reactionType as ReactionType; 
 
   try {
-    // 1. Perform the DB Transaction (Updates Counts + Reaction Table)
-    await prisma.$transaction(async (tx) => {
-      
+    // 2. Fetch Post to get Author ID (Needed for notification)
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true }
+    });
+
+    if (!post) return { error: "Post not found" };
+
+    // 3. Perform the DB Transaction (Returns 'shouldNotify' flag)
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      let shouldNotify = false;
+
       const existing = await tx.reaction.findUnique({
         where: { userId_postId: { userId, postId } },
       });
 
       if (existing) {
         if (existing.type === newType) {
-          // A. TOGGLE OFF
+          // A. TOGGLE OFF (Delete)
           await tx.reaction.delete({ where: { id: existing.id } });
           if (newType === 'LIKE') {
             await tx.post.update({ where: { id: postId }, data: { likesCount: { decrement: 1 } } });
@@ -51,6 +61,7 @@ export async function setReaction(formData: FormData) {
           await tx.reaction.update({ where: { id: existing.id }, data: { type: newType } });
           if (newType === 'LIKE') {
             await tx.post.update({ where: { id: postId }, data: { likesCount: { increment: 1 }, dislikesCount: { decrement: 1 } } });
+            shouldNotify = true; // We switched to LIKE
           } else {
             await tx.post.update({ where: { id: postId }, data: { likesCount: { decrement: 1 }, dislikesCount: { increment: 1 } } });
           }
@@ -60,32 +71,35 @@ export async function setReaction(formData: FormData) {
         await tx.reaction.create({ data: { userId, postId, type: newType } });
         if (newType === 'LIKE') {
             await tx.post.update({ where: { id: postId }, data: { likesCount: { increment: 1 } } });
+            shouldNotify = true; // We created a LIKE
         } else {
             await tx.post.update({ where: { id: postId }, data: { dislikesCount: { increment: 1 } } });
         }
       }
+      
+      return { shouldNotify };
     });
 
-    // 🛑 2. AGGRESSIVE REVALIDATION
-    // We must clear the cache for ALL feeds where this post might appear.
-    
-    // A. The specific channel the post belongs to
+    // 4. TRIGGER NOTIFICATION 🔔 (Outside transaction to keep DB lock short)
+    if (transactionResult.shouldNotify) {
+        await createNotification({
+            type: 'LIKE',
+            actorId: session.user.id,
+            recipientId: post.authorId,
+            postId: postId
+        });
+    }
+
+    // 🛑 5. AGGRESSIVE REVALIDATION
     revalidatePath(`/channels/${channelSlug}`);
-    
-    // B. The Global Discovery Feed
     revalidatePath('/home');
-    
-    // C. The User's Personal Feed
+    revalidatePath('/discover');
     revalidatePath('/my-feed');
     
-    // D. (Optional) The Profile Page of the current user (if viewing "Liked Posts" or "My Posts")
     if (session.user.username) {
         revalidatePath(`/profile/${session.user.username}`);
     }
 
-    // E. (Optional) We could also revalidate the Author's profile if we had their username, 
-    // but that requires an extra DB lookup which might be overkill for a like button.
-    
     return { success: true };
 
   } catch (error) {

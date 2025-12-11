@@ -90,6 +90,17 @@ enum PenaltyType {
   CONTENT_REMOVAL         // Content gone, no strike
 }
 
+// 🔔 NEW: Notification Types
+enum NotificationType {
+  LIKE
+  COMMENT
+  REPLY
+  MENTION
+  SYSTEM
+  TICKET_REPLY
+  MESSAGE
+}
+
 // --------------------------------------
 // 3. Core Application Models
 // --------------------------------------
@@ -150,8 +161,16 @@ model User {
   invitesIssued   InviteCode[] @relation("IssuedInvites")
   inviteUsed      InviteCode?  @relation("UsedInvite")
 
-  // 🆘 SUPPORT SYSTEM (NEW)
+  // 🆘 SUPPORT SYSTEM
   supportTickets  SupportTicket[]
+
+  // 🔔 NOTIFICATIONS
+  notificationsReceived Notification[] @relation("NotificationsReceived")
+  notificationsSent     Notification[] @relation("NotificationsTriggered")
+
+  // 💬 MESSAGING
+  conversations Conversation[] @relation("ConversationParticipants")
+  messagesSent  DirectMessage[] @relation("SentMessages")
 }
 
 model Channel {
@@ -204,6 +223,7 @@ model Post {
   embedUrl        String?   
   mediaHash       String?
 
+  // Link Metadata
   linkTitle       String?
   linkDescription String?   @db.Text
   linkImage       String?
@@ -238,6 +258,9 @@ model Post {
   
   // Safety
   reports   Report[]
+  
+  // 🔔 Notifications linked to this post
+  notifications Notification[]
 
   @@index([channelId, createdAt(sort: Desc)])
   @@index([authorId])
@@ -266,6 +289,9 @@ model Comment {
   parentId  String?
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
+
+  // 🔔 Notifications linked to this comment
+  notifications Notification[]
 
   @@index([postId])
   @@index([parentId])
@@ -469,6 +495,9 @@ model SupportTicket {
   
   // The conversation history
   messages        TicketMessage[]
+  
+  // 🔔 Notifications linked to this ticket
+  notifications Notification[]
 
   @@index([status])
   @@index([userId])
@@ -488,4 +517,78 @@ model TicketMessage {
   adminId         String?       
   
   @@index([ticketId])
+}
+
+// --------------------------------------
+// 12. Notification System (NEW)
+// --------------------------------------
+
+model Notification {
+  id        String           @id @default(cuid())
+  createdAt DateTime         @default(now())
+  isRead    Boolean          @default(false)
+  type      NotificationType
+
+  // 1. The Recipient (Who sees the red dot?)
+  userId    String
+  user      User             @relation("NotificationsReceived", fields: [userId], references: [id], onDelete: Cascade)
+
+  // 2. The Trigger (Who did it?) - Optional for System messages
+  actorId   String?
+  actor     User?            @relation("NotificationsTriggered", fields: [actorId], references: [id], onDelete: Cascade)
+
+  // 3. The Context (Polymorphic Links - only one usually populated)
+  postId    String?
+  post      Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  ticketId  String?
+  ticket    SupportTicket?   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  // 4. Performance: Indexing for the "Show my unread" query
+  @@index([userId, isRead]) 
+  @@index([createdAt])
+}
+
+// --------------------------------------
+// 13. User Messaging (DMs)
+// --------------------------------------
+
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // The participants (Usually 2 for DMs, but allows groups later)
+  participants User[] @relation("ConversationParticipants")
+
+  // The messages in this chat
+  messages     DirectMessage[]
+
+  // For sorting inbox by most recent activity
+  lastMessageAt DateTime @default(now())
+
+  @@index([lastMessageAt])
+}
+
+model DirectMessage {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  // Who sent it?
+  senderId  String
+  sender    User   @relation("SentMessages", fields: [senderId], references: [id])
+
+  // Where does it belong?
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // Read Status (Simplest version: If created > user's last view)
+  // We can add a specialized "ReadReceipt" model later if needed
+  isRead    Boolean @default(false)
+
+  @@index([conversationId])
 }

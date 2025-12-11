@@ -37,6 +37,13 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
+/* --- ONBOARDING HIGHLIGHT --- */
+.introHighlight {
+  box-shadow: 0 0 30px rgba(13, 148, 136, 0.5), inset 0 0 20px rgba(13, 148, 136, 0.2);
+  border-right: 2px solid var(--accent-secondary) !important;
+  z-index: 200; /* Ensure it pops above everything */
+}
+
 /* --- COLLAPSED CONTROLS WRAPPER --- */
 .collapsedControls {
   position: fixed;
@@ -254,6 +261,51 @@
 
 .navLabel {
   font-size: 0.95rem;
+}
+
+/* --- SETTINGS ROW (Checkbox) --- */
+.settingsRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.5rem 0;
+  transition: color 0.2s;
+}
+
+.settingsRow:hover {
+  color: var(--text-primary);
+}
+
+.checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--text-muted);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.checkbox:checked {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+/* Checkmark Hack */
+.checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
 }
 
 /* --- FOOTER --- */
