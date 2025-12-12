@@ -10,7 +10,18 @@ const queryClient = new QueryClient()
 
 export function Web3Provider({ children, cookies }: { children: ReactNode; cookies?: string | null }) {
   // 1. Hydrate the state from server cookies (Prevents flash of disconnected state)
-  const initialState = cookieToInitialState(wagmiAdapter.wagmiConfig as Config, cookies)
+  let initialState
+  
+  if (cookies) {
+    try {
+      // 🟢 FIX: Safely attempt to parse the cookie. 
+      // If it's malformed (JSON error), catch it and use undefined (fresh state).
+      initialState = cookieToInitialState(wagmiAdapter.wagmiConfig as Config, cookies)
+    } catch (error) {
+      console.warn("Error parsing Wagmi cookie, resetting state:", error)
+      initialState = undefined
+    }
+  }
 
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig as Config} initialState={initialState}>

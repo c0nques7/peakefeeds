@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
   turbopack: {},
-  // 1. WEBPACK CONFIG (Keeps your build working)
+  // 1. WEBPACK CONFIG
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -28,7 +27,26 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://www.youtube.com https://youtu.be https://vercel.live; frame-src 'self' https://www.youtube.com https://youtu.be https://vercel.live; media-src 'self' data: https://www.youtube.com https://youtu.be;",
+            // ⚡️ UPDATED: Added 'https://open.spotify.com' explicitly
+            value: `
+              frame-ancestors 'self' https://www.youtube.com https://youtu.be https://vercel.live; 
+              frame-src 
+                'self' 
+                https://www.youtube.com 
+                https://youtu.be 
+                https://vercel.live 
+                http://googleusercontent.com 
+                https://open.spotify.com 
+                https://w.soundcloud.com 
+                https://www.tiktok.com 
+                https://www.instagram.com 
+                https://discord.com 
+                https://www.reddit.com 
+                https://embed.reddit.com 
+                https://apnews.com 
+                https://www.eporner.com; 
+              media-src 'self' data: https://www.youtube.com https://youtu.be;
+            `.replace(/\s{2,}/g, ' ').trim() 
           },
           {
             key: 'X-Frame-Options',
@@ -39,13 +57,11 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // 3. ⚡️ REWRITES (The Magic Alias)
+  // 3. REWRITES
   async rewrites() {
     return [
       {
-        // When user visits /c/anything...
         source: '/c/:slug*',
-        // ...serve them /channels/anything
         destination: '/channels/:slug*',
       },
     ];
