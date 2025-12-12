@@ -2,11 +2,165 @@
 
 import { useState, useMemo } from 'react'
 import { useSession } from "next-auth/react" 
-import { Reply, Trash, Edit2, Send, MoreVertical, CornerDownRight, X, Check, Loader2 } from 'lucide-react'
+import { 
+  Reply, Trash, Edit2, Send, MoreVertical, CornerDownRight, 
+  X, Check, Loader2, ExternalLink, Video, Music, Image as ImageIcon, MessageCircle 
+} from 'lucide-react'
 import { createComment } from '@/actions/create-comment'
 import { deleteComment, updateComment } from '@/actions/comment-actions'
 import { toast } from 'sonner' 
 import clsx from 'clsx'
+
+// --- HELPER: Embed Logic for Comments ---
+const CommentEmbed = ({ url }: { url: string }) => {
+  if (!url) return null;
+
+  // Simple type detection
+  let type = 'external';
+  
+  // 1. Precise Image Regex
+  if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) || url.match(/(picsum\.photos|i\.imgur\.com)/)) {
+      type = 'image';
+  }
+  else if (url.match(/(youtube\.com|youtu\.be)/)) type = 'youtube';
+  else if (url.match(/(open\.spotify\.com)/)) type = 'spotify';
+  else if (url.match(/(soundcloud\.com)/)) type = 'soundcloud';
+  else if (url.match(/(instagram\.com)/)) type = 'instagram';
+  else if (url.match(/(tiktok\.com)/)) type = 'tiktok';
+  else if (url.match(/(reddit\.com)/)) type = 'reddit';
+  else if (url.match(/(discord\.com|discord\.gg)/)) type = 'discord';
+
+  // --- RENDERERS ---
+
+  if (type === 'youtube') {
+    const videoId = url.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|shorts\/)([^"&?\/\s]{11})/)?.[1];
+    if (!videoId) return <GenericLinkCard url={url} />;
+    return (
+      <div className="mt-3 w-full max-w-[400px] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-black aspect-video shadow-sm">
+        <iframe 
+          src={`https://www.youtube.com/embed/${videoId}`} 
+          className="w-full h-full" 
+          allowFullScreen 
+          allow="autoplay; encrypted-media" 
+          style={{ border: 'none' }} 
+        />
+      </div>
+    );
+  }
+
+  if (type === 'spotify') {
+    const embedUrl = url.replace('open.spotify.com', 'open.spotify.com/embed');
+    return (
+        <div className="mt-3 w-full max-w-[400px]">
+            <iframe 
+              src={embedUrl} 
+              width="100%" 
+              height="80" 
+              allow="encrypted-media" 
+              className="rounded-xl shadow-sm bg-white/5" 
+              style={{ border: 'none' }}
+            />
+        </div>
+    );
+  }
+
+  if (type === 'soundcloud') {
+    return (
+      <div className="mt-3 w-full max-w-[400px]">
+        <iframe 
+          width="100%" 
+          height="166" 
+          scrolling="no" 
+          allow="autoplay" 
+          src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`} 
+          className="rounded-xl border border-gray-200 dark:border-gray-700" 
+          style={{ border: 'none' }}
+        />
+      </div>
+    );
+  }
+
+  if (type === 'image') {
+    return (
+      <div className="mt-3 w-full max-w-[400px] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm relative group/image">
+        <img 
+            src={url} 
+            alt="Comment attachment" 
+            className="w-full h-auto object-cover max-h-[400px]" 
+            loading="lazy" 
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+      </div>
+    );
+  }
+
+  if (type === 'instagram') {
+    // 🟢 NEW STRATEGY: Render a Rich Social Card for Instagram
+    // (Identical logic to PostCard/index.tsx for consistency)
+    
+    const match = url.match(/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
+    const postId = match ? match[1] : null;
+
+    // Extract handle for label
+    const handle = url.match(/instagram\.com\/([a-zA-Z0-9_.]+)/)?.[1];
+    const label = handle ? `@${handle}` : "Instagram";
+
+    return (
+        <div className="w-full mt-3 relative z-10 max-w-[400px]">
+            <a 
+                href={url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="group block relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-[#833ab4]/5 via-[#fd1d1d]/5 to-[#fcb045]/5 hover:from-[#833ab4]/10 hover:via-[#fd1d1d]/10 hover:to-[#fcb045]/10 transition-all"
+            >
+                <div className="flex items-center gap-3 p-3">
+                    {/* Instagram Icon Box */}
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-tr from-[#ffc107] via-[#f44336] to-[#9c27b0] flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+                        <ExternalLink size={20} />
+                    </div>
+
+                    {/* Text Info */}
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
+                            {postId ? "View Post on Instagram" : "View Profile on Instagram"}
+                        </span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                            {label} • Click to open
+                        </span>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="ml-auto text-gray-400 group-hover:text-indigo-500 transition-colors">
+                        <CornerDownRight size={14} />
+                    </div>
+                </div>
+            </a>
+        </div>
+    );
+  }
+
+  if (type === 'discord') {
+      return <GenericLinkCard url={url} icon={<MessageCircle className="text-[#5865F2]" size={18} />} label="Discord Invite" />;
+  }
+
+  // Fallback for generic links
+  return <GenericLinkCard url={url} />;
+};
+
+// Generic Card for non-media links
+const GenericLinkCard = ({ url, icon, label }: any) => (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 p-2 pr-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-colors max-w-md group/card">
+        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 group-hover/card:text-indigo-500 transition-colors">
+            {icon || <ExternalLink size={16} />}
+        </div>
+        <div className="flex flex-col overflow-hidden">
+            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate">{label || new URL(url).hostname}</span>
+            <span className="text-[10px] text-gray-400 truncate">{url}</span>
+        </div>
+    </a>
+);
+
+// --- MAIN COMPONENT ---
 
 interface CommentItemProps {
   comment: any; 
@@ -28,7 +182,6 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
   const [showMenu, setShowMenu] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 🟢 FIX: Check both the foreign key AND the author object relation
   const isCommentAuthor = currentUserId && (
       currentUserId === comment.authorId || 
       currentUserId === comment.author?.id
@@ -52,6 +205,13 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
       const index = comment.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % colors.length;
       return colors[index];
   }, [comment.id]);
+
+  // Extract URL for embedding
+  const url = useMemo(() => {
+    const content = comment?.content || "";
+    const match = content.match(/(https?:\/\/[^\s]+)/g);
+    return match ? match[0] : null;
+  }, [comment.content]);
 
   // --- Handlers ---
 
@@ -111,6 +271,18 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
     
     setIsSubmitting(false);
     setShowDeleteConfirm(false);
+  };
+
+  // Helper to make links clickable in text
+  const renderContent = (text: string) => {
+    const parts = text.split(/(https?:\/\/[^\s]+)/g);
+    return parts.map((part, i) => 
+        part.match(/^https?:\/\//) ? (
+            <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
+                {part}
+            </a>
+        ) : part
+    );
   };
 
   return (
@@ -193,7 +365,7 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
                 </div>
             </div>
 
-            {/* Content Logic */}
+            {/* Content & Embed Logic */}
             {isEditing ? (
                 <div className="mt-2">
                     <input 
@@ -212,9 +384,14 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
                     </div>
                 </div>
             ) : (
-                <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed whitespace-pre-wrap">
-                    {comment.content}
-                </p>
+                <>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed whitespace-pre-wrap">
+                        {renderContent(comment.content)}
+                    </p>
+                    
+                    {/* RICH MEDIA EMBED */}
+                    {url && <CommentEmbed url={url} />}
+                </>
             )}
 
             {/* Reply Button */}

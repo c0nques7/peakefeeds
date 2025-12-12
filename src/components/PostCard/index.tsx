@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { 
   MessageCircle, Heart, Share2, MoreHorizontal, 
-  ExternalLink, ShieldCheck, Trash2, AlertCircle, X, Loader2, Send
+  ExternalLink, ShieldCheck, Trash2, AlertCircle, X, Loader2, Send,
+  Play, Music, Image as ImageIcon, Video, Disc, CornerDownRight
 } from 'lucide-react'
 import { toast } from 'sonner' 
 import { setReaction } from '@/actions/toggle-reaction'
@@ -17,11 +18,32 @@ import styles from './PostCard.module.css'
 
 // --- HELPERS ---
 
-function formatTextWithLinks(text: string) {
+// 🟢 HELPER: Hides the previewed URL from the text body
+function formatTextWithLinks(text: string, previewUrl?: string | null) {
+  if (!text) return null;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
+  
   return parts.map((part, i) => {
-    if (part.match(urlRegex)) return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline break-all relative z-10" onClick={(e) => e.stopPropagation()}>{part}</a>;
+    if (part.match(urlRegex)) {
+        // If this URL is the one being previewed, hide it
+        if (previewUrl && part.includes(previewUrl)) {
+            return null; 
+        }
+        
+        return (
+            <a 
+                key={i} 
+                href={part} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-[var(--accent-primary)] hover:underline break-all relative z-10" 
+                onClick={(e) => e.stopPropagation()}
+            >
+                {part}
+            </a>
+        );
+    }
     return part;
   });
 }
@@ -30,10 +52,8 @@ function formatTextWithLinks(text: string) {
 function buildCommentTree(flatComments: any[]) {
     if (!flatComments) return [];
     const map = new Map();
-    // Initialize map
     flatComments.forEach(c => map.set(c.id, { ...c, replies: [] }));
     const roots: any[] = [];
-    
     flatComments.forEach(c => {
         if (c.parentId && map.has(c.parentId)) {
             map.get(c.parentId).replies.push(map.get(c.id));
@@ -58,6 +78,214 @@ const RoleBadge = ({ role }: { role: string }) => {
     return <span className={clsx("text-[10px] font-bold px-1.5 py-0.5 rounded-md border ml-2 align-middle", colorClass)}>{label}</span>;
 };
 
+// --- NEW: Unified Embed Component ---
+const PostEmbed = ({ url, fallbackData }: { url: string, fallbackData?: any }) => {
+    if (!url) return null;
+
+    let type = 'link';
+    // 1. Precise Image Regex: Only allow direct file extensions or known direct image domains
+    // 🔴 Removed 'imgur.com' (pages), kept 'i.imgur.com' (files)
+    if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) || url.match(/(picsum\.photos|i\.imgur\.com)/)) {
+        type = 'image';
+    }
+    else if (url.match(/(youtube\.com|youtu\.be)/)) type = 'youtube';
+    else if (url.match(/(open\.spotify\.com)/)) type = 'spotify';
+    else if (url.match(/(soundcloud\.com)/)) type = 'soundcloud';
+    else if (url.match(/(instagram\.com)/)) type = 'instagram';
+    else if (url.match(/(tiktok\.com)/)) type = 'tiktok';
+    else if (url.match(/(reddit\.com)/)) type = 'reddit';
+    else if (url.match(/(discord\.com|discord\.gg)/)) type = 'discord';
+
+    // --- RENDERERS ---
+
+    if (type === 'image') {
+        return (
+            <div className="w-full mt-3 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-black/5 relative z-10 flex justify-center">
+                {/* 🟢 FIX: Added auto height and max-height to prevent white squares */}
+                <img 
+                    src={url} 
+                    alt="Post content" 
+                    className="w-full h-auto object-contain max-h-[600px]" 
+                    loading="lazy"
+                    onError={(e) => {
+                        // If image fails, hide it (prevents broken icon/white square)
+                        e.currentTarget.style.display = 'none';
+                    }} 
+                />
+            </div>
+        );
+    }
+
+    if (type === 'instagram') {
+        const match = url.match(/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
+        const postId = match ? match[1] : null;
+        
+        // Extract handle if available for the label
+        const handle = url.match(/instagram\.com\/([a-zA-Z0-9_.]+)/)?.[1];
+        const label = handle ? `@${handle}` : "Instagram";
+
+        // 🟢 SOLUTION: Render a Rich Social Card
+        // Since Instagram blocks direct embeds/hotlinking, we provide a polished
+        // "Click to View" card styled with Instagram's gradient.
+        return (
+            <div className="w-full mt-3 relative z-10 max-w-[450px] mx-auto md:mx-0">
+                <a 
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="group block relative overflow-hidden rounded-xl border border-[var(--glass-border)] bg-gradient-to-br from-[#833ab4]/5 via-[#fd1d1d]/5 to-[#fcb045]/5 hover:from-[#833ab4]/10 hover:via-[#fd1d1d]/10 hover:to-[#fcb045]/10 transition-all"
+                >
+                    <div className="flex items-center gap-4 p-4">
+                        {/* Instagram Icon / Gradient Box */}
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-tr from-[#ffc107] via-[#f44336] to-[#9c27b0] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+                            <ExternalLink size={24} />
+                        </div>
+
+                        {/* Text Info */}
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-bold text-[var(--text-primary)] truncate">
+                                {postId ? "View Post on Instagram" : "View Profile on Instagram"}
+                            </span>
+                            <span className="text-xs text-[var(--text-muted)] truncate mt-0.5">
+                                {label} • Click to open
+                            </span>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="ml-auto text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] transition-colors">
+                            <CornerDownRight size={16} />
+                        </div>
+                    </div>
+                </a>
+            </div>
+        );
+    }
+
+    if (type === 'youtube') {
+        const videoId = url.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|shorts\/)([^"&?\/\s]{11})/)?.[1];
+        if (!videoId) return <GenericLinkCard url={url} data={fallbackData} />;
+        return (
+            <div className="w-full overflow-hidden rounded-xl border border-[var(--glass-border)] bg-black aspect-video relative z-10 mt-3">
+                <iframe 
+                    src={`https://www.youtube.com/embed/${videoId}`} 
+                    className="w-full h-full" 
+                    allowFullScreen 
+                    allow="autoplay; encrypted-media"
+                    style={{ border: 'none' }}
+                />
+            </div>
+        );
+    }
+
+    if (type === 'spotify') {
+        const embedUrl = url.replace('open.spotify.com', 'open.spotify.com/embed');
+        return (
+            <div className="w-full mt-3 relative z-10">
+                <iframe 
+                    src={embedUrl} 
+                    width="100%" 
+                    height="152" 
+                    allow="encrypted-media" 
+                    className="rounded-xl border border-[var(--glass-border)] bg-black/5"
+                    style={{ border: 'none' }}
+                />
+            </div>
+        );
+    }
+
+    if (type === 'soundcloud') {
+        return (
+            <div className="w-full mt-3 relative z-10">
+                <iframe 
+                    width="100%" 
+                    height="166" 
+                    scrolling="no" 
+                    allow="autoplay" 
+                    src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`} 
+                    className="rounded-xl border border-[var(--glass-border)]"
+                    style={{ border: 'none' }}
+                />
+            </div>
+        );
+    }
+
+    if (type === 'tiktok') {
+        const videoId = url.split('/video/')[1]?.split('?')[0];
+        return (
+            <div className="w-full mt-3 relative z-10">
+                <div className="rounded-xl border border-[var(--glass-border)] bg-black/5 overflow-hidden flex flex-col">
+                   <div className="p-4 flex items-center gap-4 bg-black/80 text-white">
+                        <div className="p-3 bg-[#ff0050] rounded-full"><Video size={20} /></div>
+                        <div>
+                            <h3 className="font-bold text-sm">TikTok Video</h3>
+                            <p className="text-xs text-gray-400">View on TikTok</p>
+                        </div>
+                   </div>
+                   <div className="p-6 bg-white flex justify-center">
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-black text-white rounded-full text-sm font-bold hover:opacity-80 transition-opacity">
+                            Watch Video on TikTok
+                        </a>
+                   </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'reddit') {
+        let embedUrl = url;
+        if (!url.includes('embed=true')) embedUrl = url.endsWith('/') ? `${url}embed` : `${url}/embed`;
+        return (
+            <div className="w-full mt-3 h-[500px] overflow-hidden rounded-xl border border-[var(--glass-border)] bg-white relative z-10">
+                <iframe 
+                    src={embedUrl} 
+                    className="w-full h-full" 
+                    style={{ border: 'none' }}
+                />
+            </div>
+        );
+    }
+
+    if (type === 'image') {
+        return (
+            <div className="w-full mt-3 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-black/5 relative z-10">
+                <img src={url} alt="Post content" className="w-full h-auto object-cover max-h-[600px]" loading="lazy" />
+            </div>
+        );
+    }
+
+    if (type === 'discord') {
+        return <GenericLinkCard url={url} data={fallbackData} icon={<MessageCircle className="text-[#5865F2]" />} label="Discord" />;
+    }
+
+    // Default Fallback
+    return <GenericLinkCard url={url} data={fallbackData} />;
+};
+
+const GenericLinkCard = ({ url, data, icon, label }: any) => (
+    <a href={url} target="_blank" rel="noopener noreferrer" className={clsx(styles.linkCard, "group relative z-10")}>
+        {data?.linkImage ? (
+            <div className={styles.linkImageWrapper}>
+                <img src={data.linkImage} className={styles.linkImage} alt="" />
+            </div>
+        ) : (
+            <div className="w-24 h-full bg-[var(--surface-elevated)] flex items-center justify-center border-r border-[var(--glass-border)]">
+                 {icon || <ExternalLink size={20} className="text-[var(--text-muted)]" />}
+            </div>
+        )}
+        <div className={styles.linkInfo}>
+            <div className={styles.linkDomainRow}>
+                <span>{label || new URL(url).hostname.replace('www.','')}</span>
+                <ExternalLink size={12} />
+            </div>
+            <h3 className={styles.linkTitle}>{data?.linkTitle || label || "External Link"}</h3>
+            {data?.linkDescription && <p className={styles.linkDesc}>{data.linkDescription}</p>}
+        </div>
+    </a>
+);
+
+
+// --- MAIN COMPONENT ---
+
 interface PostCardProps {
     post: any;
     initialReaction?: 'LIKE' | 'DISLIKE' | null;
@@ -80,7 +308,7 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDeleted, setIsDeleted] = useState(false)
 
-  // 🛡️ OWNERSHIP CHECK
+  // Ownership
   const isOwner = currentUserId === post.author.id;
   
   const commentTree = useMemo(() => buildCommentTree(post.comments || []), [post.comments]);
@@ -118,7 +346,7 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
   }
 
   const handleDelete = async () => { 
-      setIsConfirmingDelete(false); // Close overlay
+      setIsConfirmingDelete(false); 
       setIsDeleting(true); 
       
       try {
@@ -137,9 +365,10 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
   }
 
   // --- RENDER CHECKS ---
-  const isLinkPost = post.type === 'LINK' || (post.linkTitle && post.linkTitle.length > 0) || post.mediaUrl;
-  const isInstagram = post.mediaUrl && (post.mediaUrl.includes('instagram.com/p/') || post.mediaUrl.includes('instagram.com/reel/'));
-  const instagramEmbedUrl = isInstagram ? `${post.mediaUrl.split('?')[0]}/embed` : undefined;
+  
+  // Determine if we have a media URL to show
+  const mediaUrl = post.mediaUrl || (post.type === 'LINK' ? post.content.match(/(https?:\/\/[^\s]+)/)?.[0] : null);
+  const hasEmbed = !!mediaUrl;
 
   if (isDeleted) return null;
 
@@ -148,7 +377,6 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
       <div className={clsx(styles.cardInner, isFlipped && styles.flipped)}>
         
         {/* ================= FRONT FACE ================= */}
-        {/* ⚡️ FIX: Inline style forces overflow visible so Dropdown Menu works */}
         <div className={styles.cardFront} style={{ overflow: 'visible' }}> 
           
           {/* DELETE CONFIRMATION OVERLAY */}
@@ -180,7 +408,7 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
                 </div>
             </div>
             
-            {/* 🟢 MENU */}
+            {/* MENU */}
             <div className="relative">
                 <button 
                     onClick={() => setShowMenu(!showMenu)}
@@ -191,12 +419,9 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
                 
                 {showMenu && !isDeleting && (
                     <>
-                        {/* Overlay to close menu */}
                         <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
                         
                         <div className="absolute right-0 top-8 w-32 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg shadow-xl overflow-hidden z-20 backdrop-blur-xl">
-                            
-                            {/* 🟢 DELETE BUTTON (Owner Only) */}
                             {isOwner && (
                                 <button 
                                     onClick={() => { setShowMenu(false); setIsConfirmingDelete(true); }} 
@@ -205,7 +430,6 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
                                     <Trash2 size={14} /> Delete
                                 </button>
                             )}
-                            
                             <button className="w-full text-left px-4 py-2 text-xs font-bold text-[var(--text-muted)] hover:bg-white/5 flex items-center gap-2 cursor-pointer z-30">
                                 <AlertCircle size={14} /> Report
                             </button>
@@ -216,23 +440,15 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
           </div>
 
           <div className={styles.contentWrapper}>
-              <div className={styles.content}>{formatTextWithLinks(post.content)}</div>
+              {/* Pass the mediaUrl to be hidden from text if it matches */}
+              <div className={styles.content}>
+                  {formatTextWithLinks(post.content, mediaUrl)}
+              </div>
           </div>
 
-          {/* MEDIA PREVIEWS */}
-          {isInstagram ? (
-            <div className={styles.instagramWrapper}><iframe src={instagramEmbedUrl} className={styles.instagramFrame} scrolling="no" allowTransparency={true}/></div>
-          ) : (
-              isLinkPost && post.mediaUrl && (
-                 <a href={post.mediaUrl} target="_blank" rel="noopener noreferrer" className={styles.linkCard}>
-                    {post.linkImage ? <div className={styles.linkImageWrapper}><img src={post.linkImage} className={styles.linkImage} /></div> : <div className="w-full h-2 bg-[var(--accent-primary)] opacity-50"></div>}
-                    <div className={styles.linkInfo}>
-                        <div className={styles.linkDomainRow}><span>{post.linkDomain || new URL(post.mediaUrl).hostname.replace('www.','')}</span><ExternalLink size={12} /></div>
-                        <h3 className={styles.linkTitle}>{post.linkTitle || "External Link"}</h3>
-                        {post.linkDescription && <p className={styles.linkDesc}>{post.linkDescription}</p>}
-                    </div>
-                 </a>
-              )
+          {/* MEDIA PREVIEWS - NEW UNIFIED SYSTEM */}
+          {hasEmbed && (
+              <PostEmbed url={mediaUrl} fallbackData={post} />
           )}
 
           <div className="flex items-center justify-between pt-3 border-t border-[var(--glass-border)] mt-auto">
@@ -264,9 +480,9 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
                       commentTree.map(c => (
                           <CommentItem 
                             key={c.id} 
-                            comment={c} 
-                            postId={post.id} 
-                            channelSlug={post.channel?.slug || 'home'} 
+                            comment={c}
+                            postId={post.id}
+                            channelSlug={post.channel?.slug || 'home'}
                             postAuthorId={post.author.id} 
                           />
                       ))
