@@ -6,7 +6,6 @@ export type ProfileData = {
     id: string;
     username: string | null;
     name: string | null;
-    // ✅ ADDED IMAGE
     image: string | null; 
     walletAddress: string | null;
     createdAt: Date;
@@ -29,7 +28,13 @@ export type ProfileData = {
         mediaUrl: string | null;
         type: PostType;
         
-        // ✅ ADDED COUNTS TO TYPE (So page.tsx can access them)
+        // 🆕 LINK PREVIEW DATA
+        linkTitle: string | null;
+        linkDescription: string | null;
+        linkImage: string | null;
+        linkDomain: string | null;
+
+        // Counts
         likesCount: number;
         dislikesCount: number;
         
@@ -77,7 +82,6 @@ export async function getProfileData(username: string, currentUserId?: string): 
     }
 
     const user = await prisma.user.findFirst({
-        // Use findFirst with insensitive mode for better UX
         where: { 
             username: {
                 equals: username,
@@ -88,7 +92,6 @@ export async function getProfileData(username: string, currentUserId?: string): 
             id: true,
             username: true,
             name: true,
-            // ✅ SELECT IMAGE
             image: true,
             walletAddress: true,
             createdAt: true,
@@ -102,12 +105,18 @@ export async function getProfileData(username: string, currentUserId?: string): 
             },
             
             posts: {
-                take: 50, // Increased from 10 to fill the grid better
+                take: 50,
                 orderBy: { createdAt: 'desc' },
                 select: {
                     id: true, title: true, content: true, createdAt: true, isVerified: true,
                     contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
                     
+                    // 🆕 SELECT LINK METADATA
+                    linkTitle: true,
+                    linkDescription: true,
+                    linkImage: true,
+                    linkDomain: true,
+
                     // Counts
                     likesCount: true,
                     dislikesCount: true,
@@ -143,14 +152,14 @@ export async function getProfileData(username: string, currentUserId?: string): 
 
     if (!user) return null;
 
-    // 🛑 TRANSFORM DATA
+    // TRANSFORM DATA
     const formattedPosts = user.posts.map(post => {
         // @ts-ignore 
         const userReaction = post.likes?.[0]?.type || null;
 
         return {
             ...post,
-            // ✅ Ensure we return these so the page can map them if needed
+            // Ensure counts are safe
             likesCount: post.likesCount ?? 0,
             dislikesCount: post.dislikesCount ?? 0,
 
@@ -163,6 +172,6 @@ export async function getProfileData(username: string, currentUserId?: string): 
         };
     });
 
-    // @ts-ignore - TS might complain about 'likes' property being left over, but that's fine for runtime
+    // @ts-ignore 
     return { ...user, posts: formattedPosts };
 }

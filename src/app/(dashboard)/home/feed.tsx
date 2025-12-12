@@ -35,6 +35,7 @@ export default async function PersonalFeed() {
                contentHash: post.contentHash || null
             }}
             initialReaction={post.currentUserReaction}
+            currentUserId={currentUserId} // 🟢 ADDED THIS
           />
         ))
       ) : (

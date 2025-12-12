@@ -7,7 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton"; 
 import { SearchBar } from "@/components/SearchBar"; 
-import MessageButton from "@/components/messaging/MessageButton"; // 🆕 1. Import Message Button
+import MessageButton from "@/components/messaging/MessageButton"; 
 
 // Shared Layout Styles
 import styles from "../../(dashboard)/dashboard.module.css"; 
@@ -81,11 +81,11 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
         signature: post.signature ?? null,
         contentHash: post.contentHash ?? null,
         
-        // 🆕 Add Link Metadata fields if they exist in your Prisma return type
-        // linkTitle: post.linkTitle ?? null,
-        // linkDescription: post.linkDescription ?? null,
-        // linkImage: post.linkImage ?? null,
-        // linkDomain: post.linkDomain ?? null,
+        // 🟢 UNCOMMENTED: Link Metadata is now passed to the Client Component
+        linkTitle: post.linkTitle ?? null,
+        linkDescription: post.linkDescription ?? null,
+        linkImage: post.linkImage ?? null,
+        linkDomain: post.linkDomain ?? null,
         
         author: { 
             id: profile.id, 
@@ -136,7 +136,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                         <span>Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
                     </div>
                     
-                    {/* 🆕 ACTION AREA (Wallet + Message) */}
+                    {/* ACTION AREA (Wallet + Message) */}
                     <div className="flex items-center justify-center gap-3">
                         {isOwnProfile ? (
                             <ConnectWalletButton />
@@ -149,7 +149,6 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                                     </span>
                                 </div>
                                 
-                                {/* 🆕 MESSAGE BUTTON */}
                                 <MessageButton recipientId={profile.id} />
                             </>
                         )}

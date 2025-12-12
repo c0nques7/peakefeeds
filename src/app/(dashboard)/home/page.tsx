@@ -53,7 +53,12 @@ export default async function PersonalFeed() {
           </div>
         ) : (
           posts.map((post) => (
-            <PostCard key={post.id} post={post} initialReaction={post.currentUserReaction} />
+            <PostCard 
+                key={post.id} 
+                post={post} 
+                initialReaction={post.currentUserReaction}
+                currentUserId={currentUserId} // 🟢 ADDED THIS
+            />
           ))
         )}
       </div>

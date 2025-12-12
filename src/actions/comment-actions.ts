@@ -17,21 +17,33 @@ export async function deleteComment(commentId: string, channelSlug: string) {
   if (!session?.user?.id) return { error: "Unauthorized" };
 
   try {
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    // 1. Fetch Comment AND the parent Post to check permissions
+    const comment = await prisma.comment.findUnique({ 
+        where: { id: commentId },
+        include: { post: true } // 🟢 Needed to identify the post owner
+    });
+
     if (!comment) return { error: "Comment not found" };
 
-    // Permission check: Author only (expand logic for admins later if needed)
-    if (comment.authorId !== session.user.id) {
-        return { error: "You can only delete your own comments." };
+    const isCommentAuthor = comment.authorId === session.user.id;
+    const isPostOwner = comment.post.authorId === session.user.id;
+
+    // 2. Permission Check: Allow if User wrote the comment OR owns the post
+    if (!isCommentAuthor && !isPostOwner) {
+        return { error: "You do not have permission to delete this comment." };
     }
 
+    // 3. Delete
     await prisma.comment.delete({ where: { id: commentId } });
     
-    // Refresh the UI
+    // Refresh the UI paths where this comment might appear
     revalidatePath(`/channels/${channelSlug}`);
     revalidatePath(`/home`);
+    revalidatePath(`/profile/[username]`, 'page');
+    
     return { success: true };
   } catch (error) {
+    console.error("Delete Comment Error:", error);
     return { error: "Failed to delete comment." };
   }
 }
@@ -51,6 +63,8 @@ export async function updateComment(formData: FormData) {
 
   try {
     const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    
+    // STRICT: Only the comment author can edit the text
     if (!comment || comment.authorId !== session.user.id) {
         return { error: "Unauthorized" };
     }
@@ -62,6 +76,8 @@ export async function updateComment(formData: FormData) {
 
     revalidatePath(`/channels/${channelSlug}`);
     revalidatePath(`/home`);
+    revalidatePath(`/profile/[username]`, 'page');
+    
     return { success: true };
   } catch (error) {
     return { error: "Failed to update comment." };

@@ -1,452 +1,310 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import Image from 'next/image' // 🆕 Added for Link Preview
+import { formatDistanceToNow } from 'date-fns'
 import { 
-  MessageCircle, 
-  Heart, 
-  ShieldCheck, 
-  ShieldOff, 
-  X, 
-  Send, 
-  ChevronDown, 
-  ChevronUp, 
-  Trash, 
-  HeartCrack, 
-  ExternalLink 
+  MessageCircle, Heart, Share2, MoreHorizontal, 
+  ExternalLink, ShieldCheck, Trash2, AlertCircle, X, Loader2, Send
 } from 'lucide-react'
-import clsx from 'clsx'
-import styles from './PostCard.module.css' 
-import { PostType } from '@prisma/client'
-
-// Role Badge
-import { UserRoleBadge } from '@/components/userrolebadge/UserRoleBadge'
-
-// Server Actions
+import { toast } from 'sonner' 
+import { setReaction } from '@/actions/toggle-reaction'
 import { deletePost } from '@/actions/delete-post' 
-import { createComment } from '@/actions/create-comment'
-import { setReaction } from '@/actions/toggle-reaction' 
+import { createComment } from '@/actions/create-comment' 
+import { CommentItem } from '@/components/comments/CommentItem' 
+import clsx from 'clsx'
+import styles from './PostCard.module.css'
 
-// --- TYPES ---
+// --- HELPERS ---
 
-interface Comment {
-    id: string;
-    author: { id: string; username: string | null };
-    content: string;
-    parentId?: string | null; 
-    replies?: Comment[];      
-}
-
-interface PostProps {
-  post: {
-    id: string
-    title: string | null
-    content: string;
-    type: PostType; 
-    mediaUrl: string | null;
-    embedUrl?: string | null;
-    contentHash?: string | null;
-    isVerified?: boolean; 
-    signature?: string | null;
-    
-    // 🆕 NEW: Link Metadata Fields
-    linkTitle?: string | null;
-    linkDescription?: string | null;
-    linkImage?: string | null;
-    linkDomain?: string | null;
-
-    createdAt: string; 
-    
-    author: { 
-        id: string; 
-        name: string | null; 
-        username: string | null; 
-        image?: string | null; 
-        role?: string | null; 
-    };
-    channel: { id: string; name: string; slug: string; creatorId: string; };
-    comments?: Comment[];
-    _count?: { comments: number, likes: number, dislikes: number };
-  }
-  initialReaction?: 'LIKE' | 'DISLIKE' | null;
-  isDemo?: boolean; 
-}
-
-// --- HELPER: Media Detection ---
-function detectMedia(text: string | null): any {
-    if (!text) return null;
-    const ytMatch = text.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}(?:\S+)?)/i);
-    if (ytMatch) return { type: 'YOUTUBE', url: ytMatch[0] }; 
-    const imgMatch = text.match(/(https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp)|https?:\/\/(?:i\.imgur\.com|storage\.googleapis\.com|cdn\.\S+)\/\S+)/i);
-    if (imgMatch) return { type: 'IMAGE', url: imgMatch[0] };
-    return null;
-}
-
-// --- SUB-COMPONENT: Media Preview ---
-function MediaPreview({ type, url }: { type: string, url: string | null }) {
-    if (!url) return null;
-    
-    if (type === 'YOUTUBE') {
-        const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-        const videoId = videoIdMatch ? videoIdMatch[1] : null;
-        if (!videoId) return null;
-
-        return (
-            <div className={styles.videoWrapper} onClick={(e) => e.stopPropagation()}>
-                <iframe 
-                    src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`} 
-                    title="YouTube" 
-                    allowFullScreen 
-                />
-            </div>
-        );
-    }
-
-    if (type === 'IMAGE') {
-        return (
-            <div className={styles.imageWrapper}>
-                <img src={url} alt="Post Content" loading="lazy" />
-            </div>
-        );
-    }
-    return null;
-}
-
-// --- SUB-COMPONENT: Single Comment ---
-function SingleComment({ comment, isDemo }: { comment: Comment, isDemo: boolean }) {
-    return (
-        <div className={styles.commentItem}>
-            <div className="flex justify-between items-start">
-                <span className={styles.commentAuthor}>@{comment.author?.username || 'user'}</span>
-                <span className="text-[10px] text-gray-500">Just now</span>
-            </div>
-            <p className={styles.commentText}>{comment.content}</p>
-        </div>
-    )
-}
-
-// --- MAIN COMPONENT ---
-export function PostCard({ post, initialReaction = null, isDemo = false }: PostProps) {
-  // UI State
-  const [isFlipped, setIsFlipped] = useState(false) 
-  const [showComments, setShowComments] = useState(false) 
-  const [isExpanded, setIsExpanded] = useState(false) 
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  
-  // Data State
-  const [userReaction, setUserReaction] = useState<'LIKE' | 'DISLIKE' | null>(initialReaction);
-  const [counts, setCounts] = useState({
-      likes: post._count?.likes || 0,
-      dislikes: post._count?.dislikes || 0,
-      comments: post.comments?.length || post._count?.comments || 0
+function formatTextWithLinks(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) => {
+    if (part.match(urlRegex)) return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline break-all relative z-10" onClick={(e) => e.stopPropagation()}>{part}</a>;
+    return part;
   });
+}
 
-  const [localComments, setLocalComments] = useState<Comment[]>(post.comments || []);
-  const [commentText, setCommentText] = useState("") 
+// Tree Builder for Comments
+function buildCommentTree(flatComments: any[]) {
+    if (!flatComments) return [];
+    const map = new Map();
+    // Initialize map
+    flatComments.forEach(c => map.set(c.id, { ...c, replies: [] }));
+    const roots: any[] = [];
+    
+    flatComments.forEach(c => {
+        if (c.parentId && map.has(c.parentId)) {
+            map.get(c.parentId).replies.push(map.get(c.id));
+        } else {
+            roots.push(map.get(c.id));
+        }
+    });
+    return roots;
+}
+
+const RoleBadge = ({ role }: { role: string }) => {
+    if (!role || role === 'STANDARD' || role === 'USER') return null;
+    let label = role;
+    let colorClass = "text-gray-400 bg-gray-500/10 border-gray-500/20"; 
+    switch (role) {
+        case 'ADMIN': label = 'ADMIN'; colorClass = "text-red-400 bg-red-500/10 border-red-500/20"; break;
+        case 'MODERATOR': label = 'MOD'; colorClass = "text-orange-400 bg-orange-500/10 border-orange-500/20"; break;
+        case 'GOVERNMENT': label = 'OFFICIAL'; colorClass = "text-blue-400 bg-blue-500/10 border-blue-500/20"; break;
+        case 'FACT_CHECKER': label = 'VERIFIER'; colorClass = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"; break;
+        case 'INFLUENCER': label = 'CREATOR'; colorClass = "text-purple-400 bg-purple-500/10 border-purple-500/20"; break;
+    }
+    return <span className={clsx("text-[10px] font-bold px-1.5 py-0.5 rounded-md border ml-2 align-middle", colorClass)}>{label}</span>;
+};
+
+interface PostCardProps {
+    post: any;
+    initialReaction?: 'LIKE' | 'DISLIKE' | null;
+    currentUserId?: string;
+}
+
+export function PostCard({ post, initialReaction, currentUserId }: PostCardProps) {
+  const [reaction, setReactionState] = useState(initialReaction)
+  const [likesCount, setLikesCount] = useState(post._count?.likes || post.likesCount || 0)
+  const [showMenu, setShowMenu] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
+  
+  // Comment State
+  const [showComments, setShowComments] = useState(false) 
+  const [commentText, setCommentText] = useState("")
+  const [isSendingComment, setIsSendingComment] = useState(false)
+
+  // Delete State
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false) 
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isDeleted, setIsDeleted] = useState(false)
+
+  // 🛡️ OWNERSHIP CHECK
+  const isOwner = currentUserId === post.author.id;
+  
+  const commentTree = useMemo(() => buildCommentTree(post.comments || []), [post.comments]);
 
   // --- HANDLERS ---
-  
-  const handleVerifyFlip = (e: React.MouseEvent) => { 
-      e.stopPropagation(); 
-      if (!showComments) setIsFlipped(!isFlipped) 
-  }
 
-  const handleReaction = async (e: React.MouseEvent, type: 'LIKE' | 'DISLIKE') => {
-    e.stopPropagation();
-    
-    const previousReaction = userReaction;
-    const previousCounts = { ...counts };
-    let newCounts = { ...counts };
-
-    if (userReaction === type) {
-        setUserReaction(null);
-        if (type === 'LIKE') newCounts.likes--;
-        if (type === 'DISLIKE') newCounts.dislikes--;
+  const handleReaction = async (type: 'LIKE' | 'DISLIKE') => {
+    if (reaction === type) {
+        setReactionState(null)
+        if(type === 'LIKE') setLikesCount((prev: number) => prev - 1)
     } else {
-        setUserReaction(type);
-        if (type === 'LIKE') {
-            newCounts.likes++;
-            if (previousReaction === 'DISLIKE') newCounts.dislikes--;
-        }
-        if (type === 'DISLIKE') {
-            newCounts.dislikes++;
-            if (previousReaction === 'LIKE') newCounts.likes--;
-        }
+        if(reaction === 'LIKE') setLikesCount((prev: number) => prev - 1) 
+        if(type === 'LIKE') setLikesCount((prev: number) => prev + 1)     
+        setReactionState(type)
     }
-    setCounts(newCounts);
-
-    if (isDemo) return; 
-
-    const formData = new FormData();
-    formData.append('postId', post.id);
-    formData.append('reactionType', type);
-    formData.append('channelSlug', post.channel.slug);
-    
-    try {
-        const result = await setReaction(formData);
-        if (result.error) throw new Error(result.error);
-    } catch (err) {
-        setUserReaction(previousReaction);
-        setCounts(previousCounts);
-    }
+    const formData = new FormData()
+    formData.append('postId', post.id)
+    formData.append('reactionType', type)
+    formData.append('channelSlug', post.channel?.slug || 'home') 
+    await setReaction(formData)
   }
 
-  async function handleSendComment() {
-    if (!commentText.trim()) return;
-    
-    const newComment: Comment = {
-        id: `temp-${Date.now()}`,
-        author: { id: 'me', username: 'you' },
-        content: commentText,
-        replies: []
-    };
-    
-    setLocalComments(prev => [newComment, ...prev]);
-    setCounts(prev => ({ ...prev, comments: prev.comments + 1 }));
-    setCommentText("");
-
-    if (isDemo) return;
-
-    const formData = new FormData();
-    formData.append('postId', post.id);
-    formData.append('content', commentText);
-    formData.append('channelSlug', post.channel.slug);
-    await createComment(formData);
+  const handleCreateComment = async () => {
+      if(!commentText.trim()) return;
+      setIsSendingComment(true);
+      
+      const formData = new FormData();
+      formData.append('content', commentText);
+      formData.append('postId', post.id);
+      
+      await createComment(formData);
+      
+      setCommentText("");
+      setIsSendingComment(false);
   }
 
-  const handleDeletePost = async () => {
-      if(isDemo) {
-          alert("Demo Mode: Post deletion simulated.");
-          setShowConfirm(false);
-          return;
+  const handleDelete = async () => { 
+      setIsConfirmingDelete(false); // Close overlay
+      setIsDeleting(true); 
+      
+      try {
+          const res = await deletePost(post.id);
+          if (res.success) { 
+              toast.success("Post deleted"); 
+              setIsDeleted(true); 
+          } else { 
+              toast.error(res.error || "Failed to delete"); 
+              setIsDeleting(false); 
+          }
+      } catch (e) { 
+          toast.error("Error deleting post"); 
+          setIsDeleting(false); 
       }
-      setIsDeleting(true);
-      await deletePost(post.id);
-      setIsDeleting(false);
   }
 
-  // --- CONTENT PREP ---
-  const isPostVerified = post.isVerified || false;
-  let mediaInfo = detectMedia(post.mediaUrl) || detectMedia(post.content);
-  const rawContent = (mediaInfo?.url ? post.content.replace(mediaInfo.url, '') : post.content).trim();
-  const formattedDate = new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  // --- RENDER CHECKS ---
+  const isLinkPost = post.type === 'LINK' || (post.linkTitle && post.linkTitle.length > 0) || post.mediaUrl;
+  const isInstagram = post.mediaUrl && (post.mediaUrl.includes('instagram.com/p/') || post.mediaUrl.includes('instagram.com/reel/'));
+  const instagramEmbedUrl = isInstagram ? `${post.mediaUrl.split('?')[0]}/embed` : undefined;
 
-  // 🆕 TRUNCATION LOGIC (For Long Text)
-  const MAX_LENGTH = 280;
-  const isLongText = rawContent.length > MAX_LENGTH;
-  const displayContent = isExpanded || !isLongText 
-    ? rawContent 
-    : `${rawContent.slice(0, MAX_LENGTH)}...`;
+  if (isDeleted) return null;
 
   return (
-    <div className={styles.cardContainer}>
-      <div className={clsx(styles.cardInner, { [styles.flipped]: isFlipped })}>
+    <div className={clsx(styles.cardContainer, isDeleting && "opacity-50 pointer-events-none")}>
+      <div className={clsx(styles.cardInner, isFlipped && styles.flipped)}>
         
-        {/* --- FRONT FACE --- */}
-        <div className={styles.cardFront}>
+        {/* ================= FRONT FACE ================= */}
+        {/* ⚡️ FIX: Inline style forces overflow visible so Dropdown Menu works */}
+        <div className={styles.cardFront} style={{ overflow: 'visible' }}> 
           
-          {/* Header */}
-          <div className={styles.header}>
-            <div className={styles.authorInfo}>
-              <div className={styles.avatar}>{post.author.username?.[0]?.toUpperCase()}</div>
-              <div>
-                <div className="flex items-center gap-2">
-                    <span className={styles.authorName}>{post.author.username}</span>
-                    {post.author.role && (
-                        <UserRoleBadge role={post.author.role} showLabel={true} />
-                    )}
-                </div>
-                <span className={styles.timestamp}>
-                    {formattedDate} 
-                    {isDemo && " • Optimism Mainnet"}
-                </span>
-              </div>
-            </div>
-            
-            {!isDemo && (
-                <Link href={`/channels/${post.channel.slug}`} className={styles.channelTag} onClick={(e) => e.stopPropagation()}>
-                    #{post.channel.slug}
-                </Link>
-            )}
-          </div>
-
-          {/* Body */}
-          <div className={styles.contentWrapper}>
-            {post.title && <h3 className={styles.title}>{post.title}</h3>}
-            
-            <div onClick={(e) => e.stopPropagation()}>
-                <MediaPreview type={mediaInfo?.type || post.type} url={mediaInfo?.url || post.mediaUrl} />
-            </div>
-
-            {/* 🆕 TEXT CONTENT (With Read More) */}
-            {rawContent && (
-                <p className={styles.content}>
-                    {displayContent}
-                    {isLongText && !isExpanded && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
-                            className="ml-2 text-[var(--accent-primary)] hover:underline text-xs font-bold cursor-pointer inline-flex items-center gap-0.5"
-                        >
-                            Read More <ChevronDown size={10} />
-                        </button>
-                    )}
-                    {isExpanded && isLongText && (
-                         <button 
-                            onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}
-                            className="ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs font-bold cursor-pointer inline-flex items-center gap-0.5"
-                        >
-                            Show Less <ChevronUp size={10} />
-                        </button>
-                    )}
-                </p>
-            )}
-
-            {/* 🆕 LINK PREVIEW CARD (Visible if post.type is LINK and metadata exists) */}
-            {post.type === 'LINK' && post.linkTitle && (
-                <a 
-                    href={post.mediaUrl || '#'} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()} // Prevent card flip
-                    className="block mt-3 group border border-[var(--glass-border)] rounded-xl overflow-hidden bg-black/20 hover:border-[var(--accent-primary)] transition-all"
-                >
-                    {post.linkImage && (
-                        <div className="relative h-48 w-full overflow-hidden bg-gray-900">
-                            <Image 
-                                src={post.linkImage} 
-                                alt={post.linkTitle}
-                                fill
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                unoptimized
-                            />
-                        </div>
-                    )}
-                    <div className="p-3 bg-black/40 backdrop-blur-sm">
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)] flex items-center gap-1">
-                                {post.linkDomain || 'EXTERNAL LINK'} <ExternalLink size={10} />
-                            </span>
-                        </div>
-                        <h4 className="font-bold text-[var(--text-primary)] mb-1 leading-snug group-hover:text-[var(--accent-primary)] transition-colors">
-                            {post.linkTitle}
-                        </h4>
-                        {post.linkDescription && (
-                            <p className="text-xs text-[var(--text-muted)] line-clamp-2 leading-relaxed">
-                                {post.linkDescription}
-                            </p>
-                        )}
-                    </div>
-                </a>
-            )}
-            
-          </div>
-          
-          {/* Footer Actions */}
-          <div className={styles.actionBar}>
-            <button className={clsx(styles.actionBtn, { [styles.liked]: userReaction === 'LIKE' })} onClick={(e) => handleReaction(e, 'LIKE')}>
-              <Heart size={18} fill={userReaction === 'LIKE' ? "currentColor" : "none"} />
-              <span>{counts.likes}</span>
-            </button>
-
-            <button className={clsx(styles.actionBtn, { [styles.disliked]: userReaction === 'DISLIKE' })} onClick={(e) => handleReaction(e, 'DISLIKE')}>
-              <HeartCrack size={18} fill={userReaction === 'DISLIKE' ? "currentColor" : "none"} />
-              <span>{counts.dislikes}</span>
-            </button>
-
-            <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); setShowComments(true); }}>
-              <MessageCircle size={18} />
-              <span>{counts.comments}</span>
-            </button>
-            
-            <button className={clsx(styles.actionBtn, "ml-auto")} onClick={(e) => {e.stopPropagation(); setShowConfirm(true)}}>
-                <Trash size={18} />
-            </button>
-          </div>
-
-          {/* Verification Chip (Trigger for Flip) */}
-          <div className={styles.verificationFooter}>
-             <button className={clsx(styles.verifyChip, { [styles.unverified]: !isPostVerified })} onClick={handleVerifyFlip}>
-                {isPostVerified ? <ShieldCheck size={14} /> : <ShieldOff size={14} />}
-                {isPostVerified ? 'Verified' : 'Unverified'}
-            </button>
-          </div>
-
-          {/* DELETE CONFIRMATION MODAL */}
-          {showConfirm && (
-            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 rounded-[20px] backdrop-blur-sm">
-                <div className="bg-white dark:bg-neutral-900 p-6 rounded-xl text-center max-w-[280px] shadow-2xl border border-white/10">
-                    <Trash className="mx-auto text-red-500 mb-2" size={32} />
-                    <h4 className="font-bold text-lg mb-1">Delete Post?</h4>
-                    <p className="text-xs text-gray-500 mb-4">This action cannot be undone.</p>
-                    <div className="flex gap-2 justify-center">
-                        <button onClick={(e) => {e.stopPropagation(); setShowConfirm(false)}} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-800 text-xs font-bold">Cancel</button>
-                        <button onClick={(e) => {e.stopPropagation(); handleDeletePost()}} className="px-4 py-2 rounded-lg bg-red-500 text-white text-xs font-bold" disabled={isDeleting}>
-                            {isDeleting ? '...' : 'Delete'}
-                        </button>
-                    </div>
+          {/* DELETE CONFIRMATION OVERLAY */}
+          {isConfirmingDelete && (
+            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm rounded-[20px] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+                <div className="w-12 h-12 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-3"><Trash2 size={24} /></div>
+                <h3 className="text-white font-bold text-lg mb-6">Delete Post?</h3>
+                <div className="flex gap-3 w-full">
+                    <button onClick={() => setIsConfirmingDelete(false)} className="flex-1 py-2 rounded-lg bg-white/10 text-white font-medium hover:bg-white/20">Cancel</button>
+                    <button onClick={handleDelete} className="flex-1 py-2 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600">Delete</button>
                 </div>
             </div>
           )}
 
-          {/* --- DRAWER: COMMENTS --- */}
-          <div className={clsx(styles.commentsPanel, { [styles.commentsOpen]: showComments })}>
-              <div className={styles.panelHeader}>
-                <span className="font-bold text-sm">Comments ({counts.comments})</span>
-                <button className={styles.closeBtn} onClick={(e) => { e.stopPropagation(); setShowComments(false); }}><X size={16} /></button>
-              </div>
-
-              <div className={styles.commentsList}>
-                {localComments.length > 0 ? (
-                    localComments.map((c) => (
-                        <SingleComment key={c.id} comment={c} isDemo={isDemo} />
-                    ))
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full opacity-50 text-sm text-center px-4">
-                        <MessageCircle size={24} className="mb-2" /> 
-                        <p>No thoughts yet.<br/>Be the first to sign a comment.</p>
+          <div className={styles.header}>
+            <div className={styles.authorInfo}>
+                <Link href={`/profile/${post.author.username}`} className={styles.avatar}>
+                    {post.author.image ? <img src={post.author.image} className="w-full h-full object-cover rounded-full" /> : <span>{post.author.username?.[0]}</span>}
+                </Link>
+                <div>
+                    <div className="flex items-center">
+                        <Link href={`/profile/${post.author.username}`} className={styles.authorName}>@{post.author.username}</Link>
+                        <RoleBadge role={post.author.role} />
                     </div>
+                    <div className={styles.timestamp}>
+                       <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                       {post.channel && <><span className="mx-1">•</span><Link href={`/channels/${post.channel.slug}`} className={styles.channelTag}>#{post.channel.slug}</Link></>}
+                    </div>
+                </div>
+            </div>
+            
+            {/* 🟢 MENU */}
+            <div className="relative">
+                <button 
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-full hover:bg-white/5 transition-colors"
+                >
+                    {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <MoreHorizontal size={18} />}
+                </button>
+                
+                {showMenu && !isDeleting && (
+                    <>
+                        {/* Overlay to close menu */}
+                        <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                        
+                        <div className="absolute right-0 top-8 w-32 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg shadow-xl overflow-hidden z-20 backdrop-blur-xl">
+                            
+                            {/* 🟢 DELETE BUTTON (Owner Only) */}
+                            {isOwner && (
+                                <button 
+                                    onClick={() => { setShowMenu(false); setIsConfirmingDelete(true); }} 
+                                    className="w-full text-left px-4 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-2 cursor-pointer z-30"
+                                >
+                                    <Trash2 size={14} /> Delete
+                                </button>
+                            )}
+                            
+                            <button className="w-full text-left px-4 py-2 text-xs font-bold text-[var(--text-muted)] hover:bg-white/5 flex items-center gap-2 cursor-pointer z-30">
+                                <AlertCircle size={14} /> Report
+                            </button>
+                        </div>
+                    </>
                 )}
+            </div>
+          </div>
+
+          <div className={styles.contentWrapper}>
+              <div className={styles.content}>{formatTextWithLinks(post.content)}</div>
+          </div>
+
+          {/* MEDIA PREVIEWS */}
+          {isInstagram ? (
+            <div className={styles.instagramWrapper}><iframe src={instagramEmbedUrl} className={styles.instagramFrame} scrolling="no" allowTransparency={true}/></div>
+          ) : (
+              isLinkPost && post.mediaUrl && (
+                 <a href={post.mediaUrl} target="_blank" rel="noopener noreferrer" className={styles.linkCard}>
+                    {post.linkImage ? <div className={styles.linkImageWrapper}><img src={post.linkImage} className={styles.linkImage} /></div> : <div className="w-full h-2 bg-[var(--accent-primary)] opacity-50"></div>}
+                    <div className={styles.linkInfo}>
+                        <div className={styles.linkDomainRow}><span>{post.linkDomain || new URL(post.mediaUrl).hostname.replace('www.','')}</span><ExternalLink size={12} /></div>
+                        <h3 className={styles.linkTitle}>{post.linkTitle || "External Link"}</h3>
+                        {post.linkDescription && <p className={styles.linkDesc}>{post.linkDescription}</p>}
+                    </div>
+                 </a>
+              )
+          )}
+
+          <div className="flex items-center justify-between pt-3 border-t border-[var(--glass-border)] mt-auto">
+             <div className={styles.actionBar} style={{borderTop: 'none', marginTop: 0, paddingTop: 0}}>
+                 <button onClick={() => handleReaction('LIKE')} className={clsx(styles.actionBtn, reaction === 'LIKE' && styles.liked)}>
+                    <Heart size={18} fill={reaction === 'LIKE' ? "currentColor" : "none"} />
+                    <span>{likesCount}</span>
+                 </button>
+                 <button onClick={() => setShowComments(true)} className={styles.actionBtn}>
+                    <MessageCircle size={18} />
+                    <span>{post._count?.comments || 0}</span>
+                 </button>
+                 <button className={styles.actionBtn}><Share2 size={18} /></button>
+             </div>
+             <button onClick={(e) => { e.stopPropagation(); setIsFlipped(true); }} className={clsx(styles.verifyChip, !post.isVerified && styles.unverified)}>
+                {post.isVerified ? <><ShieldCheck size={14} className="text-emerald-400" /><span className="text-emerald-400">Verified</span></> : <><AlertCircle size={14} /><span>Unverified</span></>}
+             </button>
+          </div>
+
+          {/* COMMENT DRAWER */}
+          <div className={clsx(styles.commentsPanel, showComments && styles.commentsOpen)}>
+              <div className={styles.panelHeader}>
+                  <span className="font-bold text-sm">Comments ({post._count?.comments || 0})</span>
+                  <button onClick={() => setShowComments(false)} className="text-[var(--text-muted)] hover:text-white"><X size={18}/></button>
+              </div>
+              
+              <div className={styles.commentsList}>
+                  {commentTree.length > 0 ? (
+                      commentTree.map(c => (
+                          <CommentItem 
+                            key={c.id} 
+                            comment={c} 
+                            postId={post.id} 
+                            channelSlug={post.channel?.slug || 'home'} 
+                            postAuthorId={post.author.id} 
+                          />
+                      ))
+                  ) : (
+                      <div className="text-center text-[var(--text-muted)] text-xs mt-8">No comments yet. Be the first!</div>
+                  )}
               </div>
 
               <div className={styles.inputArea}>
                   <input 
-                    type="text" 
-                    placeholder="Write a thought..." 
                     className={styles.commentInput} 
-                    value={commentText} 
-                    onChange={(e) => setCommentText(e.target.value)} 
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendComment()} 
-                    onClick={(e) => e.stopPropagation()} 
-                   />
-                  <button onClick={(e) => { e.stopPropagation(); handleSendComment(); }} className={styles.sendBtn}>
-                      <Send size={14} />
+                    placeholder="Add to the discussion..." 
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateComment()}
+                  />
+                  <button onClick={handleCreateComment} disabled={!commentText.trim() || isSendingComment} className={styles.sendBtn}>
+                      {isSendingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
               </div>
           </div>
-        </div>
 
-        {/* --- BACK FACE (VERIFICATION DATA) --- */}
+        </div> 
+        {/* ================= END FRONT FACE ================= */}
+
+        {/* ... (Back Face) ... */}
         <div className={styles.cardBack}>
-             <button className={styles.absoluteCloseBtn} onClick={handleVerifyFlip}><X size={20} /></button>
+             <button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
-                <ShieldCheck size={56} className="text-emerald-400 mb-4 animate-pulse" />
-                <h3 className={styles.verifyTitle}>Anchored on Optimism</h3>
-                <p className={styles.verifyText}>This content was cryptographically signed and settled on the Superchain.</p>
-                <div className={styles.hashBox}>
-                    <span className={styles.hashLabel}>BLOCK HASH</span>
-                    <span className={styles.hashValue}>{post.contentHash || "0x7f83...2d9069"}</span>
-                </div>
-                <div className={styles.hashBox}>
-                    <span className={styles.hashLabel}>SIGNATURE</span>
-                    <span className={styles.hashValue}>{post.signature || "0x9a2...11b"}</span>
-                </div>
-                <a href="#" className={styles.etherscanLink} onClick={(e) => isDemo && e.preventDefault()} target="_blank" rel="noopener noreferrer">
-                    View on Etherscan <ExternalLink size={12} />
-                </a>
+                <ShieldCheck size={48} className={clsx("mb-4", post.isVerified ? "text-emerald-400" : "text-[var(--text-muted)]")} />
+                <h3 className={styles.verifyTitle}>{post.isVerified ? "On-Chain Verification" : "Unverified Content"}</h3>
+                <p className={styles.verifyText}>{post.isVerified ? "This content has been cryptographically signed and timestamped on the Optimism blockchain." : "This content lives off-chain and has not been cryptographically verified."}</p>
+                {post.contentHash && <div className={styles.hashBox}><span className={styles.hashLabel}>Content Hash (SHA-256)</span><span className={styles.hashValue}>{post.contentHash}</span></div>}
+                {post.signature && <div className={styles.hashBox}><span className={styles.hashLabel}>Author Signature</span><span className={styles.hashValue}>{post.signature}</span></div>}
+                {post.verificationTx && <a href={`https://optimistic.etherscan.io/tx/${post.verificationTx}`} target="_blank" rel="noopener noreferrer" className={styles.etherscanLink}>View Transaction <ExternalLink size={12} /></a>}
              </div>
         </div>
+
       </div>
     </div>
   )
