@@ -81,9 +81,10 @@ interface PostCardProps {
     post: any;
     initialReaction?: 'LIKE' | 'DISLIKE' | null;
     currentUserId?: string;
+    isDemo?: boolean;
 }
 
-export function PostCard({ post, initialReaction, currentUserId }: PostCardProps) {
+export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostCardProps) {
   const [reaction, setReactionState] = useState(initialReaction)
   const [likesCount, setLikesCount] = useState(post._count?.likes || post.likesCount || 0)
   const [showMenu, setShowMenu] = useState(false)
@@ -191,6 +192,9 @@ export function PostCard({ post, initialReaction, currentUserId }: PostCardProps
                     <div className="flex items-center">
                         <Link href={`/profile/${post.author.username}`} className={styles.authorName}>@{post.author.username}</Link>
                         <RoleBadge role={post.author.role} />
+                        {isDemo && (
+                            <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-md text-[var(--accent-primary)] bg-[var(--glass-card)] border border-[var(--glass-border)]">DEMO</span>
+                        )}
                     </div>
                     <div className={styles.timestamp}>
                        <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
