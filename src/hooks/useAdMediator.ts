@@ -1,50 +1,39 @@
-import { useState, useCallback } from 'react';
-import { AdAdapter, AdEvent, AdRequest } from '@/lib/ads/types';
+import { useState, useCallback, useRef } from 'react';
+import { AdRequest, AdEvent, AdAdapter } from '@/lib/ads/types';
 
 // Adapters
 import { HypeLabAdapter } from '@/lib/ads/adapters/hypelab';
 import { GoogleIMAAdapter } from '@/lib/ads/adapters/google-ima';
 
 // ------------------------------------------------------------------
-// 1. Dev Mode Adapter (Only active in development)
+// 1. Dev Mode Adapter
 // ------------------------------------------------------------------
 const DevMockAdapter: AdAdapter = {
   name: "DEV_DEBUGGER",
-  initialize: async () => console.log("🔧 [Dev Mode] Ad System Initialized"),
+  initialize: async () => console.log("🔧 [Dev] Ad System Init"),
   showAd: async (containerId, request, onEvent) => {
-    // Inject a visible control panel into the DOM for manual testing
-    const existing = document.getElementById('dev-ad-controls');
-    if (existing) existing.remove();
-
     const controls = document.createElement('div');
     controls.id = 'dev-ad-controls';
     controls.style.cssText = `
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       z-index: 9999; display: flex; flex-direction: column; gap: 12px;
-      background: #18181b; padding: 20px; border-radius: 12px; border: 1px solid #3f3f46;
-      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5); font-family: sans-serif;
+      background: #18181b; padding: 24px; border-radius: 16px; border: 1px solid #3f3f46;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5); font-family: sans-serif; text-align: center;
     `;
     
     controls.innerHTML = `
-      <h3 style="color:white; margin:0 0 8px 0; font-size:14px;">🛠 Dev Ad Controller</h3>
-      <button id="dev-pass" style="background:#059669; color:white; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; font-weight:bold;">
-        ✅ Simulate Success (Proof)
-      </button>
-      <button id="dev-fail" style="background:#dc2626; color:white; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; font-weight:bold;">
-        ❌ Simulate Error
-      </button>
+      <h3 style="color:white; margin:0 0 4px 0; font-size:16px;">🛠 Developer Mode</h3>
+      <div style="display:grid; gap:8px; grid-template-columns: 1fr 1fr;">
+        <button id="dev-pass" style="background:#059669; color:white; padding:10px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:12px;">✅ Success</button>
+        <button id="dev-fail" style="background:#dc2626; color:white; padding:10px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:12px;">❌ Fail</button>
+      </div>
     `;
     
-    // Append to the specific container so it appears inside the Overlay
-    const container = document.getElementById(containerId);
-    if (container) container.appendChild(controls);
-
+    document.getElementById(containerId)?.appendChild(controls);
     onEvent('AD_STARTED');
 
-    // Handle Clicks
     document.getElementById('dev-pass')?.addEventListener('click', () => {
        controls.remove();
-       // Return a fake "signed" token for testing verification logic
        onEvent('AD_COMPLETED', { proofToken: `DEV_PROOF_${Date.now()}` }); 
     });
 
@@ -59,97 +48,93 @@ const DevMockAdapter: AdAdapter = {
 // 2. The Hook Logic
 // ------------------------------------------------------------------
 
-export type MediatorStatus = 'IDLE' | 'INITIALIZING' | 'LOADING' | 'SHOWING' | 'COMPLETED' | 'ERROR' | 'SKIPPED';
+export type MediatorStatus = 'IDLE' | 'PROMPT' | 'INITIALIZING' | 'LOADING' | 'SHOWING' | 'COMPLETED' | 'ERROR';
 
 export function useAdMediator() {
   const [status, setStatus] = useState<MediatorStatus>('IDLE');
   const [currentProvider, setCurrentProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper to reset state when user closes the modal
+  const promiseResolver = useRef<((value: string | null) => void) | null>(null);
+  const cachedRequest = useRef<{ containerId: string; request: AdRequest } | null>(null);
+
+  // A. Start -> Opens the Choice Menu
+  const startVerification = useCallback((containerId: string, request: AdRequest): Promise<string | null> => {
+    cachedRequest.current = { containerId, request };
+    setStatus('PROMPT');
+    setError(null);
+    return new Promise((resolve) => { promiseResolver.current = resolve; });
+  }, []);
+
+  // B. Option 1: Watch Video (Waterfall)
+  const selectAdFlow = useCallback(async () => {
+    if (!cachedRequest.current) return;
+    const { containerId, request } = cachedRequest.current;
+
+    setStatus('INITIALIZING');
+    const waterfall: AdAdapter[] = [];
+    if (process.env.NODE_ENV === 'development') waterfall.push(DevMockAdapter);
+    waterfall.push(HypeLabAdapter, GoogleIMAAdapter);
+
+    for (const adapter of waterfall) {
+      try {
+        await adapter.initialize();
+        setStatus('LOADING');
+        setCurrentProvider(adapter.name);
+
+        const token = await new Promise<string>((resolveAd, rejectAd) => {
+          adapter.showAd(containerId, request, (event, payload) => {
+            if (event === 'AD_STARTED') setStatus('SHOWING');
+            if (event === 'AD_COMPLETED') {
+                setStatus('COMPLETED');
+                resolveAd(payload?.proofToken || `${adapter.name}_PROOF_${Date.now()}`);
+            }
+            if (event === 'AD_SKIPPED' || event === 'AD_ERROR') rejectAd();
+          });
+        });
+
+        if (promiseResolver.current) promiseResolver.current(token);
+        return;
+      } catch (err) {
+        console.warn(`[${adapter.name}] failed. Next...`);
+      }
+    }
+
+    setStatus('ERROR');
+    setError('No sponsors available.');
+    if (promiseResolver.current) promiseResolver.current(null);
+  }, []);
+
+  // C. Option 2: Quest (PLACEHOLDER)
+  const selectQuestFlow = useCallback(async () => {
+    setStatus('LOADING');
+    setCurrentProvider('QUEST_PLACEHOLDER');
+
+    // 🛑 PLACEHOLDER LOGIC 🛑
+    // Replace this setTimeout with your future TaskOn/Zealy API call
+    setTimeout(() => {
+        setStatus('COMPLETED');
+        const mockToken = `QUEST_PLACEHOLDER_${Date.now()}`;
+        if (promiseResolver.current) promiseResolver.current(mockToken);
+    }, 2000); // Fakes a 2s verification delay
+  }, []);
+
   const resetAdState = useCallback(() => {
     setStatus('IDLE');
     setCurrentProvider(null);
     setError(null);
-  }, []);
-
-  /**
-   * Triggers the Ad Waterfall.
-   * Returns a Promise that resolves to a 'proofToken' (string) if successful, 
-   * or null if all ads failed/skipped.
-   */
-  const triggerAdWaterfall = useCallback(async (containerId: string, request: AdRequest): Promise<string | null> => {
-    setStatus('INITIALIZING');
-    setError(null);
-
-    // Build the Waterfall: Dev Adapter (if local) -> HypeLab (Web3 Native) -> Google IMA (Fallback)
-    const waterfall: AdAdapter[] = [];
-    
-    if (process.env.NODE_ENV === 'development') {
-      waterfall.push(DevMockAdapter);
+    cachedRequest.current = null;
+    if (promiseResolver.current) {
+        promiseResolver.current(null);
+        promiseResolver.current = null;
     }
-    waterfall.push(HypeLabAdapter, GoogleIMAAdapter);
-
-    // Iterate through providers
-    for (const adapter of waterfall) {
-      try {
-        console.log(`🌊 AdMediator: Requesting [${adapter.name}]...`);
-        
-        // 1. Initialize SDK
-        await adapter.initialize();
-        
-        // 2. Ready to show
-        setStatus('LOADING');
-        setCurrentProvider(adapter.name);
-
-        // 3. Play & Wait for Result
-        const resultToken = await new Promise<string>((resolve, reject) => {
-          adapter.showAd(containerId, request, (event: AdEvent, payload?: any) => {
-            
-            switch (event) {
-              case 'AD_STARTED':
-                setStatus('SHOWING');
-                break;
-              
-              case 'AD_COMPLETED':
-                setStatus('COMPLETED');
-                // Use the token provided by the adapter, or fallback to a timestamp for basic logic
-                resolve(payload?.proofToken || `proof-${Date.now()}`);
-                break;
-
-              case 'AD_SKIPPED':
-                setStatus('SKIPPED');
-                reject(new Error('User skipped the ad'));
-                break;
-                
-              case 'AD_ERROR':
-                // Rejecting here triggers the catch block below, which moves to the next provider
-                reject(new Error(`Provider ${adapter.name} failed to play`));
-                break;
-            }
-          });
-        });
-
-        // ✅ Success! We have a token.
-        console.log(`✅ AdMediator: Success via [${adapter.name}]`);
-        return resultToken;
-
-      } catch (err) {
-        console.warn(`⚠️ AdMediator: [${adapter.name}] failed/skipped.`, err);
-        // Continue loop to next provider...
-      }
-    }
-
-    // ❌ Total Failure: If we exit the loop, no provider succeeded.
-    console.error("❌ AdMediator: All providers failed.");
-    setStatus('ERROR');
-    setError('Sponsorship unavailable at this time.');
-    return null;
   }, []);
 
   return { 
-    triggerAdWaterfall, 
-    resetAdState,
+    startVerification, 
+    selectAdFlow, 
+    selectQuestFlow, 
+    resetAdState, 
     status, 
     currentProvider,
     error 

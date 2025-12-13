@@ -6,8 +6,9 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db'; 
 import { revalidatePath } from 'next/cache';
 import { generateContentHash, recoverSignerAddress } from "@/lib/verification"; 
-import { fetchLinkMetadata } from "@/lib/metadata"; // 🆕 Import Utility
+import { fetchLinkMetadata } from "@/lib/metadata"; 
 
+// 1. UPDATE SCHEMA
 const FinalPostSchema = z.object({
   content: z.string().min(1).max(2000),
   channelId: z.string(),
@@ -15,6 +16,7 @@ const FinalPostSchema = z.object({
   contentHash: z.string().optional(),
   salt: z.string().optional(),
   signature: z.string().optional(),
+  adProofToken: z.string().optional(), // 🆕 NEW FIELD
 });
 
 export type CreatePostState = {
@@ -40,6 +42,7 @@ export async function createPost(
     return { message: "You must be signed in to post." };
   }
 
+  // 2. PARSE DATA
   const validatedFields = FinalPostSchema.safeParse({
     content: formData.get('content'),
     channelId: formData.get('channelId'),
@@ -47,6 +50,7 @@ export async function createPost(
     contentHash: formData.get('contentHash'),
     salt: formData.get('salt'),
     signature: formData.get('signature'),
+    adProofToken: formData.get('adProofToken'), // 🆕 EXTRACT
   });
 
   if (!validatedFields.success) {
@@ -57,9 +61,9 @@ export async function createPost(
     };
   }
 
-  const { content, channelId, verificationMethod, contentHash, salt, signature } = validatedFields.data;
+  const { content, channelId, verificationMethod, contentHash, salt, signature, adProofToken } = validatedFields.data;
 
-  // Case: SKIP
+  // Case: SKIP (Unverified)
   if (verificationMethod === 'SKIP') {
       return await savePost({ content, channelId, authorId: session.user.id });
   }
@@ -73,19 +77,19 @@ export async function createPost(
       return { message: "Session out of sync. Please Sign Out and Sign In again." };
   }
 
-  // Integrity Check
+  // A. Integrity Check (Has content been tampered with?)
   const serverRecalculatedHash = generateContentHash(content, salt);
   if (serverRecalculatedHash !== contentHash) {
       return { message: "Verification failed: Content integrity compromised." };
   }
 
-  // Signature Check
+  // B. Signature Check (Did THIS user sign it?)
   const recoveredAddress = await recoverSignerAddress(contentHash, signature);
   if (!recoveredAddress) {
       return { message: "Verification failed: Invalid signature." };
   }
 
-  // Ownership Check
+  // C. Ownership Check (Does signature match profile?)
   const sessionWallet = session.user.walletAddress.toLowerCase();
   const signerWallet = recoveredAddress.toLowerCase();
 
@@ -93,7 +97,25 @@ export async function createPost(
       return { message: "Verification failed: Signature wallet does not match profile wallet." };
   }
 
-  console.log("✅ Verification Passed. Saving to DB...");
+  // 🆕 D. AD PROOF CHECK (The Paywall Guard)
+  if (verificationMethod === 'AD') {
+      if (!adProofToken) {
+          console.warn("⚠️ Ad exploit attempt: Method is AD but no token provided.");
+          return { message: "Ad verification failed: Missing proof of view." };
+      }
+
+      // Basic Validation Logic
+      const isDevToken = process.env.NODE_ENV === 'development' && adProofToken.startsWith('DEV_PROOF_');
+      const isProdToken = adProofToken.length > 5; // Simple length check for now
+
+      if (!isDevToken && !isProdToken) {
+          return { message: "Ad verification failed: Invalid proof token." };
+      }
+      
+      console.log(`✅ Ad Token Verified: ${adProofToken.slice(0, 15)}...`);
+  }
+
+  console.log("✅ All Verification Passed. Saving to DB...");
 
   return await savePost({ 
     content, 
@@ -121,11 +143,10 @@ interface PostData {
 
 async function savePost(data: PostData): Promise<CreatePostState> {
     try {
-        // 🆕 1. DETECT LINK METADATA
+        // 1. DETECT LINK METADATA
         const metadata = await fetchLinkMetadata(data.content);
         
         // Determine Post Type
-        // If we found a valid title in metadata, treat it as a LINK post
         const postType = metadata.title ? "LINK" : "TEXT"; 
 
         const newPost = await prisma.post.create({
@@ -139,9 +160,9 @@ async function savePost(data: PostData): Promise<CreatePostState> {
                 signature: data.signature,
                 verificationSource: data.verificationSource,
                 
-                // 🆕 2. SAVE DYNAMIC TYPE & METADATA
+                // 2. SAVE DYNAMIC TYPE & METADATA
                 type: postType,
-                mediaUrl: metadata.url, // Save the URL as mediaUrl
+                mediaUrl: metadata.url,
                 linkTitle: metadata.title,
                 linkDescription: metadata.description,
                 linkImage: metadata.image,

@@ -1,56 +1,93 @@
-'use client';
-
-import { Loader2, XCircle } from "lucide-react";
+'use client'
+import React from 'react';
+import { PlayCircle, Award, X, Loader2 } from 'lucide-react';
+import { MediatorStatus } from '@/hooks/useAdMediator';
 
 interface AdPlayerOverlayProps {
-  status: 'IDLE' | 'INITIALIZING' | 'LOADING' | 'SHOWING' | 'COMPLETED' | 'ERROR';
+  status: MediatorStatus;
   provider: string | null;
-  onCancel: () => void; // Allow user to bail out if it hangs
+  onSelectVideo: () => void; // 🆕
+  onSelectQuest: () => void; // 🆕
+  onCancel: () => void;
 }
 
-export function AdPlayerOverlay({ status, provider, onCancel }: AdPlayerOverlayProps) {
-  if (status === 'IDLE' || status === 'COMPLETED') return null;
+export const AdPlayerOverlay = ({ 
+  status, provider, onSelectVideo, onSelectQuest, onCancel 
+}: AdPlayerOverlayProps) => {
+  
+  if (status === 'IDLE') return null;
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-xl">
-      
-      {/* Loading State */}
-      {(status === 'INITIALIZING' || status === 'LOADING') && (
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-teal-500 animate-spin mx-auto" />
-          <h3 className="text-xl font-bold text-white">Loading Sponsor...</h3>
-          <p className="text-zinc-400 text-sm">Finding a Web3 partner to pay your gas.</p>
-        </div>
-      )}
+  // 1. The Choice Screen (PROMPT)
+  if (status === 'PROMPT') {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in">
+        <div className="relative w-full max-w-lg bg-zinc-900/90 border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+               <h3 className="text-xl font-bold text-white">Choose Verification</h3>
+               <button onClick={onCancel}><X className="text-zinc-400 hover:text-white" /></button>
+            </div>
 
-      {/* The Ad Container - SDKs inject video here */}
-      <div 
-        id="peake-ad-container" 
-        className={`relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-zinc-800 transition-opacity duration-300 ${
-          status === 'SHOWING' ? 'opacity-100' : 'opacity-0 h-0'
-        }`}
-      />
+            <div className="space-y-3">
+              {/* Option A: Video */}
+              <button onClick={onSelectVideo} className="w-full flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-emerald-500/50 transition-all text-left group">
+                <div className="h-12 w-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                   <PlayCircle size={24} />
+                </div>
+                <div>
+                   <p className="font-bold text-white">Watch Ad</p>
+                   <p className="text-xs text-zinc-400">Sponsor gas for 1 post • ~15s</p>
+                </div>
+              </button>
 
-      {/* Footer Info */}
-      {status === 'SHOWING' && (
-        <div className="mt-6 flex flex-col items-center gap-2">
-          <p className="text-zinc-400 text-sm animate-pulse">
-            Watching this video verifies your post on Optimism.
-          </p>
-          <div className="px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-500">
-            Ad Provider: <span className="text-teal-400 font-mono">{provider || 'Loading...'}</span>
+              {/* Option B: Quest (Placeholder) */}
+              <button onClick={onSelectQuest} className="w-full flex items-center gap-4 p-4 rounded-xl border border-purple-500/20 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-400 transition-all text-left group">
+                <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                   <Award size={24} />
+                </div>
+                <div>
+                   <p className="font-bold text-white">Complete Quest <span className="text-[10px] bg-zinc-700 px-1 rounded ml-2">BETA</span></p>
+                   <p className="text-xs text-zinc-400">Unlock <span className="text-purple-300">5 Free Posts</span> • Follow/Task</p>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Emergency Escape Hatch */}
-      <button 
-        onClick={onCancel}
-        className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors"
-      >
-        <XCircle size={32} />
-      </button>
+  // 2. The Player Screen (LOADING / SHOWING / ERROR)
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+      <div className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
+          <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
+             {status === 'LOADING' ? 'Connecting...' : `Powered by ${provider || 'Peake'}`}
+          </span>
+          <button onClick={onCancel} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-white">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="relative aspect-video bg-black flex flex-col items-center justify-center">
+          {status === 'LOADING' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-10">
+              <Loader2 className="animate-spin text-emerald-500 mb-4" size={40} />
+              <p className="text-sm text-zinc-400">Loading Content...</p>
+            </div>
+          )}
+          
+          {status === 'ERROR' && (
+             <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-20">
+                <p className="text-red-400 font-bold">Verification Failed</p>
+                <button onClick={onCancel} className="mt-4 text-xs px-4 py-2 bg-zinc-800 rounded">Close</button>
+             </div>
+          )}
+          
+          <div id="peake-ad-container" className="w-full h-full" />
+        </div>
+      </div>
     </div>
   );
-}
-
+};
