@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { Sidebar } from "@/components/layout/Sidebar"; // Adjusted path to match component
+import { RightSidebar } from "@/components/layout/RightSidebar";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import styles from "../(dashboard)/dashboard.module.css"; // Pointing to your main CSS module
 
@@ -39,10 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* 4. RIGHT SIDEBAR (Large Desktop) */}
       {/* Ensure you have a RightSidebar component created, or remove this if not ready */}
       <aside className={styles.rightSidebar}>
-         {/* <RightSidebar /> */} 
-         <div className="p-6 text-[var(--text-muted)] text-sm">
-            <p>Trending & Suggestions coming soon.</p>
-         </div>
+        <RightSidebar />
       </aside>
 
       {/* 5. BOTTOM NAV (Mobile) */}
