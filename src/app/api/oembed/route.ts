@@ -39,31 +39,38 @@ export async function GET(request: Request) {
 
 async function fetchWithRetry(url: string, opts: { retries?: number; timeoutMs?: number } = {}) {
   const retries = opts.retries ?? 1;
-  const timeoutMs = opts.timeoutMs ?? 5000;
+  const timeoutMs = opts.timeoutMs ?? 8000; // Increased to 8s
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const res = await fetch(url, { signal: controller.signal });
+      const res = await fetch(url, { 
+        signal: controller.signal,
+        // vital for Next.js to not cache API proxy results
+        cache: 'no-store', 
+        headers: {
+          // SoundCloud/others often block requests without a User-Agent
+          'User-Agent': 'Mozilla/5.0 (compatible; MyOembedProxy/1.0; +https://your-site.com)',
+          'Accept': 'application/json'
+        }
+      });
       clearTimeout(id);
       return res;
     } catch (err: any) {
       clearTimeout(id);
-      // If aborted or network error, retry unless out of attempts
       const isAbort = err?.name === 'AbortError';
       console.warn(`oEmbed fetch attempt ${attempt + 1} failed for ${url}:`, err?.message || err);
+      
       if (attempt === retries) {
-        // rethrow for the caller to handle
         throw err;
       }
-      // Backoff before retrying (simple linear backoff)
-      await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+      // Backoff
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
     }
   }
 
-  // Should never reach here
   throw new Error('Failed to fetch');
 }
 
