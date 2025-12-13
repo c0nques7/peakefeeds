@@ -2,6 +2,9 @@ import Link from "next/link";
 import { ArrowUpRight, Hash, ShieldCheck } from "lucide-react";
 import styles from "../../app/(dashboard)/dashboard.module.css";
 import { prisma } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth.config";
+import { SubscribeButton } from "@/components/SubscribeButton";
 
 type ChannelSummary = {
     id: string;
@@ -30,6 +33,10 @@ export async function RightSidebar() {
         .sort((a, b) => b.subscribersCount - a.subscribersCount)
         .slice(0, 6);
 
+    // get current session to check subscriptions
+    const session = await getServerSession(authOptions);
+    const currentUserId = session?.user?.id;
+
     // For each recommended channel, fetch latest and top post
     const channelPostsPromises = channelSummaries.map(async (ch) => {
         const latest = await prisma.post.findFirst({
@@ -48,6 +55,16 @@ export async function RightSidebar() {
     });
 
     const channelPosts = await Promise.all(channelPostsPromises);
+
+    // If user is signed in, fetch which of these channels they're subscribed to
+    let subscribedSet = new Set<string>();
+    if (currentUserId && channelSummaries.length > 0) {
+        const subs = await prisma.subscription.findMany({
+            where: { userId: currentUserId, channelId: { in: channelSummaries.map(c => c.id) } },
+            select: { channelId: true }
+        });
+        subscribedSet = new Set(subs.map(s => s.channelId));
+    }
 
     // Trending posts globally (top by likes in the last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
@@ -119,7 +136,9 @@ export async function RightSidebar() {
                                             <div className="text-[10px] text-[var(--text-muted)]">@{channel.slug}</div>
                                         </div>
                                     </Link>
-                                    <Link href={`/channels/${channel.slug}`} className="text-xs bg-[var(--accent-secondary)] text-white px-3 py-1 rounded-full font-bold">Join</Link>
+                                    <div>
+                                        <SubscribeButton channelId={channel.id} channelSlug={channel.slug} isSubscribedInitial={subscribedSet.has(channel.id)} />
+                                    </div>
                                 </div>
 
                                 <div className="mt-2 text-[12px] text-[var(--text-muted)]">
