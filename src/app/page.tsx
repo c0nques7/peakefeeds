@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react"
 import ThemeLogo from "@/components/ThemeLogo" 
+import Link from 'next/link'
 import styles from "./landing.module.css"
 import { Hexagon, Layers, ShieldCheck, Mail, Check, AlertCircle, Copy } from "lucide-react"
 import { PostCard } from "@/components/PostCard"
@@ -162,6 +163,11 @@ export default function LandingPage() {
         <div className={styles.brandContainer}>
             <ThemeLogo />
             <span className={styles.brandText}>PeakeFeeds</span>
+        </div>
+        <div className={styles.navActions}>
+          <Link href="/signin" className="ml-4 px-4 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition-all">
+            Sign In
+          </Link>
         </div>
       </nav>
 
