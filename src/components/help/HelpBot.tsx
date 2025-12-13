@@ -117,10 +117,10 @@ export default function HelpBot() {
       }
 
       if (matched) {
-        setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: matched!.a, action: 'show_return_menu' }]), 400)
+        setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: matched!.a }]), 400)
       } else {
-        // No good match — provide example and fallback to FAQs
-        setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: "I can help with wallets, posting, verification, channels, messaging, and admin issues. Try asking: \"How do I connect my wallet?\"", action: 'show_faqs' }]), 400)
+        // No good match — ask the user to clarify in free text (keep it open-ended)
+        setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: "I didn't find a direct match. Please describe the issue in your own words (for example: 'I'm seeing a 404 on a profile'). If you'd rather talk to a human, type 'human'." }]), 400)
       }
     }
   }
@@ -187,23 +187,7 @@ export default function HelpBot() {
                     <div key={msg.id} className={clsx(styles.messageRow, styles[msg.type])}>
                       <div className={styles.bubble}>
                         {msg.text}
-                        {/* Interactive Chips */}
-                        {msg.action === 'show_faqs' && (
-                          <div className={styles.faqList}>
-                            {FAQ_DATA.map((faq, i) => (
-                              <button key={i} className={styles.faqChip} onClick={() => {
-                                  setMessages(p => [...p, { id: Date.now(), type: 'user', text: faq.q }, { id: Date.now()+1, type: 'bot', text: faq.a, action: 'show_return_menu' }])
-                              }}>{faq.q}</button>
-                            ))}
-                          </div>
-                        )}
-                        {msg.action === 'show_return_menu' && (
-                          <div className={styles.actionArea}>
-                            <button className={styles.menuButton} onClick={() => {
-                                setMessages(p => [...p, { id: Date.now(), type: 'user', text: "Main Menu" }, { id: Date.now()+1, type: 'bot', text: "Main topics:", action: 'show_faqs' }])
-                            }}>↩ Main Menu</button>
-                          </div>
-                        )}
+                        {/* Conversation-driven: render bot text only. User guides the interaction. */}
                       </div>
                     </div>
                   ))}
