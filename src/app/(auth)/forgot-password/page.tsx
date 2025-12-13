@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Mail, Loader2, Check } from "lucide-react"
 import Link from "next/link"
 import { requestPasswordReset } from '@/actions/auth-reset'
@@ -9,6 +9,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState("")
   const [isPending, startTransition] = useTransition()
+  const [cooldownSeconds, setCooldownSeconds] = useState(0)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -19,13 +20,32 @@ export default function ForgotPasswordPage() {
       const res = await requestPasswordReset(form)
       if (res?.success) {
         setMessage('If an account exists for this email, a password reset link has been sent.')
+        // Start a short client-side cooldown to prevent repeat submissions
+        const COOLDOWN = 60 // seconds
+        setCooldownSeconds(COOLDOWN)
       } else if (res?.error) {
         setMessage(res.error)
       } else {
         setMessage('If an account exists for this email, a password reset link has been sent.')
+        const COOLDOWN = 60 // seconds
+        setCooldownSeconds(COOLDOWN)
       }
     })
   }
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return
+    const t = setInterval(() => {
+      setCooldownSeconds((s) => {
+        if (s <= 1) {
+          clearInterval(t)
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+    return () => clearInterval(t)
+  }, [cooldownSeconds])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)] p-4">
@@ -59,13 +79,19 @@ export default function ForgotPasswordPage() {
 
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || cooldownSeconds > 0}
             className="w-full py-3 rounded-lg bg-[var(--accent-primary)] text-white font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             {isPending && <Loader2 className="animate-spin" size={16} />}
-            Send reset link
+            {cooldownSeconds > 0 ? `Please wait ${cooldownSeconds}s` : 'Send reset link'}
           </button>
         </form>
+
+        {cooldownSeconds > 0 && (
+          <div className="mt-3 text-center text-sm text-[var(--text-muted)]">
+            You can request another link in {cooldownSeconds} second{cooldownSeconds !== 1 ? 's' : ''}.
+          </div>
+        )}
 
         <div className="mt-4 text-center text-sm text-[var(--text-muted)]">
           <Link href="/signin" className="text-[var(--accent-primary)] hover:underline">Back to sign in</Link>
