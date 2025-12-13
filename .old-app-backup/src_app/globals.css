@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- 🛡️ CRITICAL GLOBAL RESET --- */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* --- ☀️ LIGHT MODE: "Digital Daydream" --- */
+  --bg-app: #ffffff;
+  
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  
+  /* 2025 Accents (High Visibility) */
+  --accent-primary: #7c3aed;   /* Vivid Violet */
+  --accent-secondary: #0d9488; /* Teal */
+  
+  /* Glass Surfaces */
+  --glass-panel: rgba(255, 255, 255, 0.9); 
+  --glass-card: rgba(255, 255, 255, 0.85); 
+  --glass-card-hover: #ffffff;
+  --glass-border: rgba(124, 58, 237, 0.1); 
+  
+  --shadow-glass: 0 8px 30px rgba(124, 58, 237, 0.05);
+  --shadow-card: 0 4px 20px rgba(0,0,0,0.05);
+
+  /* 🆕 NEW: Glass Consistency */
+  --blur-light: 12px;  /* For standard cards */
+  --blur-heavy: 40px;  /* For overlays, drawers, and headers */
+  
+  /* Background Orb Colors (Stronger for visibility on white) */
+  --orb-teal: rgba(45, 212, 191, 0.25); 
+  --orb-purple: rgba(168, 85, 247, 0.25);
+  
+  /* Inputs */
+  --input-bg: rgba(255, 255, 255, 0.8); 
+  --input-border: rgba(124, 58, 237, 0.15);
+  
+  /* 🆕 NEW: Layout Constants */
+  /* This controls the minimum width of a card before it wraps to the next line */
+  --feed-card-min-width: 240px; 
+  --feed-gap: 1.5rem;
+
+  /* 🆕 NEW: Layout Variables (The Source of Truth) */
+  --sidebar-width: 240px;
+  --max-feed-width: 1400px; 
+
+  /* 🆕 NEW: Verification Back Face (Light Mode specific) */
+  --bg-verification: linear-gradient(145deg, #f8fafc, #f1f5f9);
+}
+
+/* 🌙 DARK MODE: "Deep Nebula" */
+.dark {
+  --bg-app: #050505; /* Deepest Black/Navy from logo background */
+  
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  
+  /* 2025 Accents (Neon Glow from Logo) */
+  --accent-primary: #a855f7;   /* Digital Lavender */
+  --accent-secondary: #2dd4bf; /* Cyber Blue/Teal */
+  
+  /* Glass Surfaces */
+  --glass-panel: rgba(20, 20, 25, 0.6); 
+  --glass-card: rgba(255, 255, 255, 0.03); 
+  --glass-card-hover: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  
+  --shadow-glass: 0 0 30px rgba(168, 85, 247, 0.1);
+  --shadow-card: 0 4px 30px rgba(0,0,0,0.5);
+
+  /* Background Orb Colors (Subtle Glow) */
+  --orb-teal: rgba(45, 212, 191, 0.15); 
+  --orb-purple: rgba(168, 85, 247, 0.15);
+  
+  /* Inputs */
+  --input-bg: rgba(255, 255, 255, 0.05); 
+  --input-border: rgba(255, 255, 255, 0.15);
+
+  /* 🆕 NEW: Verification Back Face (Dark Mode specific) */
+  --bg-verification: linear-gradient(145deg, #0a0a0a, #141414);
+}
+
+/* --- 🛡️ GLOBAL ANIMATIONS --- */
+@keyframes breathe {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate(20px, -20px) scale(1.1); opacity: 0.8; }
+  100% { transform: translate(-10px, 10px) scale(1); opacity: 0.5; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+html, body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* --- 🆕 GLOBAL UTILITY CLASSES --- */
+/* Replaces inline styles for headers and panels */
+.glass-panel {
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(var(--blur-heavy));
+  -webkit-backdrop-filter: blur(var(--blur-heavy));
+}
