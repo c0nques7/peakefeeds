@@ -137,7 +137,7 @@ export async function RightSidebar() {
                                         </div>
                                     </Link>
                                     <div>
-                                        <SubscribeButton channelId={channel.id} channelSlug={channel.slug} isSubscribedInitial={subscribedSet.has(channel.id)} />
+                                        <SubscribeButton channelId={channel.id} channelSlug={channel.slug} isSubscribedInitial={subscribedSet.has(channel.id)} small={true} />
                                     </div>
                                 </div>
 

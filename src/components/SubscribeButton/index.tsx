@@ -8,9 +8,10 @@ interface SubscribeButtonProps {
     channelId: string;
     channelSlug: string;
     isSubscribedInitial: boolean; // Initial state passed from Server Component
+    small?: boolean;
 }
 
-export function SubscribeButton({ channelId, channelSlug, isSubscribedInitial }: SubscribeButtonProps) {
+export function SubscribeButton({ channelId, channelSlug, isSubscribedInitial, small = false }: SubscribeButtonProps) {
     
     const [actionState, action, isPending] = useActionState(toggleSubscription, {} as SubscribeState);
     
@@ -22,8 +23,14 @@ export function SubscribeButton({ channelId, channelSlug, isSubscribedInitial }:
                        ? false 
                        : isSubscribedInitial;
 
-    const buttonText = isSubscribed ? 'Subscribed' : 'Subscribe';
-    const buttonIcon = isSubscribed ? <Check size={18} /> : <Plus size={18} />;
+        const buttonText = isSubscribed ? 'Subscribed' : 'Subscribe';
+        const iconSize = small ? 14 : 18;
+        const buttonIcon = isSubscribed ? <Check size={iconSize} /> : <Plus size={iconSize} />;
+
+        // compact styles when small=true
+        const compactClasses = small
+            ? 'px-3 py-1 text-xs gap-1 rounded-full'
+            : 'px-4 py-2 text-sm gap-2 rounded-full';
 
     return (
         <form action={action}>
@@ -34,7 +41,7 @@ export function SubscribeButton({ channelId, channelSlug, isSubscribedInitial }:
                 type="submit"
                 disabled={isPending}
                 className={`
-                    flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-200 
+                    flex items-center ${compactClasses} font-bold transition-all duration-200
                     ${isSubscribed 
                         ? 'bg-gray-700 text-white border border-gray-600 hover:bg-gray-600'
                         : 'bg-indigo-600 text-white border border-indigo-600 hover:bg-indigo-500'
@@ -42,7 +49,7 @@ export function SubscribeButton({ channelId, channelSlug, isSubscribedInitial }:
                     disabled:opacity-50
                 `}
             >
-                {isPending ? 'Updating...' : <>{buttonIcon} {buttonText}</>}
+                {isPending ? (small ? '...' : 'Updating...') : <>{buttonIcon} {buttonText}</>}
             </button>
         </form>
     );
