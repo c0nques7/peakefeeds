@@ -54,7 +54,7 @@ export default function HelpBot() {
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
 
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, type: 'bot', text: "Hi! I'm the Help Bot. Click an FAQ below or type 'human' to speak to an admin.", action: 'show_faqs' }
+    { id: 1, type: 'bot', text: "Hi! I'm the Help Bot. What can I help you with? Example: 'How do I connect my wallet?' You can also type 'human' to speak to an agent.", action: 'show_faqs' }
   ])
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -93,13 +93,34 @@ export default function HelpBot() {
       }
     
     } else {
-      // SCENARIO B: Normal Bot Interaction
+      // SCENARIO B: Normal Bot Interaction — try to answer from FAQ by keyword matching
       const lowerText = userText.toLowerCase()
+      // If user explicitly asks for human support, switch to ticket mode
       if (['human', 'support', 'admin', 'help'].some(kw => lowerText.includes(kw))) {
         setIsTicketMode(true)
         setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: "Please describe your issue below to open a ticket." }]), 500)
+        return
+      }
+
+      // Simple keyword matching against FAQ_DATA
+      const words = lowerText.split(/\W+/).filter(Boolean)
+      let matched: typeof FAQ_DATA[0] | null = null
+      outer: for (const faq of FAQ_DATA) {
+        const hay = (faq.q + ' ' + faq.a).toLowerCase()
+        for (const w of words) {
+          if (w.length < 3) continue
+          if (hay.includes(w)) {
+            matched = faq
+            break outer
+          }
+        }
+      }
+
+      if (matched) {
+        setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: matched!.a, action: 'show_return_menu' }]), 400)
       } else {
-        setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: "I didn't catch that. Try using the menu.", action: 'show_return_menu' }]), 500)
+        // No good match — provide example and fallback to FAQs
+        setTimeout(() => setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: "I can help with wallets, posting, verification, channels, messaging, and admin issues. Try asking: \"How do I connect my wallet?\"", action: 'show_faqs' }]), 400)
       }
     }
   }
