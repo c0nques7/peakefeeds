@@ -1,14 +1,14 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
-import { Sidebar } from "@/components/layout/Sidebar"; // Adjusted path to match component
+import { Sidebar } from "@/components/layout/Sidebar"; 
 import { RightSidebar } from "@/components/layout/RightSidebar";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
-import styles from "../(dashboard)/dashboard.module.css"; // Pointing to your main CSS module
+import styles from "./dashboard.module.css"; 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
   
-  // Prepare user data for Sidebar props
+  // Prepare user data for the Desktop Sidebar (which still needs props)
   const user = session?.user ? {
     name: session.user.name,
     email: session.user.email,
@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className={styles.layoutContainer}>
 
-      {/* 1. BACKGROUND LAYER (Global) */}
+      {/* 1. BACKGROUND LAYER */}
       <div className={styles.backgroundLayer}>
           <div className={styles.orbTeal} />
           <div className={styles.orbPurple} />
@@ -28,23 +28,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* 2. LEFT SIDEBAR (Desktop) */}
       <aside className={styles.desktopSidebar}>
+        {/* Sidebar uses props because it's a Server Component here */}
         <Sidebar user={user} /> 
       </aside>
 
       {/* 3. MAIN CONTENT */}
       <main className={styles.mainContent}>
-        {/* Render the specific page content here */}
         {children}
       </main>
 
-      {/* 4. RIGHT SIDEBAR (Large Desktop) */}
-      {/* Ensure you have a RightSidebar component created, or remove this if not ready */}
+      {/* 4. RIGHT SIDEBAR (Desktop) */}
       <aside className={styles.rightSidebar}>
         <RightSidebar />
       </aside>
 
       {/* 5. BOTTOM NAV (Mobile) */}
       <div className={styles.mobileNavWrapper}>
+        {/* 🟢 FIX: Removed 'user={user}' because MobileBottomNav now uses 'useSession()' internally */}
         <MobileBottomNav />
       </div>
 

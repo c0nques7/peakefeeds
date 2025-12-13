@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Hash, ShieldCheck } from "lucide-react";
-import styles from "../../app/(dashboard)/dashboard.module.css";
+import { TrendingUp, Users, ArrowRight, ShieldCheck } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
@@ -22,41 +21,22 @@ type PostPreview = {
 }
 
 export async function RightSidebar() {
-    // Fetch top channels by subscriber count
+    // 1. DATA FETCHING -------------------------------------
+    
+    // A. Fetch top channels (for suggestions)
     const channels = await prisma.channel.findMany({
-        take: 10,
-        include: { _count: { select: { subscribers: true } } }
+        take: 5, // Reduced from 10 to fit UI better
+        include: { _count: { select: { subscribers: true } } },
+        orderBy: { createdAt: 'desc' } // Just fetching some distinct channels for now
     });
 
     const channelSummaries: ChannelSummary[] = channels
-        .map(c => ({ id: c.id, name: c.name, slug: c.slug, subscribersCount: c._count?.subscribers ?? 0 }))
-        .sort((a, b) => b.subscribersCount - a.subscribersCount)
-        .slice(0, 6);
+        .map(c => ({ id: c.id, name: c.name, slug: c.slug, subscribersCount: c._count?.subscribers ?? 0 }));
 
-    // get current session to check subscriptions
+    // B. Check User Subscriptions
     const session = await getServerSession(authOptions);
     const currentUserId = session?.user?.id;
 
-    // For each recommended channel, fetch latest and top post
-    const channelPostsPromises = channelSummaries.map(async (ch) => {
-        const latest = await prisma.post.findFirst({
-            where: { channelId: ch.id },
-            orderBy: { createdAt: 'desc' },
-            select: { id: true, title: true, content: true, createdAt: true, likesCount: true }
-        });
-
-        const top = await prisma.post.findFirst({
-            where: { channelId: ch.id },
-            orderBy: { likesCount: 'desc' },
-            select: { id: true, title: true, content: true, createdAt: true, likesCount: true }
-        });
-
-        return { channel: ch, latest: latest ?? null, top: top ?? null };
-    });
-
-    const channelPosts = await Promise.all(channelPostsPromises);
-
-    // If user is signed in, fetch which of these channels they're subscribed to
     let subscribedSet = new Set<string>();
     if (currentUserId && channelSummaries.length > 0) {
         const subs = await prisma.subscription.findMany({
@@ -66,103 +46,131 @@ export async function RightSidebar() {
         subscribedSet = new Set(subs.map(s => s.channelId));
     }
 
-    // Trending posts globally (top by likes in the last 7 days)
+    // C. Fetch Context for Channels (Latest Post)
+    const channelContextPromises = channelSummaries.map(async (ch) => {
+        const latest = await prisma.post.findFirst({
+            where: { channelId: ch.id },
+            orderBy: { createdAt: 'desc' },
+            select: { title: true, content: true }
+        });
+        return { channel: ch, latest: latest ?? null };
+    });
+    const suggestedChannels = await Promise.all(channelContextPromises);
+
+    // D. Fetch Trending Posts (Global Hot List)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
     const trendingPostsRaw = await prisma.post.findMany({
         where: { createdAt: { gte: sevenDaysAgo } },
-        take: 6,
+        take: 4,
         orderBy: { likesCount: 'desc' },
-        select: { id: true, title: true, content: true, createdAt: true, likesCount: true, channel: { select: { slug: true, name: true } } }
+        select: { id: true, title: true, content: true, likesCount: true, channel: { select: { slug: true } } }
     });
 
-    const trendingPosts: (PostPreview & { channelName?: string; channelSlug?: string })[] = trendingPostsRaw.map(p => ({
+    const trendingPosts = trendingPostsRaw.map(p => ({
         id: p.id,
         title: p.title,
         content: p.content,
-        createdAt: p.createdAt.toISOString(),
         likesCount: p.likesCount ?? 0,
-        channelName: p.channel?.name,
         channelSlug: p.channel?.slug
     }));
 
+    // 2. RENDER UI -----------------------------------------
     return (
-        <aside className={`${styles.rightSidebar} flex flex-col gap-6 p-6 overflow-y-auto bg-[var(--glass-panel)] backdrop-blur-md`}>
-
-             {/* --- BLOCK 1: TRENDING CHANNELS & POSTS --- */}
-             <div className="rounded-2xl p-4 border border-[var(--glass-border)] bg-[var(--glass-card)] shadow-sm">
-                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
-                        <ArrowUpRight size={20} className="text-[var(--accent-primary)]" /> Trending
-                    </h2>
-
-                    <div className="space-y-3">
-                        {channelSummaries.map(ch => (
-                            <Link key={ch.id} href={`/channels/${ch.slug}`} className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--glass-card-hover)] transition-colors">
-                                <div>
-                                    <div className="text-sm font-semibold text-[var(--text-primary)]">{ch.name}</div>
-                                    <div className="text-[10px] text-[var(--text-muted)]">{ch.subscribersCount.toLocaleString()} subscribers</div>
-                                </div>
-                                <div className="text-[12px] text-[var(--accent-primary)]">View</div>
-                            </Link>
-                        ))}
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-[var(--glass-border)]">
-                        <div className="text-sm font-semibold text-[var(--text-primary)] mb-2">Hot posts this week</div>
-                        <div className="space-y-2">
-                            {trendingPosts.map(p => (
-                                <Link key={p.id} href={`/posts/${p.id}`} className="block p-2 rounded hover:bg-[var(--glass-card-hover)] transition-colors">
-                                    <div className="text-xs font-semibold text-[var(--text-primary)] truncate">{p.title ?? p.content.slice(0, 60)}</div>
-                                    <div className="text-[10px] text-[var(--text-muted)]">{p.channelName} • {p.likesCount} likes</div>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-             </div>
-
-             {/* --- BLOCK 2: SUGGESTED CHANNELS + PREVIEWS --- */}
-             <div className="rounded-2xl p-4 border border-[var(--glass-border)] bg-[var(--glass-card)] shadow-sm">
-                    <h2 className="text-lg font-bold mb-4 text-[var(--text-primary)]">Suggested Channels</h2>
-
-                    <div className="space-y-3">
-                        {channelPosts.map(({ channel, latest, top }) => (
-                            <div key={channel.id} className="p-2 rounded-lg hover:bg-[var(--glass-card-hover)] transition-colors">
-                                <div className="flex items-center justify-between">
-                                    <Link href={`/channels/${channel.slug}`} className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500">
-                                            <ShieldCheck size={14} />
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-semibold text-[var(--text-primary)]">{channel.name}</div>
-                                            <div className="text-[10px] text-[var(--text-muted)]">@{channel.slug}</div>
-                                        </div>
-                                    </Link>
-                                    <div>
-                                        <SubscribeButton channelId={channel.id} channelSlug={channel.slug} isSubscribedInitial={subscribedSet.has(channel.id)} small={true} />
-                                    </div>
-                                </div>
-
-                                <div className="mt-2 text-[12px] text-[var(--text-muted)]">
-                                    {latest ? (
-                                        <div className="truncate">Latest: {latest.title ?? latest.content.slice(0, 80)}</div>
-                                    ) : (
-                                        <div className="italic">No recent posts</div>
-                                    )}
-                                    {top && (
-                                        <div className="text-[11px] text-[var(--text-muted)] mt-1">Top: {top.title ?? top.content.slice(0, 60)} • {top.likesCount} likes</div>
-                                    )}
-                                </div>
+        <div className="flex flex-col gap-6 w-full max-w-[320px] pb-20">
+            
+            {/* --- CARD 1: TRENDING POSTS --- */}
+            <div className="flex flex-col rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-sm">
+                <div className="p-4 border-b border-[var(--glass-border)] flex items-center gap-2">
+                    <TrendingUp size={18} className="text-[var(--accent-secondary)]" />
+                    <span className="font-bold text-sm text-[var(--text-primary)]">Trending Now</span>
+                </div>
+                
+                <div className="flex flex-col">
+                    {trendingPosts.length > 0 ? trendingPosts.map((post) => (
+                        <Link 
+                            key={post.id} 
+                            href={`/posts/${post.id}`}
+                            className="group flex items-center justify-between px-4 py-3 hover:bg-[var(--glass-card-hover)] transition-colors border-b border-[var(--glass-border)] last:border-0"
+                        >
+                            <div className="flex flex-col min-w-0 pr-2">
+                                <span className="font-bold text-sm text-[var(--text-primary)] truncate">
+                                    {post.title || post.content.slice(0, 30)}
+                                </span>
+                                <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+                                    {post.channelSlug && <span className="opacity-70">#{post.channelSlug}</span>}
+                                    <span>•</span>
+                                    <span>{post.likesCount} likes</span>
+                                </span>
                             </div>
-                        ))}
-                    </div>
-             </div>
+                            <ArrowRight size={14} className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        </Link>
+                    )) : (
+                        <div className="p-4 text-xs text-[var(--text-muted)] text-center">No trending posts yet.</div>
+                    )}
+                </div>
+            </div>
 
-             {/* Footer */}
-             <div className="text-[10px] text-[var(--text-muted)] flex flex-wrap gap-x-3 gap-y-1 px-2">
-                    <span className="hover:underline cursor-pointer">Terms</span>
-                    <span className="hover:underline cursor-pointer">Privacy</span>
-                    <span className="hover:underline cursor-pointer">© 2025 PeakeFeeds</span>
-             </div>
+            {/* --- CARD 2: WHO TO FOLLOW (SUGGESTED) --- */ }
+            <div className="flex flex-col rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-sm">
+                <div className="p-4 border-b border-[var(--glass-border)] flex items-center gap-2">
+                    <Users size={18} className="text-[var(--accent-primary)]" />
+                    <span className="font-bold text-sm text-[var(--text-primary)]">Who to Follow</span>
+                </div>
 
-        </aside>
+                <div className="flex flex-col">
+                    {suggestedChannels.map(({ channel, latest }) => (
+                        <div key={channel.id} className="flex flex-col px-4 py-3 hover:bg-[var(--glass-card-hover)] transition-colors border-b border-[var(--glass-border)] last:border-0">
+                            
+                            {/* Top Row: Channel Info + Subscribe */}
+                            <div className="flex items-center gap-3 mb-2">
+                                <Link href={`/channels/${channel.slug}`} className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500/10 to-teal-500/10 border border-[var(--glass-border)] flex items-center justify-center font-bold text-xs text-[var(--text-primary)] flex-shrink-0">
+                                    {channel.name[0].toUpperCase()}
+                                </Link>
+                                
+                                <div className="flex-1 min-w-0">
+                                    <Link href={`/channels/${channel.slug}`} className="flex items-center gap-1 hover:underline">
+                                        <span className="font-bold text-xs text-[var(--text-primary)] truncate">{channel.name}</span>
+                                        {/* Assuming these are top channels, we give them a 'verified' check visually */}
+                                        <ShieldCheck size={10} className="text-emerald-500" />
+                                    </Link>
+                                    <div className="text-[10px] text-[var(--text-muted)] truncate">@{channel.slug}</div>
+                                </div>
+
+                                <SubscribeButton 
+                                    channelId={channel.id} 
+                                    channelSlug={channel.slug} 
+                                    isSubscribedInitial={subscribedSet.has(channel.id)} 
+                                    small={true} 
+                                />
+                            </div>
+
+                            {/* Bottom Row: Context (Latest Post) */}
+                            {latest && (
+                                <div className="pl-11 text-[10px] text-[var(--text-secondary)] italic truncate opacity-80">
+                                    "{latest.title || latest.content.slice(0, 40)}..."
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="p-3 text-center">
+                    <Link href="/discover" className="text-xs text-[var(--accent-primary)] font-bold hover:underline">
+                        View More
+                    </Link>
+                </div>
+            </div>
+
+            {/* --- FOOTER --- */}
+            <div className="px-4 text-[10px] text-[var(--text-muted)] text-center leading-relaxed">
+                 © 2025 PeakeFeeds. Built on Optimism.
+                 <div className="flex gap-2 justify-center mt-1">
+                     <Link href="/privacy" className="hover:text-[var(--text-primary)]">Privacy</Link>
+                     <span>•</span>
+                     <Link href="/terms" className="hover:text-[var(--text-primary)]">Terms</Link>
+                 </div>
+            </div>
+
+        </div>
     )
 }

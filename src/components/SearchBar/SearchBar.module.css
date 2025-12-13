@@ -1,3 +1,5 @@
+/* src/components/SearchBar.module.css */
+
 /* Container */
 .container {
     position: relative;
@@ -10,23 +12,24 @@
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 1rem 1.5rem;
+    padding: 0.8rem 1.5rem; /* Adjusted padding for better vertical centering */
     
+    /* Use global variables for theme consistency */
     background: var(--glass-card);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     
     border: 1px solid var(--glass-border);
     border-radius: 99px; /* Pill shape */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* Softer shadow for light mode */
     
     transition: all 0.2s ease;
 }
 
 .inputWrapper:focus-within {
-    background: var(--glass-card-hover);
+    background: var(--glass-panel); /* Slightly more opaque on focus */
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px var(--accent-glow), 0 8px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15); /* Purple glow ring */
     transform: translateY(-1px);
 }
 
@@ -34,6 +37,11 @@
     color: var(--text-muted);
     margin-right: 1rem;
     flex-shrink: 0;
+    transition: color 0.2s;
+}
+
+.inputWrapper:focus-within .searchIcon {
+    color: var(--accent-primary);
 }
 
 .searchInput {
@@ -42,7 +50,7 @@
     border: none;
     outline: none;
     
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--text-primary);
     font-weight: 500;
 }
@@ -59,21 +67,26 @@
     left: 0;
     right: 0;
     
-    /* Deep dark background ensures readability over glass */
-    background: rgba(10, 10, 12, 0.95); 
+    /* 🟢 FIX: Use variable instead of hardcoded black so it works in Light Mode */
+    background: var(--glass-panel); 
     backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    
     border: 1px solid var(--glass-border);
     border-radius: 1.5rem;
     
-    padding: 0.75rem;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem; /* Tighter padding for cleaner list */
+    
+    /* Theme-aware shadow */
+    box-shadow: var(--glass-shadow);
     
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     
     /* Simple slide animation */
     animation: slideDown 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    overflow: hidden;
+    z-index: 100;
 }
 
 @keyframes slideDown {
@@ -88,13 +101,19 @@
     margin-bottom: 0.5rem;
 }
 
+.group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
 .groupTitle {
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0 0.75rem 0.5rem;
+    padding: 0.5rem 1rem 0.25rem;
 }
 
 /* Result Items */
@@ -103,24 +122,26 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
+    margin: 0 0.25rem; /* Slight indent */
     border-radius: 1rem;
     text-decoration: none;
-    transition: background 0.2s;
+    transition: all 0.15s ease;
     cursor: pointer;
+    border: 1px solid transparent; /* Prevents layout shift on hover border */
 }
 
-/* 🆕 Unified Active State (Hover OR Keyboard Selection) */
+/* 🟢 Unified Active State (Hover OR Keyboard Selection) */
 .resultItem:hover,
 .resultItem.active {
-    background: var(--glass-card-hover);
-    /* Optional: Add a subtle glow border for keyboard focus */
-    box-shadow: inset 0 0 0 1px var(--glass-border); 
+    /* Use purple tint for active state */
+    background: rgba(124, 58, 237, 0.08); 
+    border-color: rgba(124, 58, 237, 0.2);
 }
 
 .channelName {
     font-weight: 600;
     color: var(--text-primary);
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
 .channelSlug {
@@ -131,6 +152,8 @@
 /* Create Option (Special Styling) */
 .createOption {
     margin-top: 0.25rem;
+    border-top: 1px solid var(--glass-border);
+    padding-top: 0.5rem;
 }
 
 .createLink {
@@ -138,31 +161,32 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
+    margin: 0 0.25rem;
     border-radius: 1rem;
     text-decoration: none;
     
-    /* Subtle green tint to indicate action */
+    /* 🟢 Use Teal variable for 'Create' action */
     background: rgba(45, 212, 191, 0.05); 
     border: 1px dashed var(--glass-border);
     transition: all 0.2s;
     cursor: pointer;
 }
 
-/* 🆕 Create Link Active State */
+/* 🟢 Create Link Active State */
 .createLink:hover,
 .createLink.active {
-    background: rgba(45, 212, 191, 0.1);
-    border-color: var(--accent-primary);
-    transform: scale(1.01);
+    background: rgba(45, 212, 191, 0.15); /* Darker teal */
+    border-color: var(--accent-secondary);
+    transform: scale(1.005);
 }
 
 /* Mobile Optimizations */
 @media (max-width: 640px) {
     .inputWrapper {
-        padding: 0.75rem 1rem;
+        padding: 0.6rem 1rem;
     }
     .searchInput {
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
     .resultsDropdown {
         border-radius: 1rem;
