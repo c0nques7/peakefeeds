@@ -3,41 +3,60 @@
 
 import React, { useState } from 'react';
 import { AdPlayerOverlay } from '@/components/ads/AdPlayerOverlay';
+import { MediatorStatus } from '@/hooks/useAdMediator';
 
 export default function TestAdPage() {
-  // Allow 'any' here just for the test harness state switching
-  const [status, setStatus] = useState<any>('IDLE');
+  // Use the proper type for status
+  const [status, setStatus] = useState<MediatorStatus>('IDLE');
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-10 bg-zinc-950 text-white">
+    <div className="p-10 bg-zinc-900 min-h-screen text-white flex flex-col items-center">
+      <h1 className="text-2xl font-bold mb-6">Ad Overlay Test Suite</h1>
       
-      <h1 className="text-2xl font-bold mb-8">Ad Overlay Test Harness</h1>
-
-      {/* Control Panel */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <button onClick={() => setStatus('LOADING')} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500">
-          Trigger LOADING
+        <button 
+            onClick={() => setStatus('PROMPT')} 
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold transition-all">
+            1. Open Prompt
         </button>
-        <button onClick={() => setStatus('PLAYING')} className="px-4 py-2 bg-emerald-600 rounded hover:bg-emerald-500">
-          Trigger PLAYING (Success Flow)
+
+        <button 
+            onClick={() => setStatus('LOADING')} 
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-all">
+            2. Simulate Loading
         </button>
-        <button onClick={() => setStatus('ERROR')} className="px-4 py-2 bg-red-600 rounded hover:bg-red-500">
-          Trigger ERROR
+
+        <button 
+            onClick={() => setStatus('SHOWING')} 
+            className="px-6 py-3 bg-amber-600 hover:bg-amber-500 rounded-xl font-bold transition-all">
+            3. Simulate Playing
         </button>
-        <button onClick={() => setStatus('COMPLETED')} className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500">
-          Trigger COMPLETED
+
+        <button 
+            onClick={() => setStatus('ERROR')} 
+            className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold transition-all">
+            4. Simulate Error
         </button>
       </div>
 
-      <p className="text-zinc-500 mb-4">
-        Current State: <span className="text-white font-mono">{status}</span>
-      </p>
+      <div className="p-4 border border-zinc-700 rounded-lg text-sm text-zinc-400 font-mono">
+        Current Status: <span className="text-emerald-400">{status}</span>
+      </div>
 
-      {/* The Component Under Test */}
+      {/* 🟢 The Component Under Test */}
       <AdPlayerOverlay 
-         status={status} 
-         provider="TEST_PROVIDER" 
-         onCancel={() => setStatus('IDLE')} 
+        status={status} 
+        provider="TEST_PROVIDER" 
+        onCancel={() => setStatus('IDLE')} 
+        // 👇 ADD THESE TWO MISSING PROPS
+        onSelectVideo={() => {
+            console.log("Selected Video");
+            setStatus('LOADING');
+        }}
+        onSelectQuest={() => {
+            console.log("Selected Quest");
+            setStatus('LOADING');
+        }}
       />
     </div>
   );
