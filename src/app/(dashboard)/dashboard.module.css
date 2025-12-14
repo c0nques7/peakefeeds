@@ -5,28 +5,27 @@
   display: grid;
   min-height: 100vh;
   width: 100%;
-  
+  overflow-x: hidden; 
+  position: relative;
+
   /* Mobile: Single Column */
   grid-template-columns: 1fr;
   grid-template-areas: "main";
   
-  padding-bottom: 80px; /* Space for mobile nav */
+  /* Side padding */
+  padding: 0 1rem 80px 1rem; 
 }
 
 /* --- 💻 DESKTOP GRID --- */
 @media (min-width: 1024px) {
   .layoutContainer {
-    /* Sidebar: Fixed 260px
-       Main Content: Flexible
-       Right Sidebar: Fixed 320px
-    */
     grid-template-columns: 260px 1fr 320px;
     grid-template-areas: "sidebar main right";
-    
-    padding-bottom: 0;
+    padding: 0;
     max-width: 1400px; 
     margin: 0 auto;
     gap: 2rem; 
+    overflow-x: visible; 
   }
 }
 
@@ -71,24 +70,19 @@
   display: none; 
 }
 
-/* 🟢 LAYOUT FIX: Main Content Column */
 .mainContent {
   grid-area: main;
   width: 100%;
-  max-width: 700px; /* Limits feed width */
+  max-width: 700px; 
   margin: 0 auto;
-  
-  /* Flex column for Search Bar + Feed stacking */
+  min-width: 0; 
   display: flex;
   flex-direction: column;
 }
 
-/* 🟢 LAYOUT FIX: Right Sidebar */
 .rightSidebar {
   grid-area: right;
   display: none;
-  
-  /* Sticky behavior */
   position: sticky;
   top: 1.5rem;
   height: calc(100vh - 3rem);
@@ -96,13 +90,12 @@
   padding-right: 1rem;
 }
 
-/* Show sidebars only on desktop */
 @media (min-width: 1024px) {
   .desktopSidebar { display: block; }
   .rightSidebar { display: block; }
 }
 
-/* --- MOBILE NAV WRAPPER --- */
+/* --- MOBILE NAV --- */
 .mobileNavWrapper {
   display: block;
   position: fixed;
@@ -116,25 +109,61 @@
   .mobileNavWrapper { display: none; }
 }
 
-/* --- 🔍 SEARCH BAR WRAPPER --- */
-/* This pin the search bar to the top of the main content column */
+/* --- 🔍 SEARCH BAR WRAPPER (FIXED HEADER) --- */
 .searchWrapper {
-  position: sticky;
-  top: 1rem; 
-  z-index: 50; /* Sits above feed items */
-  margin-bottom: 2rem;
-  margin-top: 1rem;
+  /* 🟢 FIX: Force Fixed Position on Mobile */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50; 
   width: 100%;
-  padding: 0 1rem;
+  
+  /* 🟢 Glass Effect Background */
+  background: var(--bg-app); 
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  
+  padding: 1rem;
+  
+  /* Ensure it sits above content */
+  transform: translateZ(0); 
+}
+
+/* --- 💻 DESKTOP SEARCH RESET --- */
+@media (min-width: 1024px) {
+  .searchWrapper {
+    /* Reset to normal flow for desktop */
+    position: sticky; 
+    top: 1rem;
+    left: auto;
+    right: auto;
+    
+    background: transparent;
+    border-bottom: none;
+    backdrop-filter: none;
+    
+    padding: 0;
+    margin-bottom: 2rem;
+  }
 }
 
 /* --- 📰 FEED STREAM --- */
 .feedWrapper {
   width: 100%;
   position: relative;
-  
-  /* 🟢 INTERACTION FIX: Lower Z-Index than sidebar */
   z-index: 0; 
+  
+  /* 🟢 FIX: Push content down on Mobile so it's not hidden behind the fixed SearchBar */
+  padding-top: 80px; 
+}
+
+@media (min-width: 1024px) {
+  .feedWrapper {
+    /* Reset padding on desktop */
+    padding-top: 0;
+  }
 }
 
 .feedStream {
@@ -142,7 +171,5 @@
   flex-direction: column;
   gap: 2rem;
   padding-bottom: 4rem;
-  
-  /* 🟢 INTERACTION FIX: Isolates 3D transforms so they don't clip fixed elements */
   isolation: isolate; 
 }

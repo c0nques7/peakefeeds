@@ -97,12 +97,9 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
 
   return (
     <div className={styles.feedWrapper}>
-      
-      {/* 🔍 SEARCH BAR */}
-      <div className="mb-6 w-full pt-4 relative z-20">
+      <div className={styles.searchWrapper}>
         <SearchBar />
       </div>
-      
       {/* CHANNEL HEADER */}
       <div className="mb-10 relative z-10"> 
         <div className="backdrop-blur-xl rounded-[2rem] p-8 text-center shadow-xl border border-[var(--glass-border)] bg-[var(--glass-card)] w-full">

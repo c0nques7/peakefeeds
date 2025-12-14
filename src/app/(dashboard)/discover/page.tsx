@@ -9,10 +9,9 @@ export default function DiscoverPage() {
     <div className={styles.feedWrapper}>
 
         {/* Search Bar */}
-        <div className="mb-8 relative z-20 w-full pt-4">
-            <SearchBar />
+       <div className={styles.searchWrapper}>
+                <SearchBar />
         </div>
-
         <section className="relative z-10">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">

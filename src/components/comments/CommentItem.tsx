@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from 'react'
 import { useSession } from "next-auth/react" 
+import Link from 'next/link'
+import { formatDistanceToNow } from 'date-fns'
 import { 
   Reply, Trash, Edit2, Send, MoreVertical, CornerDownRight, 
-  X, Check, Loader2, ExternalLink, Video, Music, Image as ImageIcon, MessageCircle 
+  X, Check, Loader2, ExternalLink, MessageCircle 
 } from 'lucide-react'
 import { createComment } from '@/actions/create-comment'
 import { deleteComment, updateComment } from '@/actions/comment-actions'
@@ -15,10 +17,8 @@ import clsx from 'clsx'
 const CommentEmbed = ({ url }: { url: string }) => {
   if (!url) return null;
 
-  // Simple type detection
   let type = 'external';
   
-  // 1. Precise Image Regex
   if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) || url.match(/(picsum\.photos|i\.imgur\.com)/)) {
       type = 'image';
   }
@@ -26,8 +26,6 @@ const CommentEmbed = ({ url }: { url: string }) => {
   else if (url.match(/(open\.spotify\.com)/)) type = 'spotify';
   else if (url.match(/(soundcloud\.com)/)) type = 'soundcloud';
   else if (url.match(/(instagram\.com)/)) type = 'instagram';
-  else if (url.match(/(tiktok\.com)/)) type = 'tiktok';
-  else if (url.match(/(reddit\.com)/)) type = 'reddit';
   else if (url.match(/(discord\.com|discord\.gg)/)) type = 'discord';
 
   // --- RENDERERS ---
@@ -95,13 +93,8 @@ const CommentEmbed = ({ url }: { url: string }) => {
   }
 
   if (type === 'instagram') {
-    // 🟢 NEW STRATEGY: Render a Rich Social Card for Instagram
-    // (Identical logic to PostCard/index.tsx for consistency)
-    
     const match = url.match(/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
     const postId = match ? match[1] : null;
-
-    // Extract handle for label
     const handle = url.match(/instagram\.com\/([a-zA-Z0-9_.]+)/)?.[1];
     const label = handle ? `@${handle}` : "Instagram";
 
@@ -114,12 +107,9 @@ const CommentEmbed = ({ url }: { url: string }) => {
                 className="group block relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-[#833ab4]/5 via-[#fd1d1d]/5 to-[#fcb045]/5 hover:from-[#833ab4]/10 hover:via-[#fd1d1d]/10 hover:to-[#fcb045]/10 transition-all"
             >
                 <div className="flex items-center gap-3 p-3">
-                    {/* Instagram Icon Box */}
                     <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-tr from-[#ffc107] via-[#f44336] to-[#9c27b0] flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
                         <ExternalLink size={20} />
                     </div>
-
-                    {/* Text Info */}
                     <div className="flex flex-col min-w-0">
                         <span className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
                             {postId ? "View Post on Instagram" : "View Profile on Instagram"}
@@ -128,8 +118,6 @@ const CommentEmbed = ({ url }: { url: string }) => {
                             {label} • Click to open
                         </span>
                     </div>
-
-                    {/* Arrow */}
                     <div className="ml-auto text-gray-400 group-hover:text-indigo-500 transition-colors">
                         <CornerDownRight size={14} />
                     </div>
@@ -143,11 +131,9 @@ const CommentEmbed = ({ url }: { url: string }) => {
       return <GenericLinkCard url={url} icon={<MessageCircle className="text-[#5865F2]" size={18} />} label="Discord Invite" />;
   }
 
-  // Fallback for generic links
   return <GenericLinkCard url={url} />;
 };
 
-// Generic Card for non-media links
 const GenericLinkCard = ({ url, icon, label }: any) => (
     <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 p-2 pr-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-colors max-w-md group/card">
         <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 group-hover/card:text-indigo-500 transition-colors">
@@ -167,11 +153,23 @@ interface CommentItemProps {
   postId: string;
   channelSlug: string;
   postAuthorId: string;
+  // 🟢 ADDED: currentUserId to Interface to fix TypeScript error
+  currentUserId?: string; 
+  onReply?: (comment: any) => void;
+  onDelete?: (id: string) => void;
+  onEdit?: (id: string, content: string) => void;
 }
 
-export function CommentItem({ comment, postId, channelSlug, postAuthorId }: CommentItemProps) {
+export function CommentItem({ 
+    comment, postId, channelSlug, postAuthorId, 
+    // 🟢 Rename prop to 'propUserId' to merge with session ID logic
+    currentUserId: propUserId, 
+    onReply, onDelete, onEdit 
+}: CommentItemProps) {
   const { data: session } = useSession();
-  const currentUserId = session?.user?.id;
+  
+  // 🟢 Priority: Use prop if passed (faster), otherwise fallback to session hook
+  const currentUserId = propUserId || session?.user?.id;
   
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -188,10 +186,10 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
   );
   
   const isPostOwner = currentUserId === postAuthorId;
-
   const canEdit = isCommentAuthor; 
   const canDelete = isCommentAuthor || isPostOwner; 
 
+  // Random border color based on ID
   const randomBorderClass = useMemo(() => {
       const colors = [
           'border-indigo-200 dark:border-indigo-400/50',
@@ -202,7 +200,9 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
           'border-violet-200 dark:border-violet-400/50',
           'border-fuchsia-200 dark:border-fuchsia-400/50',
       ];
-      const index = comment.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % colors.length;
+      // Fallback ID if missing
+      const idStr = comment.id || "fallback";
+      const index = idStr.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % colors.length;
       return colors[index];
   }, [comment.id]);
 
@@ -226,11 +226,19 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
     
     const res = await createComment(formData);
     
-    if (res?.error) {
-        toast.error(res.error);
-    } else {
+    if (res?.success && res.comment) {
+        const newReply = { 
+            ...res.comment, 
+            createdAt: new Date().toISOString(), 
+            replies: [] 
+        };
+        // 🟢 Update Parent State
+        if (onReply) onReply(newReply);
+        
         setReplyText("");
         setIsReplying(false);
+    } else {
+        toast.error(res?.error || "Failed to reply");
     }
     setIsSubmitting(false);
   };
@@ -250,6 +258,8 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
     const res = await updateComment(formData);
 
     if (res?.success) {
+        // 🟢 Update Parent State
+        if (onEdit) onEdit(comment.id, editText);
         toast.success("Comment updated");
         setIsEditing(false);
         setShowMenu(false);
@@ -264,6 +274,8 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
     const res = await deleteComment(comment.id, channelSlug);
     
     if (res?.success) {
+        // 🟢 Update Parent State
+        if (onDelete) onDelete(comment.id);
         toast.success("Comment deleted");
     } else {
         toast.error(res?.error || "Failed to delete");
@@ -273,7 +285,7 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
     setShowDeleteConfirm(false);
   };
 
-  // Helper to make links clickable in text
+  // Helper to make links clickable
   const renderContent = (text: string) => {
     const parts = text.split(/(https?:\/\/[^\s]+)/g);
     return parts.map((part, i) => 
@@ -289,9 +301,13 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
     <div className="flex gap-3 mb-4 w-full animate-in fade-in slide-in-from-bottom-2 duration-300 group/comment relative">
       {/* Avatar & Thread Line */}
       <div className="flex flex-col items-center">
-         <div className="w-8 h-8 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-300 shrink-0">
-            {comment.author?.username?.[0]?.toUpperCase() || 'U'}
-         </div>
+         <Link href={`/profile/${comment.author?.username}`} className="w-8 h-8 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-300 shrink-0 overflow-hidden border border-gray-200 dark:border-gray-700">
+            {comment.author?.image ? (
+                <img src={comment.author.image} alt={comment.author.username} className="w-full h-full object-cover" />
+            ) : (
+                comment.author?.username?.[0]?.toUpperCase() || 'U'
+            )}
+         </Link>
          {comment.replies && comment.replies.length > 0 && (
              <div className="w-[2px] bg-gray-200 dark:bg-gray-700/50 flex-grow mt-2 rounded-full min-h-[20px]" />
          )}
@@ -333,7 +349,9 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
                 </span>
                 
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                        {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : 'Just now'}
+                    </span>
                     
                     {/* MENU TOGGLE */}
                     {(canEdit || canDelete) && (
@@ -431,6 +449,10 @@ export function CommentItem({ comment, postId, channelSlug, postAuthorId }: Comm
                         postId={postId}
                         channelSlug={channelSlug}
                         postAuthorId={postAuthorId}
+                        currentUserId={currentUserId} // 🟢 Pass down recursively
+                        onReply={onReply}   // Pass down
+                        onDelete={onDelete} // Pass down
+                        onEdit={onEdit}     // Pass down
                     />
                 ))}
             </div>

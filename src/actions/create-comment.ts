@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { createNotification } from "@/lib/notifications"; // 1. Import Notification Utility
+import { createNotification } from "@/lib/notifications"; 
 
 const CreateCommentSchema = z.object({
   content: z.string().min(1).max(500),
@@ -28,7 +28,7 @@ export async function createComment(formData: FormData) {
   const { content, postId, parentId } = validated.data;
 
   try {
-    // 2. Create the Comment
+    // 1. Create the Comment (Include Author details for the UI)
     const newComment = await prisma.comment.create({
       data: {
         content,
@@ -36,16 +36,31 @@ export async function createComment(formData: FormData) {
         parentId,
         authorId: session.user.id,
       },
+      include: {
+        author: {
+            select: {
+                id: true,
+                username: true,
+                image: true,
+                role: true
+            }
+        }
+      }
     });
 
-    // 3. Fetch Context (Post & Channel)
+    // 2. Fetch Context (Post & Channel) for Notifications/Revalidation
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { channel: true }
     });
 
     if (post) {
-      // 4. NOTIFICATION LOGIC 🔔
+      // 3. NOTIFICATION LOGIC 🔔
+      // Don't notify if user is commenting on their own stuff
+      const isSelf = parentId 
+        ? false // Logic to check parent author would go here, but for now we skip strict self-check on replies inside this block to keep it simple, or implement fully.
+        : post.authorId === session.user.id;
+
       if (parentId) {
         // A) It's a REPLY -> Notify the author of the parent comment
         const parentComment = await prisma.comment.findUnique({
@@ -53,7 +68,7 @@ export async function createComment(formData: FormData) {
           select: { authorId: true }
         });
 
-        if (parentComment) {
+        if (parentComment && parentComment.authorId !== session.user.id) {
           await createNotification({
             type: 'REPLY',
             actorId: session.user.id,
@@ -62,7 +77,7 @@ export async function createComment(formData: FormData) {
             commentId: newComment.id
           });
         }
-      } else {
+      } else if (post.authorId !== session.user.id) {
         // B) It's a ROOT COMMENT -> Notify the post author
         await createNotification({
           type: 'COMMENT',
@@ -73,13 +88,17 @@ export async function createComment(formData: FormData) {
         });
       }
 
-      // Revalidate the channel page to show new comment
-      revalidatePath(`/channels/${post.channel.slug}`);
+      // 4. Revalidate
+      if (post.channel) {
+          revalidatePath(`/channels/${post.channel.slug}`);
+      }
     }
     
-    return { success: true };
+    // 🟢 RETURN THE COMMENT OBJECT (Fixes the TypeScript/UI Error)
+    return { success: true, comment: newComment };
+
   } catch (error) {
-    console.error(error);
+    console.error("Create comment error:", error);
     return { error: "Failed to post." };
   }
 }

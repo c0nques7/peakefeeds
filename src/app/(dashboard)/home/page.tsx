@@ -46,10 +46,9 @@ export default async function PersonalFeed() {
   // 3. RENDER FEED
   return (
     <div className={styles.feedWrapper}>
-      <div className="mb-8 w-full pt-4 sticky top-4 z-30">
-        <SearchBar />
-      </div>
-
+      <div className={styles.searchWrapper}>
+                <SearchBar />
+            </div>
       <div className={styles.feedStream}>
         {(!posts || posts.length === 0) ? (
           <div className="flex flex-col items-center justify-center p-16 text-center text-[var(--text-muted)] border border-dashed border-[var(--glass-border)] rounded-3xl bg-[var(--glass-card)] animate-in fade-in zoom-in-95 duration-500">

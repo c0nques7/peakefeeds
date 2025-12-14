@@ -6,15 +6,20 @@ export type FeedPost = {
   id: string;
   title: string | null;
   content: string;
-  // ✅ FIX: Type is now 'string', not 'Date'
   createdAt: string; 
   isVerified: boolean;
   contentHash: string | null;
   signature: string | null;
   embedUrl: string | null;
   mediaUrl: string | null;
-  type: PostType;
   
+  // 🟢 ADD THESE 4 FIELDS
+  linkTitle: string | null;
+  linkDescription: string | null;
+  linkImage: string | null;
+  linkDomain: string | null;
+
+  type: PostType;
   likesCount: number;
   dislikesCount: number;
 
@@ -52,11 +57,18 @@ export type FeedPost = {
   currentUserReaction?: ReactionType | null;
 };
 
-// 2. Shared Selection Logic (keeps things consistent)
+// 2. Shared Selection Logic
 const feedSelect = {
   id: true, title: true, content: true, createdAt: true, isVerified: true,
   contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
   likesCount: true, dislikesCount: true,
+  
+  // 🟢 ADD THESE TO THE DB SELECT
+  linkTitle: true,
+  linkDescription: true,
+  linkImage: true,
+  linkDomain: true,
+
   author: { 
     select: { id: true, username: true, name: true, image: true, role: true } 
   },
@@ -110,8 +122,6 @@ function transformPosts(posts: any[]): FeedPost[] {
       id: post.id,
       title: post.title,
       content: post.content,
-      
-      // ✅ FIX: Convert Date to ISO String
       createdAt: post.createdAt.toISOString(), 
 
       isVerified: post.isVerified,
@@ -119,8 +129,14 @@ function transformPosts(posts: any[]): FeedPost[] {
       signature: post.signature,
       embedUrl: post.embedUrl,
       mediaUrl: post.mediaUrl,
-      type: post.type as PostType,
+      
+      // 🟢 PASS THE DATA THROUGH
+      linkTitle: post.linkTitle,
+      linkDescription: post.linkDescription,
+      linkImage: post.linkImage,
+      linkDomain: post.linkDomain,
 
+      type: post.type as PostType,
       likesCount: post.likesCount ?? 0,
       dislikesCount: post.dislikesCount ?? 0,
       

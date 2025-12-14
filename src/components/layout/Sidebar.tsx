@@ -217,17 +217,7 @@ export function Sidebar({ user }: SidebarProps) {
       <div className={styles.footer}>
         
         {/* 🆕 SETTINGS CHECKBOX */}
-        {user && (
-            <label className={styles.settingsRow}>
-                <input 
-                    type="checkbox" 
-                    className={styles.checkbox}
-                    checked={showHints}
-                    onChange={toggleHints}
-                />
-                <span>Enable Visual Hints</span>
-            </label>
-        )}
+
 
         <div className="flex items-center justify-between w-full pt-2 border-t border-[var(--glass-border)]">
             <ThemeToggle /> 

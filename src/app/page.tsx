@@ -1,40 +1,19 @@
 'use client'
 
-import { useState, Suspense, useEffect } from "react"
+import { useState, Suspense } from "react"
 import Link from 'next/link'
-import { Hexagon, Layers, ShieldCheck, Mail, Check, AlertCircle, Copy, Sun, Moon, LogIn } from "lucide-react"
-import { useTheme } from "next-themes" 
+import { Hexagon, Layers, ShieldCheck, Mail, Check, AlertCircle, Copy, LogIn } from "lucide-react"
 import { PostCard } from "@/components/PostCard"
 import { subscribeToWaitlist } from "@/actions/subscribe-waitlist"
 import { useSearchParams } from "next/navigation"
+// 🟢 UPDATE: Import the global ThemeToggle instead of defining it locally
+import ThemeToggle from "@/components/ThemeToggle" 
 import styles from "./landing.module.css" 
 
 // --- 1. CONFIGURATION ---
 const DEV_WALLET = "0x6714a4e8ba4f584f1ad3b242d34628cd6d146f98";
 
 // --- 2. COMPONENTS ---
-
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
-
-  return (
-    <button
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="p-3 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] shadow-lg hover:scale-110 transition-transform active:scale-95 group"
-      aria-label="Toggle Theme"
-    >
-      {theme === "dark" ? (
-        <Sun className="text-amber-400 fill-amber-400/20" size={24} />
-      ) : (
-        <Moon className="text-slate-600 fill-slate-400/20" size={24} />
-      )}
-    </button>
-  )
-}
 
 function WaitlistForm() {
     const [email, setEmail] = useState('');
@@ -143,7 +122,7 @@ function DonationFooter() {
 
 export default function LandingPage() {
 
-  // 📝 MOCK DATA: Updated with Nested Comments
+  // MOCK DATA
   const demoPost = {
     id: "hero-demo",
     content: "The algorithm is broken.\n\nYou are looking at a verified thought. It wasn't curated by a black box. It was cryptographically signed on Optimism. #TheTruthLayer",
@@ -162,56 +141,20 @@ export default function LandingPage() {
     },
     channel: { slug: "announcements" },
     _count: { likes: 1242, comments: 4 },
-    // 🟢 ADDED: Mock Comment Data (Flat list with parentIds)
     comments: [
         {
             id: "c1",
             content: "Finally! A social graph I actually own. The UI is slick too. 💎",
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
             parentId: null,
-            author: {
-                id: "u1",
-                username: "crypto_alice",
-                image: null,
-                role: "USER"
-            }
+            author: { id: "u1", username: "crypto_alice", image: null, role: "USER" }
         },
         {
             id: "c2",
             content: "The verification speed is insane compared to traditional social apps.",
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), // 1 hour ago
-            parentId: "c1", // Reply to Alice
-            author: {
-                id: "u2",
-                username: "builder_bob",
-                image: null,
-                role: "VERIFIED"
-            }
-        },
-        {
-            id: "c3",
-            content: "Is this anchored on L1 or L2?",
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-            parentId: null,
-            author: {
-                id: "u3",
-                username: "dev_dave",
-                image: null,
-                role: "USER"
-            }
-        },
-         {
-            id: "c4",
-            content: "Signatures are L2 (Optimism) for speed, batched to L1 for security.",
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(), // 4 hours ago
-            parentId: "c3", // Reply to Dave
-            author: {
-                id: "peake-official",
-                name: "PeakeFeeds",
-                username: "peake_official",
-                image: null,
-                role: "ADMIN"
-            }
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
+            parentId: "c1",
+            author: { id: "u2", username: "builder_bob", image: null, role: "VERIFIED" }
         }
     ]
   }
@@ -219,19 +162,15 @@ export default function LandingPage() {
   return (
     <div className={styles.container}>
       
+      {/* Background Orbs */}
       <div className={styles.backgroundLayer}>
          <div className={styles.orbTeal} />
          <div className={styles.orbPurple} />
       </div>
 
-      <nav className="fixed top-0 right-0 z-50 p-6 flex justify-end">
-          <ThemeToggle />
-      </nav>
-
+      {/* Hero Section */}
       <section className={styles.hero}>
-        
         <div className={`${styles.heroContent} animate-in slide-in-from-left-10 duration-700 fade-in`}>
-          
           <div className={styles.optimismBadge}>
             <span className={styles.pingEffect}><span className={styles.pingDot}></span><span className={styles.dot}></span></span>
             <span>Built on Optimism</span>
@@ -250,7 +189,6 @@ export default function LandingPage() {
           <Suspense fallback={<div className="h-14 w-full bg-gray-100 animate-pulse rounded-2xl" />}>
              <WaitlistForm />
           </Suspense>
-          
         </div>
 
         <div className={`${styles.heroVisual} animate-in slide-in-from-right-10 duration-1000 fade-in`}>
@@ -260,19 +198,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Features Grid */}
       <section className={styles.features}>
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Hexagon size={28} /></div>
           <h3 className={styles.featureTitle}>Verifiable Speed</h3>
           <p className={styles.featureText}>We operate at the speed of the Superchain. Posts are verified instantly costing fractions of a penny.</p>
         </div>
-
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><ShieldCheck size={28} /></div>
           <h3 className={styles.featureTitle}>The Anti-Bot Layer</h3>
           <p className={styles.featureText}>AI trains on noise. We filter for signal. Our cryptographic handshake ensures you interact with humans.</p>
         </div>
-
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Layers size={28} /></div>
           <h3 className={styles.featureTitle}>Ownership by Default</h3>
@@ -280,6 +217,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Footer */}
       <footer className={styles.footer}>
         <DonationFooter />
         <div className="text-[var(--text-muted)] text-xs mt-8">

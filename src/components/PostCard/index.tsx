@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { 
   MessageCircle, Heart, Share2, MoreHorizontal, 
-  ShieldCheck, Trash2, AlertCircle, X, Loader2, Send, ExternalLink
+  ShieldCheck, Loader2, Send, ExternalLink, X, AlertCircle, Trash2 
 } from 'lucide-react'
 import { toast } from 'sonner' 
 import { setReaction } from '@/actions/toggle-reaction'
@@ -16,7 +16,7 @@ import { PostEmbed } from './PostEmbed'
 import clsx from 'clsx'
 import styles from './PostCard.module.css'
 
-// --- HELPERS REMAIN THE SAME ---
+// --- HELPERS ---
 function formatTextWithLinks(text: string, previewUrl?: string | null) {
   if (!text) return null;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -68,18 +68,21 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   const [showComments, setShowComments] = useState(false) 
   const [commentText, setCommentText] = useState("")
   const [isSendingComment, setIsSendingComment] = useState(false)
+  
+  // Local comments state (Flat list)
   const [localComments, setLocalComments] = useState(post.comments || [])
   const [commentsCount, setCommentsCount] = useState(post._count?.comments || 0)
 
-  // Delete State
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false) 
+  // Delete Post State
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDeleted, setIsDeleted] = useState(false)
 
-  const isOwner = currentUserId === post.author.id;
+  // Derived State
   const commentTree = useMemo(() => buildCommentTree(localComments), [localComments]);
+  const channelSlug = post.channel?.slug || 'home';
 
   // --- HANDLERS ---
+  
   const handleReaction = async (type: 'LIKE' | 'DISLIKE') => {
     if (reaction === type) {
         setReactionState(null)
@@ -89,60 +92,92 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
         if(type === 'LIKE') setLikesCount((prev: number) => prev + 1)     
         setReactionState(type)
     }
-
     if (isDemo) {
-        toast("Demo Mode: Reaction simulated", { icon: <Heart size={16} className="text-pink-500" /> });
+        toast("Demo Mode: Reaction simulated");
         return; 
     }
-
     const formData = new FormData()
     formData.append('postId', post.id)
     formData.append('reactionType', type)
-    formData.append('channelSlug', post.channel?.slug || 'home') 
+    formData.append('channelSlug', channelSlug) 
     await setReaction(formData)
   }
 
-  const handleCreateComment = async () => {
-      if(!commentText.trim()) return;
+  // 1. CREATE Handler
+  const handleNewComment = (newComment: any) => {
+      setLocalComments((prev: any) => {
+          if (prev.some((c: any) => c.id === newComment.id)) return prev;
+          return [...prev, newComment];
+      });
+      setCommentsCount((prev: number) => prev + 1);
+  };
+
+  // 2. DELETE Handler
+  const handleDeleteComment = (commentId: string) => {
+      setLocalComments((prev: any) => prev.filter((c: any) => c.id !== commentId));
+      setCommentsCount((prev: number) => Math.max(0, prev - 1));
+  };
+
+  // 3. EDIT Handler
+  const handleEditComment = (commentId: string, newContent: string) => {
+      setLocalComments((prev: any) => prev.map((c: any) => 
+          c.id === commentId ? { ...c, content: newContent } : c
+      ));
+  };
+
+  const handleCreateCommentRoot = async () => {
+      if (!commentText.trim() || isSendingComment) return;
       setIsSendingComment(true);
+      
+      const tempId = `temp-${Date.now()}`;
       
       if (isDemo) {
           await new Promise(r => setTimeout(r, 800)); 
           const fakeComment = {
-              id: Math.random().toString(),
+              id: tempId,
               content: commentText,
               author: { id: "guest", username: "guest_user", image: null, role: "USER" },
               createdAt: new Date().toISOString(),
               parentId: null,
               replies: []
           };
-          setLocalComments((prev: any) => [...prev, fakeComment]);
-          setCommentsCount((prev: number) => prev + 1);
+          handleNewComment(fakeComment);
           setCommentText("");
           setIsSendingComment(false);
           toast.success("Demo Comment Posted");
           return;
       }
 
-      const formData = new FormData();
-      formData.append('content', commentText);
-      formData.append('postId', post.id);
-      const newComment = await createComment(formData);
-      if (newComment) {
-          setLocalComments((prev: any) => [...prev, newComment]);
-          setCommentsCount((prev: number) => prev + 1);
+      try {
+          const formData = new FormData();
+          formData.append('content', commentText);
+          formData.append('postId', post.id);
+          
+          const result = await createComment(formData);
+          
+          if (result.success && result.comment) {
+              const newComment = {
+                  ...result.comment,
+                  createdAt: new Date().toISOString(), 
+                  replies: [] 
+              };
+              handleNewComment(newComment);
+              setCommentText(""); 
+          } else {
+              toast.error(result.error || "Failed to post comment");
+          }
+      } catch (error) {
+          toast.error("Something went wrong");
+      } finally {
+          setIsSendingComment(false);
       }
-      setCommentText("");
-      setIsSendingComment(false);
   }
 
-  const handleDelete = async () => { 
+  const handleDeletePost = async () => { 
       if (isDemo) {
-          setIsConfirmingDelete(false);
           toast.error("Delete disabled in Demo Mode");
           return;
       }
-      setIsConfirmingDelete(false); 
       setIsDeleting(true); 
       try {
           const res = await deletePost(post.id);
@@ -166,35 +201,44 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   if (isDeleted) return null;
 
   return (
-    // 🟢 1. OUTER CONTAINER: Added 'h-full' to ensure it takes the wrapper's height
     <div className={clsx(
         styles.cardContainer, 
-        isDemo ? "w-full h-full" : "w-full max-w-[550px] mx-auto", 
+        isDemo ? "w-full h-full" : "w-full max-w-[550px] mx-auto",
         isDeleting && "opacity-50 pointer-events-none"
     )}>
       <div className={clsx(styles.cardInner, isFlipped && styles.flipped)}>
         
         {/* ================= FRONT FACE ================= */}
-        {/* 🟢 2. FRONT FACE: Added 'h-full' and 'justify-between' to stretch content */}
         <div className={clsx(styles.cardFront, isDemo && "h-full flex flex-col justify-between")} style={{ overflow: 'visible' }}> 
           
-          {/* ... DELETE OVERLAY ... */}
-
           {/* HEADER */}
           <div className={styles.header}>
             <div className={styles.authorInfo}>
-                <Link href="#" className={styles.avatar}>
+                {/* 🟢 1. LINK TO PROFILE IMAGE */}
+                <Link href={`/profile/${post.author.username}`} className={styles.avatar}>
                     {post.author.image ? <img src={post.author.image} className="w-full h-full object-cover rounded-full" /> : <span>{post.author.username?.[0]}</span>}
                 </Link>
                 <div>
                     <div className="flex items-center">
-                        <Link href="#" className={styles.authorName}>@{post.author.username}</Link>
+                        {/* 🟢 1. LINK TO PROFILE NAME */}
+                        <Link href={`/profile/${post.author.username}`} className={styles.authorName}>
+                            @{post.author.username}
+                        </Link>
                         <RoleBadge role={post.author.role} />
                         {isDemo && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-md text-[var(--accent-primary)] bg-[var(--glass-card)] border border-[var(--glass-border)]">DEMO</span>}
                     </div>
                     <div className={styles.timestamp}>
                        <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
-                       {post.channel && <><span className="mx-1">•</span><Link href="#" className={styles.channelTag}>#{post.channel.slug}</Link></>}
+                       
+                       {/* 🟢 2. LINK TO CHANNEL */}
+                       {post.channel && (
+                           <>
+                               <span className="mx-1">•</span>
+                               <Link href={`/channels/${post.channel.slug}`} className={styles.channelTag}>
+                                   /c/{post.channel.slug}
+                               </Link>
+                           </>
+                       )}
                     </div>
                 </div>
             </div>
@@ -203,13 +247,24 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                 <button onClick={() => setShowMenu(!showMenu)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-full hover:bg-white/5 transition-colors">
                     {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <MoreHorizontal size={18} />}
                 </button>
+                {showMenu && !isDemo && (
+                     <div className="absolute right-0 top-8 w-32 bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
+                        {(currentUserId === post.author.id) && (
+                            <button onClick={handleDeletePost} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2">
+                                <Trash2 size={12} /> Delete Post
+                            </button>
+                        )}
+                        <button onClick={() => setShowMenu(false)} className="px-4 py-2 text-left text-xs hover:bg-[var(--glass-card-hover)] text-[var(--text-secondary)]">
+                            Close
+                        </button>
+                     </div>
+                )}
             </div>
           </div>
 
           {/* CONTENT BODY */}
-          {/* 🟢 3. CONTENT: Ensure this takes available space but doesn't overflow awkwardly */}
           <div className={clsx(styles.contentWrapper, "flex-1 flex flex-col justify-center")}>
-              <div className={clsx(styles.content, isDemo && "text-lg")}> {/* Make text slightly larger in demo mode */}
+              <div className={clsx(styles.content, isDemo && "text-lg")}> 
                   {formatTextWithLinks(post.content, mediaUrl)}
               </div>
           </div>
@@ -240,14 +295,32 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                   <span className="font-bold text-sm">Comments ({commentsCount})</span>
                   <button onClick={() => setShowComments(false)} className="text-[var(--text-muted)] hover:text-white"><X size={18}/></button>
               </div>
+              
               <div className={styles.commentsList}>
-                  {commentTree.length > 0 ? commentTree.map(c => (
-                      <CommentItem key={c.id} comment={c} postId={post.id} channelSlug={'home'} postAuthorId={post.author.id} />
-                  )) : <div className="text-center text-[var(--text-muted)] text-xs mt-8">No comments yet.</div>}
+                {commentTree.length > 0 ? commentTree.map((c: any, index: number) => (
+                    <CommentItem 
+                        key={c.id || `fallback-${index}`} 
+                        comment={c} 
+                        postId={post.id} 
+                        channelSlug={channelSlug} 
+                        postAuthorId={post.author.id}
+                        currentUserId={currentUserId}
+                        onReply={handleNewComment}
+                        onDelete={handleDeleteComment}
+                        onEdit={handleEditComment}
+                    />
+                )) : <div className="text-center text-[var(--text-muted)] text-xs mt-8">No comments yet.</div>}
               </div>
+
               <div className={styles.inputArea}>
-                  <input className={styles.commentInput} placeholder={isDemo ? "Type a demo comment..." : "Add to the discussion..."} value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateComment()} />
-                  <button onClick={handleCreateComment} disabled={!commentText.trim() || isSendingComment} className={styles.sendBtn}>
+                  <input 
+                      className={styles.commentInput} 
+                      placeholder={isDemo ? "Type a demo comment..." : "Add to the discussion..."} 
+                      value={commentText} 
+                      onChange={(e) => setCommentText(e.target.value)} 
+                      onKeyDown={(e) => e.key === 'Enter' && handleCreateCommentRoot()} 
+                  />
+                  <button onClick={handleCreateCommentRoot} disabled={!commentText.trim() || isSendingComment} className={styles.sendBtn}>
                       {isSendingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
               </div>
@@ -257,7 +330,6 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
         {/* ================= END FRONT FACE ================= */}
 
         {/* BACK FACE (METADATA) */}
-        {/* 🟢 4. BACK FACE: Added 'h-full' to stretch the verification view */}
         <div className={clsx(styles.cardBack, isDemo && "h-full")}>
              <button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
