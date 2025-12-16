@@ -39,6 +39,12 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
             contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
             likesCount: true, dislikesCount: true,
             
+            // 🟢 ADDED: Link Metadata Selection
+            linkTitle: true,
+            linkDescription: true,
+            linkImage: true,
+            linkDomain: true,
+            
             author: { 
                 select: { id: true, name: true, username: true, image: true, role: true } 
             },
@@ -77,6 +83,12 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           embedUrl: post.embedUrl ?? null,
           signature: post.signature ?? null,
           contentHash: post.contentHash ?? null,
+          
+          // 🟢 ADDED: Explicitly pass link metadata
+          linkTitle: post.linkTitle ?? null,
+          linkDescription: post.linkDescription ?? null,
+          linkImage: post.linkImage ?? null,
+          linkDomain: post.linkDomain ?? null,
           
           author: {
              ...post.author,
@@ -165,3 +177,4 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
     </div>
   );
 }
+
