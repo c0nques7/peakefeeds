@@ -8,12 +8,14 @@ import { headers } from "next/headers";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { ResetPasswordEmail } from "@/components/emails/ResetPasswordEmail";
+import React from "react";
 
+// Initialize Resend
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
  * 1. REQUEST FLOW
- * User enters email -> We generate token -> We "send" email
+ * Triggered when user submits the "Forgot Password" form.
  */
 export async function requestPasswordReset(formData: FormData) {
   const email = formData.get("email") as string;
@@ -22,118 +24,129 @@ export async function requestPasswordReset(formData: FormData) {
     return { error: "Please provide a valid email address." };
   }
 
-  // 1. Check if user exists (Silent fail if not, for security)
+  // 1. Check if user exists
   const user = await prisma.user.findUnique({
     where: { email: email.toLowerCase() }
   });
 
+  // Security: If user doesn't exist, we still return success to prevent email enumeration.
   if (user) {
-    // RATE LIMIT: check for a recently-created token and short-circuit
-    // We don't store createdAt on VerificationToken, but tokens are created with a 1 hour expiry
-    // so we can infer createdAt = expires - 1 hour. We'll enforce a 10 minute cooldown.
+    // 2. Rate Limiting (10 minute cooldown)
     const existing = await prisma.verificationToken.findFirst({
       where: { identifier: email.toLowerCase() },
       orderBy: { expires: 'desc' }
     });
 
     const TOKEN_LIFETIME_MS = 3600 * 1000; // 1 hour
-    const COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+    const COOLDOWN_MS = 10 * 60 * 1000;    // 10 minutes
 
     if (existing) {
       const createdAt = new Date(existing.expires.getTime() - TOKEN_LIFETIME_MS);
       if (Date.now() - createdAt.getTime() < COOLDOWN_MS) {
-        // Too soon; silently return success to avoid leaking info
-        return { success: true };
+        console.log(`[AUTH] Reset requested too soon for ${email}. Cooldown active.`);
+        return { success: true }; 
       }
     }
 
-    // 2. Generate secure token
+    // 3. Generate Token
     const token = randomBytes(32).toString("hex");
-    const expires = new Date(new Date().getTime() + TOKEN_LIFETIME_MS); // 1 hour
+    const expires = new Date(new Date().getTime() + TOKEN_LIFETIME_MS);
 
-    // 3. Upsert in VerificationToken table: delete old tokens for identifier then create new
-    // Simpler and more explicit: delete any existing tokens for identifier, then create a new one.
+    // 4. Save Token to Database
     try {
       await prisma.verificationToken.deleteMany({ where: { identifier: email.toLowerCase() } });
-    } catch (err) {
-      // ignore
+      await prisma.verificationToken.create({
+        data: {
+          identifier: email.toLowerCase(),
+          token,
+          expires
+        }
+      });
+    } catch (dbErr) {
+      console.error("[DB ERROR] Failed to store reset token:", dbErr);
+      return { error: "Database error. Please try again later." };
     }
 
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email.toLowerCase(),
-        token,
-        expires
-      }
-    });
-
-    // 4. Build reset link and send via Resend (if configured) or fallback to logging
+    // 5. Construct Reset Link
     let baseUrl = process.env.NEXTAUTH_URL;
     if (!baseUrl) {
-      // 🟢 FIX: await headers() here
+      // 🟢 NEXT.JS 15 FIX: must await headers()
       const headersList = await headers();
       const host = headersList.get("host");
       const protocol = headersList.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
-      if (host) {
-        baseUrl = `${protocol}://${host}`;
-      } else {
-        baseUrl = "http://localhost:3000";
-      }
+      baseUrl = host ? `${protocol}://${host}` : "http://localhost:3000";
     }
     const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email.toLowerCase())}`;
 
+    // 6. Send Email via Resend
     if (resend) {
       try {
-        console.log('[EMAIL] Resend provider configured — attempting to send reset email to', email);
-        const html = await render(ResetPasswordEmail({ userEmail: email, resetLink } as any) as React.ReactElement);
-        const resp = await resend.emails.send({
+        console.log(`[RESEND] Rendering email template for ${email}...`);
+        
+        const html = await render(
+          React.createElement(ResetPasswordEmail, { 
+            userEmail: email, 
+            resetLink 
+          } as any)
+        );
+
+        console.log(`[RESEND] Sending from security@peakefeeds.com to ${email}...`);
+        
+        const { data, error } = await resend.emails.send({
           from: 'Peake Feeds <security@peakefeeds.com>',
           to: email,
           subject: 'Reset your Peake Feeds password',
           html
         });
-        console.log('[EMAIL] Resend send response:', resp);
+
+        if (error) {
+          console.error('[RESEND ERROR] API returned error:', error.name, error.message);
+          // If you see "Domain not verified" here, you must verify peakefeeds.com in the Resend dashboard.
+          throw new Error(error.message);
+        }
+
+        console.log('[RESEND SUCCESS] Email sent successfully. ID:', data?.id);
+
       } catch (err) {
-        console.error('Password reset email send failed:', err);
-        console.log('[EMAIL] Falling back to console link log for', email);
-        console.log(`[SELF-SERVICE] Password Reset Requested for ${email}`);
-        console.log(`Link: ${resetLink}`);
+        console.error('[RESEND CRITICAL] Failed to dispatch email:', err);
+        // Fallback: Log link to console so developers can still test if email fails
+        console.log(`\n------------------------------------------------`);
+        console.log(`[STAGING FALLBACK] RESET LINK for ${email}:`);
+        console.log(resetLink);
+        console.log(`------------------------------------------------\n`);
       }
     } else {
-      console.log('[EMAIL] No Resend provider configured (RESEND_API_KEY missing)');
-      // No email provider configured — log the reset link for developer/staging
-      console.log('------------------------------------------------');
-      console.log(`[SELF-SERVICE] Password Reset Requested for ${email}`);
-      console.log(`Link: ${resetLink}`);
-      console.log('------------------------------------------------');
+      console.warn('[CONFIG] RESEND_API_KEY is missing. No email will be sent.');
+      console.log(`[LOCAL DEV] Reset Link: ${resetLink}`);
     }
   }
 
-  // Always return success to prevent Email Enumeration attacks
+  // Always return success to client for security
   return { success: true };
 }
 
 /**
  * 2. RESET FLOW
- * User clicks link -> Enters new password -> We update DB
+ * Triggered when user submits the "New Password" form.
  */
 export async function completePasswordReset(token: string, email: string, formData: FormData) {
   const password = formData.get("password") as string;
   const confirm = formData.get("confirm") as string;
 
+  // Basic Validation
   if (!password || password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
+    return { error: "Password must be at least 8 characters long." };
   }
   if (password !== confirm) {
     return { error: "Passwords do not match." };
   }
 
-  // 1. Verify Token matches Email and is Active
+  // 1. Verify Token exists and hasn't expired
   const record = await prisma.verificationToken.findFirst({
     where: {
       identifier: email.toLowerCase(),
       token: token,
-      expires: { gt: new Date() } // Must be in the future
+      expires: { gt: new Date() } 
     }
   });
 
@@ -144,22 +157,28 @@ export async function completePasswordReset(token: string, email: string, formDa
   // 2. Hash new password
   const passwordHash = await argon2.hash(password);
 
-  // 3. Update User & Delete Token (Transaction)
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { email: email.toLowerCase() },
-      data: { passwordHash: passwordHash }
-    }),
-    prisma.verificationToken.delete({
-      where: {
-        identifier_token: {
-          identifier: email.toLowerCase(),
-          token: token
+  // 3. Update User & Cleanup Token (Transaction)
+  try {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { email: email.toLowerCase() },
+        data: { passwordHash: passwordHash }
+      }),
+      prisma.verificationToken.delete({
+        where: {
+          identifier_token: {
+            identifier: email.toLowerCase(),
+            token: token
+          }
         }
-      }
-    })
-  ]);
+      })
+    ]);
+  } catch (err) {
+    console.error("[DB ERROR] Final password update failed:", err);
+    return { error: "Failed to update password. Please try again." };
+  }
 
+  // Success redirect
   redirect("/login?reset=success");
 }
 
