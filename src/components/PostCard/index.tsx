@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { 
-  MessageCircle, Heart, Share2, MoreHorizontal, 
+  MessageCircle, Heart, HeartCrack, Share2, MoreHorizontal, 
   ShieldCheck, Loader2, Send, ExternalLink, X, AlertCircle, Trash2 
 } from 'lucide-react'
 import { toast } from 'sonner' 
@@ -61,6 +61,7 @@ interface PostCardProps {
 export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostCardProps) {
   const [reaction, setReactionState] = useState(initialReaction)
   const [likesCount, setLikesCount] = useState(post._count?.likes || post.likesCount || 0)
+  const [dislikesCount, setDislikesCount] = useState(post._count?.dislikes || post.dislikesCount || 0)
   const [showMenu, setShowMenu] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   
@@ -85,13 +86,30 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   
   const handleReaction = async (type: 'LIKE' | 'DISLIKE') => {
     if (reaction === type) {
+        // Toggle OFF current reaction
+        if (type === 'LIKE') {
+            setLikesCount((prev: number) => Math.max(0, prev - 1))
+        } else {
+            setDislikesCount((prev: number) => Math.max(0, prev - 1))
+        }
         setReactionState(null)
-        if(type === 'LIKE') setLikesCount((prev: number) => prev - 1)
     } else {
-        if(reaction === 'LIKE') setLikesCount((prev: number) => prev - 1) 
-        if(type === 'LIKE') setLikesCount((prev: number) => prev + 1)     
+        // Switch reaction or set for the first time
+        if (reaction === 'LIKE') {
+            setLikesCount((prev: number) => Math.max(0, prev - 1))
+        } else if (reaction === 'DISLIKE') {
+            setDislikesCount((prev: number) => Math.max(0, prev - 1))
+        }
+
+        if (type === 'LIKE') {
+            setLikesCount((prev: number) => prev + 1)
+        } else {
+            setDislikesCount((prev: number) => prev + 1)
+        }
+
         setReactionState(type)
     }
+
     if (isDemo) {
         toast("Demo Mode: Reaction simulated");
         return; 
@@ -272,21 +290,30 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
           {hasEmbed && <PostEmbed url={mediaUrl} fallbackData={post} />}
 
           {/* ACTIONS FOOTER */}
-          <div className="flex items-center justify-between pt-3 border-t border-[var(--glass-border)] mt-auto">
-             <div className={styles.actionBar} style={{borderTop: 'none', marginTop: 0, paddingTop: 0}}>
-                 <button onClick={() => handleReaction('LIKE')} className={clsx(styles.actionBtn, reaction === 'LIKE' && styles.liked)}>
-                    <Heart size={18} fill={reaction === 'LIKE' ? "currentColor" : "none"} />
-                    <span>{likesCount}</span>
-                 </button>
-                 <button onClick={() => setShowComments(true)} className={styles.actionBtn}>
-                    <MessageCircle size={18} />
-                    <span>{commentsCount}</span>
-                 </button>
-                 <button className={styles.actionBtn}><Share2 size={18} /></button>
+          <div className="flex flex-col gap-3 pt-3 border-t border-[var(--glass-border)] mt-auto">
+             <div className={styles.actionBar} style={{borderTop: 'none', marginTop: 0, paddingTop: 0, width: '100%', justifyContent: 'center'}}>
+                 <div className="flex gap-6">
+                    <button onClick={() => handleReaction('LIKE')} className={clsx(styles.actionBtn, reaction === 'LIKE' && styles.liked)}>
+                        <Heart size={18} fill={reaction === 'LIKE' ? "currentColor" : "none"} />
+                        <span>{likesCount}</span>
+                    </button>
+                    <button onClick={() => handleReaction('DISLIKE')} className={clsx(styles.actionBtn, reaction === 'DISLIKE' && styles.disliked)}>
+                        <HeartCrack size={18} fill={reaction === 'DISLIKE' ? "currentColor" : "none"} />
+                        <span>{dislikesCount}</span>
+                    </button>
+                    <button onClick={() => setShowComments(true)} className={styles.actionBtn}>
+                        <MessageCircle size={18} />
+                        <span>{commentsCount}</span>
+                    </button>
+                    <button className={styles.actionBtn}><Share2 size={18} /></button>
+                 </div>
              </div>
-             <button onClick={(e) => { e.stopPropagation(); setIsFlipped(true); }} className={clsx(styles.verifyChip, !post.isVerified && styles.unverified)}>
-                {post.isVerified ? <><ShieldCheck size={14} className="text-emerald-400" /><span className="text-emerald-400">Verified</span></> : <><AlertCircle size={14} /><span>Unverified</span></>}
-             </button>
+             
+             <div className="flex justify-center w-full">
+                <button onClick={(e) => { e.stopPropagation(); setIsFlipped(true); }} className={clsx(styles.verifyChip, !post.isVerified && styles.unverified)}>
+                    {post.isVerified ? <><ShieldCheck size={14} className="text-emerald-400" /><span className="text-emerald-400">Verified</span></> : <><AlertCircle size={14} /><span>Unverified</span></>}
+                </button>
+             </div>
           </div>
 
           {/* COMMENT DRAWER */}

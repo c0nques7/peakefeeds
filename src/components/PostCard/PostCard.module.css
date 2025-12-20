@@ -38,8 +38,8 @@
     background: var(--glass-card);
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-card);
-    backdrop-filter: blur(var(--blur-light));
-    -webkit-backdrop-filter: blur(var(--blur-light));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     
     /* 3D Properties */
     -webkit-backface-visibility: hidden;
@@ -65,7 +65,7 @@
     width: 100%;
     transform: rotateY(180deg);
     z-index: 1;
-    background: var(--bg-verification); 
+    background: var(--glass-panel); 
     display: flex;
     flex-direction: column;
     justify-content: center;

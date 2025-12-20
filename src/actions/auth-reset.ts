@@ -67,7 +67,7 @@ export async function requestPasswordReset(formData: FormData) {
     });
 
     // 4. Build reset link and send via Resend (if configured) or fallback to logging
-    const resetLink = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    const resetLink = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}&email=${encodeURIComponent(email.toLowerCase())}`;
 
     if (resend) {
       try {
@@ -140,7 +140,7 @@ export async function completePasswordReset(token: string, email: string, formDa
     prisma.verificationToken.delete({
       where: {
         identifier_token: {
-          identifier: email,
+          identifier: email.toLowerCase(),
           token: token
         }
       }
