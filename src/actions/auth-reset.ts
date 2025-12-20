@@ -70,7 +70,8 @@ export async function requestPasswordReset(formData: FormData) {
     // 4. Build reset link and send via Resend (if configured) or fallback to logging
     let baseUrl = process.env.NEXTAUTH_URL;
     if (!baseUrl) {
-      const headersList = headers();
+      // 🟢 FIX: await headers() here
+      const headersList = await headers();
       const host = headersList.get("host");
       const protocol = headersList.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
       if (host) {
@@ -161,3 +162,4 @@ export async function completePasswordReset(token: string, email: string, formDa
 
   redirect("/login?reset=success");
 }
+
