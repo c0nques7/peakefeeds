@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { randomBytes } from "crypto";
 import * as argon2 from "argon2";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { ResetPasswordEmail } from "@/components/emails/ResetPasswordEmail";
@@ -67,7 +68,18 @@ export async function requestPasswordReset(formData: FormData) {
     });
 
     // 4. Build reset link and send via Resend (if configured) or fallback to logging
-    const resetLink = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}&email=${encodeURIComponent(email.toLowerCase())}`;
+    let baseUrl = process.env.NEXTAUTH_URL;
+    if (!baseUrl) {
+      const headersList = headers();
+      const host = headersList.get("host");
+      const protocol = headersList.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
+      if (host) {
+        baseUrl = `${protocol}://${host}`;
+      } else {
+        baseUrl = "http://localhost:3000";
+      }
+    }
+    const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email.toLowerCase())}`;
 
     if (resend) {
       try {
