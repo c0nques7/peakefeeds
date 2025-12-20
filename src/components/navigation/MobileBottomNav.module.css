@@ -1,21 +1,17 @@
-/* src/components/navigation/MobileBottomNav.module.css */
-
 .bottomNav {
   position: fixed;
   bottom: 0;
   left: 0;
+  right: 0;
   width: 100%;
   height: 80px; 
-  z-index: 50; /* Top layer */
+  z-index: 100;
 
-  /* 6 Equal Columns */
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   align-items: center;
   justify-items: center;
 
-  /* 🟢 THEME-AWARE BACKGROUND */
-  /* Uses your global variables for Light/Dark support */
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -23,14 +19,20 @@
   box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
 
   padding-bottom: env(safe-area-inset-bottom);
-  transition: transform 0.3s ease;
+  
+  /* 🟢 Smooth transition for hiding/showing */
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(0);
 }
 
-/* Dark Mode Override */
+/* 🟢 Hidden State: Slides out of frame */
+.navHidden {
+  transform: translateY(100%);
+}
+
 :global(.dark) .bottomNav {
   background: rgba(5, 5, 5, 0.95);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
 }
 
 /* --- NAV ITEMS --- */
@@ -42,35 +44,16 @@
   gap: 4px;
   width: 100%;
   height: 100%;
-  
   color: var(--text-muted);
-  text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
-  transition: transform 0.1s ease, color 0.2s ease;
-  padding-top: 10px; /* Center visual balance */
-}
-
-.navItem:active {
-  transform: scale(0.9);
+  transition: color 0.2s ease;
+  padding-top: 10px;
 }
 
 .navItemActive {
   color: var(--accent-secondary); 
-}
-
-.navItemDisabled {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100%;
-  height: 100%;
-  padding-top: 10px;
-  color: var(--text-muted);
-  opacity: 0.3;
 }
 
 .navLabel {
@@ -78,43 +61,31 @@
   font-weight: 500;
 }
 
-/* --- 🆕 NOTIFICATION DRAWER --- */
+/* --- NOTIFICATION DRAWER --- */
 .notificationOverlay {
   position: fixed;
   inset: 0;
-  /* z-45 ensures it sits immediately BEHIND the nav bar (z-50) */
-  z-index: 45; 
+  z-index: 90; 
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
-  
   display: flex;
-  align-items: flex-end; /* Align bottom */
+  align-items: flex-end;
   justify-content: center;
-  
-  /* Padding bottom equals Nav Height so drawer sits on top of nav visual */
   padding-bottom: 80px; 
-  animation: fadeIn 0.2s ease-out;
 }
 
 .notificationContent {
   width: 100%;
-  max-width: 600px; /* Limit width on tablets */
-  height: 75vh;     /* Tall drawer */
-  
-  /* Theme Aware Colors */
+  max-width: 600px;
+  height: 75vh;
   background: var(--glass-panel);
   backdrop-filter: blur(24px);
   border-top: 1px solid var(--glass-border);
-  
-  /* Rounded Top Corners */
   border-radius: 24px 24px 0 0;
-  
   display: flex;
   flex-direction: column;
   padding: 1rem;
   box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
-  
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .drawerHeader {
@@ -126,22 +97,9 @@
   margin-bottom: 0.5rem;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* 🛑 SAFETY CHECK: Force Hide on Desktop */
 @media (min-width: 1024px) {
-  .bottomNav {
-    display: none !important;
-  }
-  .notificationOverlay {
+  .bottomNav, .notificationOverlay {
     display: none !important;
   }
 }
+

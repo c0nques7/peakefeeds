@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Compass, User, Home, LogIn, LogOut, Bell, X, MessageCircle } from 'lucide-react'; 
+import { Compass, User, Home, Bell, LogOut, LogIn, MessageCircle, X } from 'lucide-react'; 
 import { useSession, signIn, signOut } from 'next-auth/react'; 
-import { NotificationFeed } from '@/components/notifications/NotificationFeed'; // Ensure this component exists
+import { NotificationFeed } from '@/components/notifications/NotificationFeed';
 import clsx from 'clsx';
 import styles from './MobileBottomNav.module.css';
 
@@ -13,14 +13,37 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession(); 
   const [showNotifs, setShowNotifs] = useState(false);
+  
+  // 🟢 State for hiding the nav on scroll
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
-  const isActive = (path: string) => {
-    return pathname.startsWith(path);
-  };
+  const isActive = (path: string) => pathname.startsWith(path);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      // Current scroll position
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        // Scrolling DOWN: Hide Navbar
+        setIsVisible(false);
+      } else {
+        // Scrolling UP: Show Navbar
+        setIsVisible(true);
+      }
+
+      // Remember current position for next move
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', controlNavbar);
+    return () => window.removeEventListener('scroll', controlNavbar);
+  }, [lastScrollY]);
 
   return (
     <>
-      {/* 🔔 NOTIFICATION DRAWER (Slides up behind the nav) */}
+      {/* 🔔 NOTIFICATION DRAWER */}
       {showNotifs && (
         <div className={styles.notificationOverlay} onClick={() => setShowNotifs(false)}>
           <div className={styles.notificationContent} onClick={(e) => e.stopPropagation()}>
@@ -30,9 +53,7 @@ export default function MobileBottomNav() {
                 <X size={20} className="text-[var(--text-muted)]" />
               </button>
             </div>
-            
             <div className="flex-1 overflow-y-auto min-h-0">
-               {/* Pass a prop to NotificationFeed if needed, e.g. limit={10} */}
                <NotificationFeed />
             </div>
           </div>
@@ -40,37 +61,31 @@ export default function MobileBottomNav() {
       )}
 
       {/* 📱 BOTTOM NAV BAR */}
-      <nav className={styles.bottomNav}>
-          
-          {/* 1. HOME */}
+      <nav className={clsx(
+          styles.bottomNav, 
+          !isVisible && styles.navHidden // 🟢 Apply hidden class
+      )}>
           <Link href="/home" className={clsx(styles.navItem, isActive('/home') && styles.navItemActive)}>
               <Home size={22} strokeWidth={isActive('/home') ? 2.5 : 2} />
               <span className={styles.navLabel}>Home</span>
           </Link>
 
-          {/* 2. DISCOVER */}
           <Link href="/discover" className={clsx(styles.navItem, isActive('/discover') && styles.navItemActive)}>
               <Compass size={22} strokeWidth={isActive('/discover') ? 2.5 : 2} />
               <span className={styles.navLabel}>Discover</span>
           </Link>
 
-          {/* 3. ACTIVITY (Toggle Drawer) */}
           {session ? (
-            <button 
-              onClick={() => setShowNotifs(!showNotifs)} 
-              className={clsx(styles.navItem, showNotifs && styles.navItemActive)}
-            >
+            <button onClick={() => setShowNotifs(!showNotifs)} className={clsx(styles.navItem, showNotifs && styles.navItemActive)}>
               <Bell size={22} strokeWidth={showNotifs ? 2.5 : 2} />
               <span className={styles.navLabel}>Activity</span>
             </button>
           ) : (
              <div className={styles.navItemDisabled}>
-                <Bell size={22} />
-                <span className={styles.navLabel}>Activity</span>
+                <Bell size={22} /><span className={styles.navLabel}>Activity</span>
              </div>
           )}
 
-          {/* 4. MESSAGES */}
           {session ? (
              <Link href="/messages" className={clsx(styles.navItem, isActive('/messages') && styles.navItemActive)}>
                 <MessageCircle size={22} strokeWidth={isActive('/messages') ? 2.5 : 2} />
@@ -78,34 +93,26 @@ export default function MobileBottomNav() {
              </Link>
           ) : (
              <div className={styles.navItemDisabled}>
-                <MessageCircle size={22} />
-                <span className={styles.navLabel}>Chats</span>
+                <MessageCircle size={22} /><span className={styles.navLabel}>Chats</span>
              </div>
           )}
 
-          {/* 5. PROFILE */}
-          <Link 
-              href={session?.user?.username ? `/profile/${session.user.username}` : '/api/auth/signin'} 
-              className={clsx(styles.navItem, isActive('/profile') && styles.navItemActive)}
-          >
+          <Link href={session?.user?.username ? `/profile/${session.user.username}` : '/api/auth/signin'} className={clsx(styles.navItem, isActive('/profile') && styles.navItemActive)}>
               <User size={22} strokeWidth={isActive('/profile') ? 2.5 : 2} />
               <span className={styles.navLabel}>Profile</span>
           </Link>
 
-          {/* 6. AUTH ACTION */}
           {session ? (
               <button onClick={() => signOut({ callbackUrl: '/' })} className={styles.navItem}>
-                  <LogOut size={22} />
-                  <span className={styles.navLabel}>Out</span>
+                  <LogOut size={22} /><span className={styles.navLabel}>Out</span>
               </button>
           ) : (
               <button onClick={() => signIn()} className={styles.navItem}>
-                  <LogIn size={22} />
-                  <span className={styles.navLabel}>In</span>
+                  <LogIn size={22} /><span className={styles.navLabel}>In</span>
               </button>
           )}
-
       </nav>
     </>
   );
 }
+
