@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { MoreHorizontal, Reply, Trash2, Edit2, Check, X, Loader2 } from 'lucide-react'
+import { MoreHorizontal, Reply, Trash2, Edit2, Check, X, Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteComment, updateComment } from '@/actions/comment-actions'
 import { createComment } from '@/actions/create-comment'
@@ -23,7 +23,7 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ 
-  comment, postId, postAuthorId, currentUserId, onReply, onDelete, onEdit, isReply = false 
+  comment, postId, channelSlug, postAuthorId, currentUserId, onReply, onDelete, onEdit, isReply = false 
 }: CommentItemProps) {
   const [showOptions, setShowOptions] = useState(false)
   const [isReplying, setIsReplying] = useState(false)
@@ -63,10 +63,13 @@ export function CommentItem({
 
   const handleDelete = async () => {
     try {
-      const res = await deleteComment(comment.id);
+      // 🟢 PASSING BOTH REQUIRED ARGUMENTS
+      const res = await deleteComment(comment.id, channelSlug || 'home');
       if (res.success) {
         onDelete?.(comment.id);
         toast.success("Comment deleted");
+      } else {
+        toast.error(res.error || "Unauthorized");
       }
     } catch (e) {
       toast.error("Error deleting comment");
@@ -81,8 +84,10 @@ export function CommentItem({
     setIsSavingEdit(true);
     try {
       const formData = new FormData();
-      formData.append('content', editText);
       formData.append('commentId', comment.id);
+      formData.append('content', editText);
+      formData.append('channelSlug', channelSlug || 'home');
+      
       const res = await updateComment(formData);
       if (res.success) {
         onEdit?.(comment.id, editText);
@@ -160,7 +165,7 @@ export function CommentItem({
       {comment.replies && comment.replies.length > 0 && (
         <div className={styles.repliesList}>
           {comment.replies.map((reply: any) => (
-            <CommentItem key={reply.id} comment={reply} postId={postId} postAuthorId={postAuthorId} currentUserId={currentUserId} onReply={onReply} onDelete={onDelete} onEdit={onEdit} isReply={true} />
+            <CommentItem key={reply.id} comment={reply} postId={postId} channelSlug={channelSlug} postAuthorId={postAuthorId} currentUserId={currentUserId} onReply={onReply} onDelete={onDelete} onEdit={onEdit} isReply={true} />
           ))}
         </div>
       )}
