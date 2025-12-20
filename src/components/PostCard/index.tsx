@@ -13,10 +13,11 @@ import { deletePost } from '@/actions/delete-post'
 import { createComment } from '@/actions/create-comment' 
 import { CommentItem } from '@/components/comments/CommentItem' 
 import { PostEmbed } from './PostEmbed' 
+import { LiveTimestamp } from './LiveTimestamp'
 import clsx from 'clsx'
 import styles from './PostCard.module.css'
 
-// --- HELPERS (FULL RESTORATION) ---
+// --- HELPERS ---
 function formatTextWithLinks(text: string, previewUrl?: string | null) {
   if (!text) return null;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -49,7 +50,6 @@ const RoleBadge = ({ role }: { role: string }) => {
     return <span className={clsx("text-[10px] font-bold px-1.5 py-0.5 rounded-md border ml-2 align-middle", colorClass)}>{role}</span>;
 };
 
-// --- MAIN COMPONENT ---
 interface PostCardProps {
     post: any;
     initialReaction?: 'LIKE' | 'DISLIKE' | null;
@@ -81,7 +81,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   const commentTree = useMemo(() => buildCommentTree(localComments), [localComments]);
   const channelSlug = post.channel?.slug || 'home';
 
-  // --- HANDLERS (FULL RESTORATION) ---
+  // --- HANDLERS ---
   const handleReaction = async (type: 'LIKE' | 'DISLIKE') => {
     if (reaction === type) {
         if (type === 'LIKE') setLikesCount((p: number) => Math.max(0, p - 1))
@@ -171,9 +171,9 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
     )}>
       <div className={clsx(styles.cardInner, isFlipped && styles.flipped)}>
 
-        {/* --- FRONT FACE --- */}
+        {/* ================= FRONT FACE ================= */}
         <div className={styles.cardFront}> 
-          {/* HEADER */}
+          
           <div className={styles.header}>
             <div className={styles.authorInfo}>
                 <Link href={`/profile/${post.author.username}`} className={styles.avatar}>
@@ -185,7 +185,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                         <RoleBadge role={post.author.role} />
                     </div>
                     <div className={styles.timestamp}>
-                       <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                       <LiveTimestamp date={post.createdAt} />
                        {post.channel && (
                            <>
                                <span className="mx-1">•</span>
@@ -212,7 +212,6 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
             </div>
           </div>
 
-          {/* MAIN BODY AREA (SCROLLABLE) */}
           <div className={styles.mainBodyArea}>
             <div className={styles.contentWrapper}>
                 <div className={styles.content}> 
@@ -222,7 +221,6 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
             {hasEmbed && <PostEmbed url={mediaUrl} fallbackData={post} />}
           </div>
 
-          {/* ACTIONS FOOTER */}
           <div className={styles.footerActions}>
              <div className={styles.actionBar}>
                 <button onClick={() => handleReaction('LIKE')} className={clsx(styles.actionBtn, reaction === 'LIKE' && styles.liked)}>
@@ -245,7 +243,6 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
              </button>
           </div>
 
-          {/* 🟢 THE COMMENTS DRAWER */}
           <div className={clsx(styles.commentsDrawer, showComments && styles.drawerOpen)}>
               <div className={styles.drawerHandle} onClick={() => setShowComments(false)}>
                   <ChevronDown size={20} />
@@ -268,7 +265,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
           </div>
         </div> 
 
-        {/* --- BACK FACE (VERIFICATION LAYER) --- */}
+        {/* ================= BACK FACE ================= */}
         <div className={styles.cardBack}>
              <button onClick={() => setIsFlipped(false)} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>

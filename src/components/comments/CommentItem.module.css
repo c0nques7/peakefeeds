@@ -1,0 +1,178 @@
+/* --- CONTAINER --- */
+.commentWrapper {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+/* 🟢 Nested Reply Indentation */
+.isReply {
+    margin-left: 2.5rem;
+    padding-top: 0.5rem;
+    border-left: 2px solid var(--glass-border, rgba(255, 255, 255, 0.05));
+    padding-left: 1rem;
+}
+
+/* --- HEADER --- */
+.commentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.commentAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px; /* 🟢 Squircle Style */
+    overflow: hidden;
+    background: var(--accent-gradient, linear-gradient(135deg, #7c3aed, #db2777));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.commentUsername {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary, #fff);
+    text-decoration: none;
+}
+
+.commentUsername:hover {
+    color: var(--accent-primary, #a855f7);
+}
+
+.timestamp {
+    font-size: 10px;
+    color: var(--text-muted, #94a3b8);
+}
+
+/* --- BODY & TEXT --- */
+.commentBody {
+    padding-left: 2.5rem; /* Aligns with end of avatar */
+}
+
+.commentText {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary, #cbd5e1);
+    word-break: break-word;
+}
+
+/* --- ACTIONS --- */
+.commentActions {
+    padding-left: 2.5rem;
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.replyBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted, #64748b);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.replyBtn:hover {
+    color: #fff;
+}
+
+/* --- INPUTS (REPLY & EDIT) --- */
+.replyInputArea {
+    margin-left: 2.5rem;
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 6px 10px;
+}
+
+.replyInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.replySendBtn {
+    background: var(--accent-primary, #a855f7);
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+
+.editInput {
+    width: 100%;
+    min-height: 60px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--accent-primary);
+    border-radius: 8px;
+    color: #fff;
+    padding: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+/* --- DROPDOWNS --- */
+.optionsDropdown {
+    position: absolute;
+    right: 0;
+    top: 24px;
+    width: 120px;
+    background: #18181b;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    z-index: 50;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.optionItem {
+    width: 100%;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: #d4d4d8;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.optionItem:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+/* --- RECURSIVE REPLIES --- */
+.repliesList {
+    margin-top: 0.5rem;
+}
+
