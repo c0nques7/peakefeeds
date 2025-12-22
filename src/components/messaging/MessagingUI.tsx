@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from 'react'
 import useSWR from 'swr'
 import { getConversations, getMessages, sendMessage } from '@/actions/messaging'
-import { Send, Search, ArrowLeft, Loader2, User as UserIcon } from 'lucide-react'
+import { Send, Search, ArrowLeft, Loader2, User as UserIcon, Flag } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import clsx from 'clsx'
 import { useSession } from 'next-auth/react'
+import ReportMessageModal from './ReportMessageModal'
 
 export default function MessagingUI() {
   const { data: session } = useSession()
@@ -16,6 +17,10 @@ export default function MessagingUI() {
   // Mobile View State ('LIST' or 'CHAT')
   const [mobileView, setMobileView] = useState<'LIST' | 'CHAT'>('LIST')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Reporting State
+  const [reportModalOpen, setReportModalOpen] = useState(false)
+  const [messageToReport, setMessageToReport] = useState<string | null>(null)
 
   // 1. POLL INBOX (List of conversations)
   const { data: conversationsRes, mutate: mutateInbox } = useSWR(
@@ -171,7 +176,16 @@ export default function MessagingUI() {
                     {messages?.map((msg: any) => {
                         const isMe = msg.senderId === session?.user?.id
                         return (
-                            <div key={msg.id} className={clsx("flex", isMe ? "justify-end" : "justify-start")}>
+                            <div key={msg.id} className={clsx("flex items-end gap-2 group", isMe ? "justify-end" : "justify-start")}>
+                                {!isMe && (
+                                    <button 
+                                        onClick={() => { setMessageToReport(msg.id); setReportModalOpen(true); }}
+                                        className="opacity-0 group-hover:opacity-100 p-2 text-[var(--text-muted)] hover:text-red-400 transition-all"
+                                        title="Report Message"
+                                    >
+                                        <Flag size={14} />
+                                    </button>
+                                )}
                                 <div className={clsx(
                                     "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed",
                                     isMe 
@@ -216,6 +230,12 @@ export default function MessagingUI() {
             </div>
          )}
       </div>
+
+      <ReportMessageModal 
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        messageId={messageToReport}
+      />
     </div>
   )
 }

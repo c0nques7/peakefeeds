@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth.config";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton"; 
 import { SearchBar } from "@/components/SearchBar"; 
 import MessageButton from "@/components/messaging/MessageButton"; 
+import BlockUserButton from "@/components/profile/BlockUserButton";
 
 // Shared Layout Styles
 import styles from "../../(dashboard)/dashboard.module.css"; 
@@ -150,6 +151,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                                 </div>
                                 
                                 <MessageButton recipientId={profile.id} />
+                                <BlockUserButton userId={profile.id} />
                             </>
                         )}
                     </div>

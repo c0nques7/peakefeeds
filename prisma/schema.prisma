@@ -80,6 +80,7 @@ enum ReportTargetType {
   POST
   USER
   CHANNEL
+  MESSAGE
 }
 
 enum PenaltyType {
@@ -171,6 +172,10 @@ model User {
   // 💬 MESSAGING
   conversations Conversation[] @relation("ConversationParticipants")
   messagesSent  DirectMessage[] @relation("SentMessages")
+
+  // 14. Blocking System
+  blocksInitiated Block[] @relation("BlocksInitiated")
+  blocksReceived  Block[] @relation("BlocksReceived")
 }
 
 model Channel {
@@ -340,6 +345,9 @@ model Report {
 
   channelId    String?
   channel      Channel? @relation(fields: [channelId], references: [id])
+
+  messageId    String?
+  message      DirectMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   // Resolution
   resolverId String?
@@ -590,5 +598,25 @@ model DirectMessage {
   // We can add a specialized "ReadReceipt" model later if needed
   isRead    Boolean @default(false)
 
+  // Safety
+  reports   Report[]
+
   @@index([conversationId])
+}
+// --------------------------------------
+// 14. Blocking System
+// --------------------------------------
+
+model Block {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  blockerId String
+  blocker   User     @relation("BlocksInitiated", fields: [blockerId], references: [id], onDelete: Cascade)
+
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
 }
