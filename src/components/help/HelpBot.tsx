@@ -29,19 +29,16 @@ type Message = {
 }
 
 const FAQ_DATA = [
-  { q: "How do I connect my wallet?", a: "Click 'Connect Wallet' in the top nav. We support MetaMask and Coinbase Wallet; only connect wallets you trust." },
-  { q: "How do I create a post?", a: "Open the Create Post form in the dashboard or channel feed, write your post, then submit. Link/media previews are detected automatically." },
-  { q: "Is there a gas fee for posting?", a: "No — standard posts are gas-less. Blockchain transactions (e.g., NFT minting) will require gas." },
-  { q: "What's the difference between Home and Discover?", a: "Home shows posts from channels and people you follow. Discover surfaces trending channels and public posts you may like." },
-  { q: "How do channels work?", a: "Channels group related posts. You can follow or subscribe to channels; channel creators can manage moderation and verification settings." },
-  { q: "How do I verify my account or post?", a: "Use the Verify Wallet flow to link a wallet. Posts and users may be verified via wallet, ad providers, or manual review — verification badges appear on profiles and posts." },
-  { q: "What are ad verification badges and overlays?", a: "Ad verification shows that a piece of media was validated by a supported ad provider. Use the ad-overlay test page to preview overlays for verified media." },
-  { q: "How do reactions and comments work?", a: "React or reply on any post using the UI buttons. You must be signed in to create reactions or comments; some demo contexts disable writes." },
-  { q: "How do I message another user?", a: "Open Messages from the dashboard to send or receive direct messages. Messages are available in your unified inbox after opening a support ticket or messaging other users." },
-  { q: "I see a 404 on a profile or channel page — what now?", a: "Confirm the username or channel slug. If it still 404s, the resource may be unpublished or deleted; try refreshing or contacting support via the Help Bot." },
-  { q: "How do I report content or request help?", a: "Open the Help Bot and type 'human' or choose 'Contact support' to create a support ticket. Include steps to reproduce and affected URLs for faster help." },
-  { q: "What data is stored and how are wallets handled?", a: "We store posts, profiles, and verification metadata in our database. Wallet connections are used for verification and never ask for private keys; only sign requests you trust." },
-  { q: "I'm a developer: where is the server logic?", a: "Server actions live in `src/actions/`, shared utilities in `src/lib/`, and UI components in `src/components/`. The app uses Prisma for DB access and Next.js App Router server actions." },
+  { q: "How do I connect my wallet?", a: "Click 'Connect Wallet' in the top nav. We use Reown AppKit to support MetaMask, Coinbase Wallet, and others. Your wallet is used for identity and signing content." },
+  { q: "What is the 'Truth Layer'?", a: "The Truth Layer is our verification system. When you post, you sign a hash of your content with your wallet. This proves you are the author and that the content hasn't been tampered with." },
+  { q: "Is there a gas fee for posting?", a: "Standard posts are gasless and stored in our database with your signature. If you choose to 'Anchor' a post on the Optimism blockchain for permanent proof, a small gas fee is required." },
+  { q: "How can I anchor a post for free?", a: "You can watch a short ad from our partners (like HypeLab). Upon completion, our system sponsors the gas fee to anchor your post's hash on the Optimism network." },
+  { q: "What's the difference between Home and Discover?", a: "Home shows a personalized feed from channels you subscribe to. Discover helps you find new trending channels and public posts across the platform." },
+  { q: "How do channels work?", a: "Channels are community spaces. You can create your own channel, subscribe to others, and manage moderation if you are an owner or moderator." },
+  { q: "How do I report content?", a: "Click the 'Report' flag on any post or profile. Our moderation team reviews these reports in the 'Courtroom' and issues warnings or bans for violations." },
+  { q: "How do I message another user?", a: "You can send Direct Messages (DMs) to other users. Your inbox is unified, meaning it also includes any active support tickets you've opened." },
+  { q: "What data is stored on-chain?", a: "Only the cryptographic hash of your content and your wallet address are stored on-chain. This protects your privacy while ensuring content integrity." },
+  { q: "I'm a developer: where can I find documentation?", a: "Technical documentation is located in the `docs/` folder of the repository. It covers our architecture, Truth Layer protocol, and setup instructions." },
 ]
 
 export default function HelpBot() {
@@ -144,13 +141,19 @@ export default function HelpBot() {
             <div className={styles.botInfo}>
                 <div className={styles.icon}>🤖</div>
                 <div className={styles.headerText}>
-                  <span className={styles.botName}>Help Bot</span>
+                  <h2 className={styles.botName}>Help Bot</h2>
                   <span className={styles.status}>
                     {ticketData ? <span className="text-green-400">● Ticket Active</span> : 'Online'}
                   </span>
                 </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className={styles.closeButton}><X size={18}/></button>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              className={styles.closeButton}
+              aria-label="Close help chat"
+            >
+              <X size={18}/>
+            </button>
         </div>
         
         {/* 🟢 CONDITIONAL BODY: If Ticket exists, show Redirect Card */}
@@ -202,7 +205,14 @@ export default function HelpBot() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   />
-                  <button className={styles.sendButton} onClick={handleSend} disabled={!input}><Send size={14}/></button>
+                  <button 
+                    className={styles.sendButton} 
+                    onClick={handleSend} 
+                    disabled={!input}
+                    aria-label="Send message"
+                  >
+                    <Send size={14}/>
+                  </button>
                 </div>
             </>
         )}

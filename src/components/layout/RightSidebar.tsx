@@ -82,7 +82,7 @@ export async function RightSidebar() {
             <div className="flex flex-col rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-[var(--glass-border)] flex items-center gap-2">
                     <TrendingUp size={18} className="text-[var(--accent-secondary)]" />
-                    <span className="font-bold text-sm text-[var(--text-primary)]">Trending Now</span>
+                    <h3 className="font-bold text-sm text-[var(--text-primary)]">Trending Now</h3>
                 </div>
                 
                 <div className="flex flex-col">
@@ -114,7 +114,7 @@ export async function RightSidebar() {
             <div className="flex flex-col rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-[var(--glass-border)] flex items-center gap-2">
                     <Users size={18} className="text-[var(--accent-primary)]" />
-                    <span className="font-bold text-sm text-[var(--text-primary)]">Who to Follow</span>
+                    <h3 className="font-bold text-sm text-[var(--text-primary)]">Who to Follow</h3>
                 </div>
 
                 <div className="flex flex-col">

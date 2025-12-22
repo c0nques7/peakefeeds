@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Peake Feeds
 
-## Getting Started
+Peake Feeds is a next-generation social platform that restores trust in online content through the "Truth Layer"—a blockchain-based verification system.
 
-First, run the development server:
+## 📚 Documentation
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+We have comprehensive technical documentation available in the `docs/` directory.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+*   **[Getting Started](./docs/setup/installation.md)**: Setup guide for developers.
+*   **[System Architecture](./docs/architecture/system-overview.md)**: High-level technical design.
+*   **[The Truth Layer](./docs/features/the-truth-layer.md)**: How our verification protocol works.
+*   **[Database Schema](./docs/architecture/database-schema.md)**: Understanding the data model.
+*   **[Environment Variables](./docs/setup/environment-variables.md)**: Configuration reference.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+*   **Hybrid Architecture**: Seamless Web2 UX with Web3 guarantees.
+*   **Content Verification**: Sign posts with your Ethereum wallet to prove authorship.
+*   **On-Chain Anchoring**: Permanently store content hashes on Optimism.
+*   **Ad-Sponsored Gas**: Users can watch ads to pay for verification fees.
+*   **Moderation**: Robust reporting, strikes, and penalty system.
 
-## Learn More
+## Quick Start
 
-To learn more about Next.js, take a look at the following resources:
+1.  Install dependencies: `npm install`
+2.  Start DB: `docker-compose up -d`
+3.  Migrate DB: `npx prisma migrate dev`
+4.  Run App: `npm run dev`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [Installation Guide](./docs/setup/installation.md) for full details.

@@ -100,6 +100,7 @@
 .botName {
   font-weight: bold;
   font-size: 0.95rem;
+  margin: 0;
 }
 
 .status {

@@ -22,11 +22,21 @@ export default function MobileBottomNav() {
     <>
       {/* 🔔 NOTIFICATION DRAWER (Slides up behind the nav) */}
       {showNotifs && (
-        <div className={styles.notificationOverlay} onClick={() => setShowNotifs(false)}>
+        <div 
+          className={styles.notificationOverlay} 
+          onClick={() => setShowNotifs(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Activity Feed"
+        >
           <div className={styles.notificationContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.drawerHeader}>
-              <h3 className="font-bold text-[var(--text-primary)]">Activity</h3>
-              <button onClick={() => setShowNotifs(false)} className="p-2 rounded-full hover:bg-[var(--glass-border)]">
+              <h2 className="font-bold text-[var(--text-primary)] text-lg">Activity</h2>
+              <button 
+                onClick={() => setShowNotifs(false)} 
+                className="p-2 rounded-full hover:bg-[var(--glass-border)]"
+                aria-label="Close activity feed"
+              >
                 <X size={20} className="text-[var(--text-muted)]" />
               </button>
             </div>
