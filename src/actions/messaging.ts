@@ -6,9 +6,8 @@ import { prisma } from "@/lib/db"
 import { createNotification } from "@/lib/notifications"
 import { addMessageAction } from "@/actions/support" // Reuse existing support logic
 import { revalidatePath } from "next/cache"
-import { $Enums } from "@prisma/client"
+import { SupportStatus } from "@prisma/client"
 
-const { SupportStatus } = $Enums;
 
 // --- TYPES ---
 // A unified type so the UI doesn't know the difference
