@@ -179,7 +179,7 @@ export default function AdminSupportConsole() {
                   </div>
                 </div>
 
-                {currentTicket.status !== 'resolved' && (
+                {currentTicket.status !== 'RESOLVED' && (
                   <button 
                     onClick={handleResolve}
                     className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors border border-emerald-500/30 px-3 py-1 rounded-full hover:bg-emerald-500/10"
