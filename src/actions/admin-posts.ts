@@ -1,7 +1,7 @@
 "use server";
 
-import { prisma } from "@/lib/db"; // Check your db import path
-import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
+import { requireStaff } from "@/lib/rbac";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -14,6 +14,7 @@ export async function getAdminPosts({
   sort?: string;
   page?: number;
 }) {
+  await requireStaff();
   const skip = (page - 1) * ITEMS_PER_PAGE;
 
   // Build the filter
@@ -45,7 +46,10 @@ export async function getAdminPosts({
         orderBy,
         include: {
           author: {
-            select: { username: true, email: true, image: true },
+            select: { id: true, username: true, email: true, image: true },
+          },
+          channel: {
+            select: { id: true, name: true, slug: true },
           },
           _count: {
             select: { likes: true, comments: true, reports: true },
@@ -61,17 +65,5 @@ export async function getAdminPosts({
   } catch (error) {
     console.error("Error fetching admin posts:", error);
     return { posts: [], totalPages: 0 };
-  }
-}
-
-export async function deletePost(postId: string) {
-  try {
-    await prisma.post.delete({
-      where: { id: postId },
-    });
-    revalidatePath("/admin/posts");
-    return { success: true };
-  } catch (error) {
-    return { success: false, message: "Failed to delete post" };
   }
 }
