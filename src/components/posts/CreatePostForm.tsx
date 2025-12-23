@@ -53,7 +53,11 @@ export default function CreatePostForm({
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   
-  // 2. AdTech Hook
+  // 2. Hydration Fix
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // 3. AdTech Hook
   const { 
       startVerification, 
       selectAdFlow, 
@@ -254,17 +258,17 @@ export default function CreatePostForm({
         <div className="flex justify-between items-end mb-3">
             <h2 className="text-xl font-bold text-[var(--text-primary)]">New Truth Submission</h2>
             
-            {isConnected ? (
+            {mounted && isConnected ? (
                 <div className="flex items-center gap-2 text-[10px] text-emerald-400 bg-emerald-900/20 px-2 py-1 rounded-lg border border-emerald-800/50">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                     {address?.slice(0,6)}...{address?.slice(-4)}
                 </div>
-            ) : linkedWallet && (
+            ) : mounted && linkedWallet && (
                  <div className="text-[10px] text-zinc-500 font-mono">Linked: {linkedWallet.slice(0,6)}...</div>
             )}
         </div>
 
-        {!isConnected && (
+        {mounted && !isConnected && (
              <div onClick={redirectToProfile} className="mb-4 p-3 rounded-xl bg-indigo-900/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-between gap-3 cursor-pointer hover:bg-indigo-900/20 transition-colors">
                  <div className="flex items-center gap-3">
                     <Wallet size={16} /> 
@@ -359,7 +363,7 @@ export default function CreatePostForm({
                       className={`p-3 rounded-xl transition-all border text-xs flex flex-col items-center group ${method === 'WALLET' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
                       <Wallet size={18} />
                       <span className="mt-1">Pay Gas</span>
-                      {method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-green-500' /> : null}
+                      {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-green-500' /> : null}
                     </button>
 
                     {/* OPTION 2: SPONSOR (Disabled in Prod) */}
@@ -379,7 +383,7 @@ export default function CreatePostForm({
                       <span className="mt-1">{!isDev ? 'Coming Soon' : 'Sponsor Gas'}</span>
 
                       {/* Status Indicators (Dev Only) */}
-                      {isDev && method === 'AD' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : (isDev && signature && method === 'AD' ? <ShieldCheck size={12} className='mt-1 text-green-500' /> : null)}
+                      {mounted && isDev && method === 'AD' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : (mounted && isDev && signature && method === 'AD' ? <ShieldCheck size={12} className='mt-1 text-green-500' /> : null)}
                     </button>
 
                     {/* OPTION 3: SKIP */}
