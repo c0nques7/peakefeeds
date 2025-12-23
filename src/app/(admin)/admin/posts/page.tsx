@@ -59,7 +59,7 @@ export default async function AdminPostsPage({
             <tr>
               <th className={`p-4 ${styles.tableHeader} w-1/3`}>Content Preview</th>
               <th className={`p-4 ${styles.tableHeader}`}>Author</th>
-              <th className={`p-4 ${styles.tableHeader}`}>Engagement</th>
+              <th className={`hidden md:table-cell p-4 ${styles.tableHeader}`}>Engagement</th>
               <th className={`p-4 ${styles.tableHeader}`}>Safety Status</th>
               <th className={`p-4 ${styles.tableHeader} text-right`}>Actions</th>
             </tr>
@@ -97,7 +97,7 @@ export default async function AdminPostsPage({
                 </td>
 
                 {/* Engagement */}
-                <td className="p-4 align-top">
+                <td className="hidden md:table-cell p-4 align-top">
                   <div className="flex gap-4 text-xs text-[var(--text-muted)]">
                     <div className="flex items-center gap-1">
                         <Heart size={14} /> {post._count.likes}

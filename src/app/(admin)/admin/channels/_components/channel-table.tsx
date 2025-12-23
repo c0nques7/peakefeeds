@@ -54,9 +54,9 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
         <thead>
           <tr className="border-b border-[var(--glass-border)] bg-white/5">
             <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Channel</th>
-            <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-center">Stats</th>
-            <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Creator</th>
-            <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Activity</th>
+            <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-center">Stats</th>
+            <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Creator</th>
+            <th className="hidden lg:table-cell px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Activity</th>
             <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">Actions</th>
           </tr>
         </thead>
@@ -82,15 +82,20 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 text-sm font-bold text-white">
                       #{channel.slug}
-                      <Link href={`/channels/${channel.slug}`} target="_blank" className="text-[var(--text-muted)] hover:text-white">
+                      <Link href={`/channels/${channel.slug}`} target="_blank" className="p-1 -m-1 text-[var(--text-muted)] hover:text-white">
                         <ExternalLink size={12} />
                       </Link>
                     </div>
                     <span className="text-xs text-[var(--text-muted)] line-clamp-1">{channel.name}</span>
+                    {/* Mobile Only Stats */}
+                    <div className="md:hidden flex gap-3 mt-1 text-[10px] text-[var(--text-muted)]">
+                       <span className="flex items-center gap-1"><Users size={10} /> {channel._count.subscribers}</span>
+                       <span className="flex items-center gap-1"><FileText size={10} /> {channel._count.posts}</span>
+                    </div>
                   </div>
                 )}
               </td>
-              <td className="px-6 py-4">
+              <td className="hidden md:table-cell px-6 py-4">
                 <div className="flex items-center justify-center gap-4">
                   <div className="flex flex-col items-center">
                     <Users size={12} className="text-emerald-400 mb-1" />
@@ -102,10 +107,10 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                   </div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                 <span className="text-xs text-[var(--text-muted)]">@{channel.creator.username}</span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                 <div className="flex flex-col text-[10px]">
                   <span className="text-zinc-400">Created {new Date(channel.createdAt).toLocaleDateString()}</span>
                   <span className="text-zinc-500">{formatDistanceToNow(new Date(channel.createdAt), { addSuffix: true })}</span>
@@ -115,20 +120,20 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                 <div className="flex justify-end gap-2">
                   {editingId === channel.id ? (
                     <>
-                      <button onClick={() => handleSave(channel.id)} disabled={isPending} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30">
-                        {isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                      <button onClick={() => handleSave(channel.id)} disabled={isPending} className="p-3 md:p-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30">
+                        {isPending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                       </button>
-                      <button onClick={() => setEditingId(null)} className="p-2 bg-zinc-800 text-zinc-400 rounded-lg hover:bg-zinc-700">
-                        <X size={14} />
+                      <button onClick={() => setEditingId(null)} className="p-3 md:p-2 bg-zinc-800 text-zinc-400 rounded-lg hover:bg-zinc-700">
+                        <X size={16} />
                       </button>
                     </>
                   ) : (
                     <>
-                      <button onClick={() => handleEdit(channel)} className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg hover:bg-indigo-500/20">
-                        <Edit2 size={14} />
+                      <button onClick={() => handleEdit(channel)} className="p-3 md:p-2 bg-indigo-500/10 text-indigo-400 rounded-lg hover:bg-indigo-500/20">
+                        <Edit2 size={16} />
                       </button>
-                      <button onClick={() => handleDelete(channel.id)} className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20">
-                        <Trash2 size={14} />
+                      <button onClick={() => handleDelete(channel.id)} className="p-3 md:p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20">
+                        <Trash2 size={16} />
                       </button>
                     </>
                   )}

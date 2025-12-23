@@ -19,7 +19,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.toLowerCase() },
           // Fetch the roles/wallet here
           select: { id: true, email: true, name: true, username: true, passwordHash: true, role: true, walletAddress: true }
         });

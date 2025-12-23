@@ -7,7 +7,7 @@ import { getAllTicketsAction } from '@/actions/support' // 2. Import Admin Actio
 import { MessageSquare, Send, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import styles from '@/app/(admin)/admin/admin.module.css'
 import clsx from 'clsx'
-
+import { SupportStatus } from '@prisma/client'
 export default function AdminSupportConsole() {
   // 3. Removed 'tickets' from context. We only get actions now.
   const { addMessageToTicket, resolveTicket, setTicketSeverity } = useSupport()
@@ -31,7 +31,7 @@ export default function AdminSupportConsole() {
 
   // Sort: Critical (High Severity) first, then by recency
   const activeTickets = tickets
-    .filter(t => t.status === 'open' || t.id === selectedTicketId)
+    .filter(t => t.status === 'OPEN' || t.id === selectedTicketId)
     .sort((a, b) => b.severity - a.severity)
 
   const currentTicket = tickets.find(t => t.id === selectedTicketId)
@@ -60,7 +60,7 @@ export default function AdminSupportConsole() {
   const handleResolve = async () => {
      if(!currentTicket) return;
      // Optimistic
-     mutate(curr => curr?.map(t => t.id === currentTicket.id ? {...t, status: 'resolved'} : t), false);
+     mutate(curr => curr?.map(t => t.id === currentTicket.id ? {...t, status: 'RESOLVED'} : t), false);
      await resolveTicket(currentTicket.id);
      mutate();
   }
@@ -179,7 +179,7 @@ export default function AdminSupportConsole() {
                   </div>
                 </div>
 
-                {currentTicket.status !== 'resolved' && (
+                {currentTicket.status !== 'RESOLVED' && (
                   <button 
                     onClick={handleResolve}
                     className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors border border-emerald-500/30 px-3 py-1 rounded-full hover:bg-emerald-500/10"

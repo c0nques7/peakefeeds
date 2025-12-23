@@ -29,10 +29,11 @@ export async function registerUser(formData: FormData) {
   }
 
   // 3. Check for existing users
+  const normalizedEmail = email.toLowerCase();
   const existingUser = await prisma.user.findFirst({
     where: {
       OR: [
-        { email: email },
+        { email: normalizedEmail },
         { username: username }
       ]
     }
@@ -51,7 +52,7 @@ export async function registerUser(formData: FormData) {
       const newUser = await tx.user.create({
         data: {
           username,
-          email,
+          email: normalizedEmail,
           passwordHash,
           // Link the user to the invite code (Tracking who invited them)
           inviteUsed: {

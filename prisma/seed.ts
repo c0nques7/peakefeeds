@@ -232,7 +232,7 @@ async function main() {
       const user = faker.helpers.arrayElement(users);
       // Severity 0 (Low) to 5 (Critical)
       const severity = faker.number.int({ min: 0, max: 5 }); 
-      const status = faker.datatype.boolean(0.7) ? 'open' : 'resolved';
+      const status = faker.datatype.boolean(0.7) ? 'OPEN' : 'RESOLVED';
       
       // Create Ticket
       const ticket = await prisma.supportTicket.create({

@@ -94,6 +94,29 @@ export async function getAdminUsers({
 }
 
 /**
+ * Fetches all staff (ADMIN, MODERATOR) for assignment purposes.
+ */
+export async function getStaffUsers() {
+  await requireStaff();
+  
+  console.log("Fetching staff users...");
+  const staff = await prisma.user.findMany({
+    where: {
+      role: { in: [UserRole.ADMIN, UserRole.MODERATOR] }
+    },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      role: true
+    },
+    orderBy: { username: 'asc' }
+  });
+  console.log("Staff users found:", staff.length);
+  return staff;
+}
+
+/**
  * -------------------------------------------------------
  * 2. CREATE USER (Admin Override Logic)
  * -------------------------------------------------------

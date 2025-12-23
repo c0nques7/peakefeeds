@@ -1,4 +1,4 @@
-import AdminSupportConsole from "@/components/admin/AdminSupportConsole";
+import SupportQueue from "@/components/admin/SupportQueue";
 import { MessageSquare } from "lucide-react";
 
 export default function SupportPage() {
@@ -10,16 +10,16 @@ export default function SupportPage() {
         <div>
           <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
             <MessageSquare className="text-pink-500" size={32} />
-            Support Command
+            Support Queue
           </h1>
           <p className="text-[var(--text-muted)]">
-            Manage live chat tickets and help bot escalations.
+            Manage live chat tickets, assignments, and escalations.
           </p>
         </div>
       </div>
 
-      {/* The Console Component */}
-      <AdminSupportConsole />
+      {/* The Enhanced Queue Component */}
+      <SupportQueue />
       
     </div>
   );

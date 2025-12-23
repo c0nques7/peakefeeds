@@ -8,8 +8,7 @@
   z-index: 1000; /* Ensure it sits above landing page nav and mobile elements */
   
   /* 📱 MOBILE DEFAULT ( < 640px ) */
-  /* By default, this div is visible (display: block). 
-     This ensures it shows on ALL pages for mobile users. */
+  display: none;
 }
 
 /* 💻 DESKTOP LOGIC ( >= 640px ) */
