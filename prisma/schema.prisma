@@ -75,6 +75,20 @@ enum ReportTargetType {
   ADVERTISEMENT
 }
 
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 enum PenaltyType {
   WARNING
   STRIKE_1_TIMEOUT
@@ -92,6 +106,7 @@ enum NotificationType {
   TICKET_REPLY
   MESSAGE
   REPORT
+  TICKET_UPDATE
 }
 
 // --------------------------------------
@@ -135,7 +150,8 @@ model User {
   adsWatched      AdView[]
   invitesIssued   InviteCode[] @relation("IssuedInvites")
   inviteUsed      InviteCode?  @relation("UsedInvite")
-  supportTickets  SupportTicket[]
+  supportTickets  SupportTicket[] @relation("UserTickets")
+  assignedTickets SupportTicket[] @relation("AssignedTickets")
   notificationsReceived Notification[] @relation("NotificationsReceived")
   notificationsSent     Notification[] @relation("NotificationsTriggered")
   conversations   Conversation[] @relation("ConversationParticipants")
@@ -370,18 +386,25 @@ model InviteCode {
 
 model SupportTicket {
   id              String   @id @default(cuid())
-  status          String   @default("open")
+  status          SupportStatus @default(OPEN)
+  priority        SupportPriority @default(LOW)
   severity        Int      @default(0)
+  internalNotes   String?  @db.Text
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   userId          String?
-  user            User?    @relation(fields: [userId], references: [id])
+  user            User?    @relation("UserTickets", fields: [userId], references: [id])
+  assigneeId      String?
+  assignee        User?    @relation("AssignedTickets", fields: [assigneeId], references: [id])
   messages        TicketMessage[]
+  directMessages  DirectMessage[]
   notifications   Notification[]
 
   @@index([status])
   @@index([userId])
+  @@index([assigneeId])
 }
+
 
 model TicketMessage {
   id              String        @id @default(cuid())
@@ -391,6 +414,7 @@ model TicketMessage {
   ticketId        String
   ticket          SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   adminId         String?
+  isInternal      Boolean       @default(false)
 
   @@index([ticketId])
 }
@@ -437,6 +461,8 @@ model DirectMessage {
   sender    User   @relation("SentMessages", fields: [senderId], references: [id])
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  ticketId       String?
+  ticket         SupportTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   isRead    Boolean @default(false)
   reports   Report[]
 

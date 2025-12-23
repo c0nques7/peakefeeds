@@ -6,6 +6,9 @@ import { prisma } from "@/lib/db"
 import { createNotification } from "@/lib/notifications"
 import { addMessageAction } from "@/actions/support" // Reuse existing support logic
 import { revalidatePath } from "next/cache"
+import { $Enums } from "@prisma/client"
+
+const { SupportStatus } = $Enums;
 
 // --- TYPES ---
 // A unified type so the UI doesn't know the difference
@@ -15,6 +18,7 @@ type UnifiedConversation = {
   lastMessageAt: Date;
   participants: { id: string; username: string; image: string | null }[];
   messages: { content: string; createdAt: Date; senderId: string }[];
+  status?: SupportStatus;
 }
 
 // 1. GET UNIFIED INBOX (DMs + Tickets)
@@ -57,7 +61,8 @@ export async function getConversations() {
     const tickets = await prisma.supportTicket.findMany({
       where: { userId: session.user.id },
       include: {
-        messages: { take: 1, orderBy: { createdAt: 'desc' } }
+        messages: { take: 1, orderBy: { createdAt: 'desc' } },
+        directMessages: { take: 1, orderBy: { createdAt: 'desc' } }
       }
     })
 
@@ -79,21 +84,37 @@ export async function getConversations() {
     }))
 
     // D. Normalize Tickets (Make them look like DMs)
-    const formattedTickets: UnifiedConversation[] = tickets.map(t => ({
-      id: t.id,
-      type: 'TICKET',
-      lastMessageAt: t.updatedAt,
-      // Create a "Fake" Participant for the Support Bot/Admin
-      participants: [
-        { id: session.user.id, username: 'Me', image: null }, // User
-        { id: 'support-system', username: 'Peake Support', image: null } // System
-      ],
-      messages: t.messages.map(m => ({ 
-         content: m.text, // Map 'text' to 'content'
-         createdAt: m.createdAt,
-         senderId: m.sender === 'user' ? session.user.id! : 'support-system'
-      }))
-    }))
+    const formattedTickets: UnifiedConversation[] = tickets.map(t => {
+      const lastTicketMsg = t.messages[0];
+      const lastDirectMsg = t.directMessages[0];
+      
+      let lastMsg = lastTicketMsg ? { 
+        content: lastTicketMsg.text, 
+        createdAt: lastTicketMsg.createdAt,
+        senderId: lastTicketMsg.sender === 'user' ? session.user.id! : 'support-system'
+      } : null;
+
+      if (lastDirectMsg && (!lastMsg || lastDirectMsg.createdAt > lastMsg.createdAt)) {
+        lastMsg = {
+          content: lastDirectMsg.content,
+          createdAt: lastDirectMsg.createdAt,
+          senderId: lastDirectMsg.senderId
+        };
+      }
+
+      return {
+        id: t.id,
+        type: 'TICKET',
+        lastMessageAt: lastMsg?.createdAt || t.updatedAt,
+        // Create a "Fake" Participant for the Support Bot/Admin
+        participants: [
+          { id: session.user.id, username: 'Me', image: null }, // User
+          { id: 'support-system', username: 'Peake Support', image: null } // System
+        ],
+        messages: lastMsg ? [lastMsg] : [],
+        status: t.status
+      };
+    })
 
     // E. Merge & Sort by Recency
     const unifiedList = [...formattedDMs, ...formattedTickets].sort(
@@ -120,28 +141,61 @@ export async function getMessages(conversationId: string) {
     // A. Check if it's a Support Ticket
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: conversationId },
-      include: { messages: { orderBy: { createdAt: 'asc' } } }
+      include: { 
+        messages: { 
+          where: { sender: { not: 'admin' } }, // 🔒 FILTER INTERNAL NOTES
+          orderBy: { createdAt: 'asc' } 
+        },
+        directMessages: { 
+          orderBy: { createdAt: 'asc' },
+          include: { sender: { select: { id: true, username: true, image: true, role: true } } } // 🟢 Added Role
+        }
+      }
     })
 
     if (ticket) {
       // Security Check: Does user own this ticket?
       if (ticket.userId !== session.user.id) return { error: "Unauthorized ticket access" }
 
+      // Merge TicketMessages and DirectMessages
+      const ticketMsgs = ticket.messages.map(m => ({
+        id: m.id,
+        content: m.text,
+        createdAt: m.createdAt,
+        senderId: m.sender === 'user' ? session.user.id : 'support-system',
+        sender: { 
+           id: m.sender === 'user' ? session.user.id : 'support-system',
+           username: m.sender === 'user' ? 'Me' : 'Help Bot', // Admin notes are filtered, so only Bot remains
+           image: null,
+           role: 'BOT'
+        },
+        type: 'TICKET_MESSAGE',
+        isInternal: false
+      }));
+
+      const directMsgs = ticket.directMessages.map(m => ({
+        id: m.id,
+        content: m.content,
+        createdAt: m.createdAt,
+        senderId: m.senderId,
+        sender: {
+          id: m.sender.id,
+          username: m.sender.username,
+          image: m.sender.image,
+          role: m.sender.role
+        },
+        type: 'DIRECT_MESSAGE',
+        isInternal: false
+      }));
+
+      const allMsgs = [...ticketMsgs, ...directMsgs].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
       return {
         success: true,
         type: 'TICKET',
-        // Normalize Ticket Messages to DM structure
-        data: ticket.messages.map(m => ({
-          id: m.id,
-          content: m.text,
-          createdAt: m.createdAt,
-          senderId: m.sender === 'user' ? session.user.id : 'support-system',
-          sender: { 
-             id: m.sender === 'user' ? session.user.id : 'support-system',
-             username: m.sender === 'user' ? 'Me' : (m.sender === 'bot' ? 'Help Bot' : 'Support Agent'),
-             image: null 
-          }
-        })),
+        data: allMsgs,
         // Fake participants so the UI Header works
         participants: [
            { id: session.user.id, username: session.user.username },

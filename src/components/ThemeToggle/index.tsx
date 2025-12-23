@@ -22,7 +22,7 @@ export default function ThemeToggle() { // Or export function ModeToggle()
   return (
     <button
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+      className="hidden sm:flex p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors items-center justify-center"
       aria-label="Toggle Theme"
     >
       {resolvedTheme === 'dark' ? (

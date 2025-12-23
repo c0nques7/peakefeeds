@@ -1,39 +1,105 @@
 'use server'
 
-import { getServerSession } from "next-auth" // 🆕
-import { authOptions } from "@/lib/auth.config" // 🆕
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth.config"
 import { prisma } from "@/lib/db"
-import { revalidatePath } from "next/cache" // 🆕
+import { revalidatePath } from "next/cache"
 import { Ticket } from "@/context/SupportContext"
+import { $Enums, NotificationType, UserRole } from "@prisma/client"
+
+const { SupportStatus, SupportPriority } = $Enums;
 
 // --- 1. FETCHING ACTIONS ---
 
 // ADMIN ONLY: Fetch ALL tickets for the dashboard
 export async function getAllTicketsAction() {
-  try {
-    const tickets = await prisma.supportTicket.findMany({
-      orderBy: { updatedAt: 'desc' },
-      include: { 
-        messages: { 
-          orderBy: { createdAt: 'asc' } 
-        } 
-      }
-    })
+  const session = await getServerSession(authOptions);
+  console.log("getAllTicketsAction: Session check:", { 
+    id: session?.user?.id, 
+    role: session?.user?.role 
+  });
 
-    return { success: true, data: tickets.map(t => ({
-      id: t.id,
-      status: t.status as 'open' | 'resolved',
-      severity: t.severity,
-      unreadAdminCount: 0, 
-      messages: t.messages.map(m => ({
+  if (!session?.user?.id || (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.MODERATOR)) {
+    console.error("getAllTicketsAction: Unauthorized access attempt");
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    console.log("getAllTicketsAction: Querying database...");
+    const [tickets, staff] = await Promise.all([
+      prisma.supportTicket.findMany({
+        orderBy: { updatedAt: 'desc' },
+        include: { 
+          messages: { 
+            orderBy: { createdAt: 'asc' } 
+          },
+          directMessages: {
+            orderBy: { createdAt: 'asc' },
+            select: { 
+              content: true, 
+              createdAt: true, 
+              senderId: true,
+              sender: {
+                select: { id: true, username: true }
+              }
+            }
+          },
+          user: {
+            select: { id: true, username: true, name: true }
+          }
+        }
+      }),
+      prisma.user.findMany({
+        where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
+        select: { id: true, username: true, name: true }
+      })
+    ]);
+
+    const staffMap = new Map(staff.map(s => [s.id, s]));
+
+    const mappedTickets: Ticket[] = tickets.map(t => {
+      const ticketMsgs = t.messages.map(m => ({
         sender: m.sender as 'user' | 'admin' | 'bot',
         text: m.text,
-        timestamp: m.createdAt.getTime()
-      }))
-    })) as Ticket[] }
-  } catch (error) {
-    console.error("Failed to fetch tickets:", error)
-    return { success: false, error: "Failed to load tickets" }
+        timestamp: m.createdAt.getTime(),
+        isDM: false,
+        isInternal: m.isInternal
+      }));
+
+      const directMsgs = t.directMessages.map(m => ({
+        sender: 'admin' as const, // Admin sent DMs from Support Queue
+        text: m.content,
+        timestamp: m.createdAt.getTime(),
+        isDM: true,
+        isInternal: false,
+        senderInfo: {
+          username: m.sender.username,
+          id: m.sender.id
+        }
+      }));
+
+      const allMessages = [...ticketMsgs, ...directMsgs].sort((a, b) => a.timestamp - b.timestamp);
+
+      return {
+        id: t.id,
+        status: t.status as SupportStatus,
+        priority: t.priority as SupportPriority,
+        severity: t.severity,
+        unreadAdminCount: 0, 
+        userId: t.userId,
+        assigneeId: t.assigneeId,
+        assignee: t.assigneeId ? staffMap.get(t.assigneeId) : null,
+        internalNotes: t.internalNotes,
+        updatedAt: t.updatedAt,
+        messages: allMessages
+      };
+    });
+
+    console.log(`Successfully fetched ${mappedTickets.length} tickets`);
+    return { success: true, data: mappedTickets };
+  } catch (error: any) {
+    console.error("getAllTicketsAction: FATAL_ERROR:", error);
+    return { success: false, error: error.message || "Failed to load tickets" }
   }
 }
 
@@ -45,21 +111,36 @@ export async function getTicketAction(ticketId: string) {
       include: { 
         messages: { 
           orderBy: { createdAt: 'asc' } 
-        } 
+        }
       }
     })
     
     if (!ticket) return { success: false, error: "Ticket not found" }
+
+    let assignee = null;
+    if (ticket.assigneeId) {
+      assignee = await prisma.user.findUnique({
+        where: { id: ticket.assigneeId },
+        select: { id: true, username: true, name: true }
+      });
+    }
     
     const mappedTicket: Ticket = {
       id: ticket.id,
-      status: ticket.status as 'open' | 'resolved',
+      status: ticket.status,
+      priority: ticket.priority,
       severity: ticket.severity,
       unreadAdminCount: 0,
+      userId: ticket.userId,
+      assigneeId: ticket.assigneeId,
+      assignee: assignee,
+      internalNotes: ticket.internalNotes,
+      updatedAt: ticket.updatedAt,
       messages: ticket.messages.map(m => ({
         sender: m.sender as 'user' | 'admin' | 'bot',
         text: m.text,
-        timestamp: m.createdAt.getTime()
+        timestamp: m.createdAt.getTime(),
+        isInternal: m.isInternal
       }))
     }
     
@@ -73,56 +154,70 @@ export async function getTicketAction(ticketId: string) {
 // --- 2. MUTATION ACTIONS ---
 
 export async function createTicketAction(initialMsg: string) {
-  // 🆕 1. GET SESSION
   const session = await getServerSession(authOptions)
   const userId = session?.user?.id || null 
 
   try {
+    console.log("Creating ticket for user:", userId);
     const ticket = await prisma.supportTicket.create({
       data: {
-        status: 'open',
+        status: SupportStatus.OPEN,
+        priority: SupportPriority.LOW,
         severity: 0,
-        userId: userId, // 👈 CRITICAL FIX: Link the ticket to the user
+        userId: userId,
         messages: {
           create: {
             text: initialMsg,
-            sender: 'user'
+            sender: 'user',
+            isInternal: false
           }
         }
       }
     })
+    console.log("Ticket created successfully:", ticket.id);
 
-    // 🆕 2. REVALIDATE
     if (userId) {
-        revalidatePath('/messages') // Update the User's Inbox
+        revalidatePath('/messages')
     }
-    revalidatePath('/admin/support') // Update Admin Console
+    revalidatePath('/admin/support')
 
     return { success: true, ticketId: ticket.id }
-  } catch (error) {
-    return { success: false, error }
+  } catch (error: any) {
+    console.error("CREATE_TICKET_ERROR:", error);
+    return { success: false, error: error.message || "Failed to create ticket" }
   }
 }
 
-export async function addMessageAction(ticketId: string, text: string, sender: 'user' | 'admin' | 'bot') {
+export async function addMessageAction(ticketId: string, text: string, sender: 'user' | 'admin' | 'bot', isInternal: boolean = false) {
   try {
     await prisma.ticketMessage.create({
       data: {
         ticketId,
         text,
-        sender
+        sender,
+        isInternal
       }
     })
     
-    // Update timestamp so it jumps to top of Admin list AND User Inbox
-    await prisma.supportTicket.update({
+    const ticket = await prisma.supportTicket.update({
       where: { id: ticketId },
-      data: { updatedAt: new Date() }
+      data: { updatedAt: new Date() },
+      include: { user: true }
     })
+
+    // Notify user if admin/bot replied in log AND it is NOT internal
+    if (ticket.userId && !isInternal && (sender === 'admin' || sender === 'bot')) {
+      await prisma.notification.create({
+        data: {
+          userId: ticket.userId,
+          type: NotificationType.TICKET_UPDATE,
+          ticketId: ticket.id,
+        }
+      })
+    }
     
-    // 🆕 REVALIDATE
     revalidatePath(`/messages/${ticketId}`)
-    revalidatePath('/messages') // Refresh the list order
+    revalidatePath('/messages')
     revalidatePath('/admin/support')
 
     return { success: true }
@@ -146,17 +241,153 @@ export async function updateSeverityAction(ticketId: string, severity: number) {
 
 export async function resolveTicketAction(ticketId: string) {
   try {
-    await prisma.supportTicket.update({
+    const ticket = await prisma.supportTicket.update({
       where: { id: ticketId },
-      data: { status: 'resolved' }
+      data: { status: SupportStatus.RESOLVED },
+      include: { user: true }
     })
     
-    // 🆕 REVALIDATE
+    if (ticket.userId) {
+      await prisma.notification.create({
+        data: {
+          userId: ticket.userId,
+          type: NotificationType.TICKET_UPDATE,
+          ticketId: ticket.id,
+        }
+      })
+    }
+
     revalidatePath('/messages')
     revalidatePath('/admin/support')
     
     return { success: true }
   } catch (error) {
+    return { success: false, error }
+  }
+}
+
+export async function updateTicketStatusAction(ticketId: string, status: SupportStatus) {
+  try {
+    const ticket = await prisma.supportTicket.update({
+      where: { id: ticketId },
+      data: { status },
+      include: { user: true }
+    })
+
+    if (ticket.userId) {
+      await prisma.notification.create({
+        data: {
+          userId: ticket.userId,
+          type: NotificationType.TICKET_UPDATE,
+          ticketId: ticket.id,
+        }
+      })
+    }
+
+    revalidatePath('/admin/support')
+    return { success: true }
+  } catch (error) {
+    return { success: false, error }
+  }
+}
+
+export async function updateTicketPriorityAction(ticketId: string, priority: SupportPriority) {
+  try {
+    await prisma.supportTicket.update({
+      where: { id: ticketId },
+      data: { priority }
+    })
+    revalidatePath('/admin/support')
+    return { success: true }
+  } catch (error) {
+    return { success: false, error }
+  }
+}
+
+export async function updateTicketAssigneeAction(ticketId: string, assigneeId: string | null) {
+  try {
+    await prisma.supportTicket.update({
+      where: { id: ticketId },
+      data: { assigneeId }
+    })
+    revalidatePath('/admin/support')
+    return { success: true }
+  } catch (error) {
+    return { success: false, error }
+  }
+}
+
+export async function updateInternalNotesAction(ticketId: string, internalNotes: string) {
+  try {
+    await prisma.supportTicket.update({
+      where: { id: ticketId },
+      data: { internalNotes }
+    })
+    revalidatePath('/admin/support')
+    return { success: true }
+  } catch (error) {
+    return { success: false, error }
+  }
+}
+
+export async function sendMessageToUserAction(ticketId: string, text: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return { success: false, error: "Not authenticated" }
+
+  try {
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: ticketId },
+      select: { userId: true, assigneeId: true }
+    })
+
+    if (!ticket || !ticket.userId) return { success: false, error: "User not found for this ticket" }
+    
+    // Strict assignment check
+    if (!ticket.assigneeId) return { success: false, error: "Ticket must be assigned to an admin before messaging" }
+
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        participants: {
+          every: {
+            id: { in: [session.user.id, ticket.userId] }
+          }
+        }
+      }
+    })
+
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          participants: {
+            connect: [{ id: session.user.id }, { id: ticket.userId }]
+          }
+        }
+      })
+    }
+
+    await prisma.directMessage.create({
+      data: {
+        content: text,
+        senderId: session.user.id,
+        conversationId: conversation.id,
+        ticketId: ticket.id
+      }
+    })
+
+    await prisma.notification.create({
+      data: {
+        userId: ticket.userId,
+        actorId: session.user.id,
+        type: NotificationType.MESSAGE,
+        ticketId: ticket.id
+      }
+    })
+
+    revalidatePath('/messages')
+    revalidatePath('/admin/support')
+    return { success: true }
+  } catch (error) {
+    console.error("FAILED_TO_SEND_MESSAGE:", error)
     return { success: false, error }
   }
 }

@@ -66,55 +66,57 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
 
       {/* TABLE */}
       <div className={styles.glassPanel}>
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr>
-              <th className={`p-4 ${styles.tableHeader} w-12 text-center`}>
-                <button onClick={toggleAll} className="hover:text-white transition-colors">
-                  {selected.length === initialData.length && initialData.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
-                </button>
-              </th>
-              <th className={`p-4 ${styles.tableHeader}`}>Email Address</th>
-              <th className={`p-4 ${styles.tableHeader}`}>Joined</th>
-              <th className={`p-4 ${styles.tableHeader}`}>Attribution</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--glass-border)]">
-            {initialData.map((user) => (
-              <tr key={user.id} className={styles.tableRow}>
-                <td className="p-4 text-center">
-                  <button 
-                    onClick={() => toggleSelect(user.id)} 
-                    className={`${selected.includes(user.id) ? "text-[var(--accent-primary)]" : "text-[var(--text-muted)]"} hover:text-white transition-colors`}
-                  >
-                    {selected.includes(user.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[600px] md:min-w-0">
+            <thead>
+              <tr>
+                <th className={`p-4 ${styles.tableHeader} w-12 text-center`}>
+                  <button onClick={toggleAll} className="hover:text-white transition-colors">
+                    {selected.length === initialData.length && initialData.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
                   </button>
-                </td>
-                <td className="p-4 text-white font-mono text-sm">{user.email}</td>
-                <td className="p-4 text-[var(--text-muted)] text-sm">
-                  {new Date(user.joinedAt).toLocaleDateString()} <span className="text-xs opacity-50">({new Date(user.joinedAt).toLocaleTimeString()})</span>
-                </td>
-                <td className="p-4">
-                  {user.source ? (
-                    <span className="px-2 py-1 rounded-md bg-slate-800 text-xs text-slate-300 border border-slate-700">
-                      {user.source}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-[var(--text-muted)] italic">Direct</span>
-                  )}
-                </td>
+                </th>
+                <th className={`p-4 ${styles.tableHeader}`}>Email Address</th>
+                <th className={`p-4 ${styles.tableHeader}`}>Joined</th>
+                <th className={`p-4 ${styles.tableHeader}`}>Attribution</th>
               </tr>
-            ))}
-            
-            {initialData.length === 0 && (
-                <tr>
-                    <td colSpan={4} className="p-8 text-center text-[var(--text-muted)]">
-                        No pending users found. The waitlist is clear!
-                    </td>
+            </thead>
+            <tbody className="divide-y divide-[var(--glass-border)]">
+              {initialData.map((user) => (
+                <tr key={user.id} className={styles.tableRow}>
+                  <td className="p-4 text-center">
+                    <button 
+                      onClick={() => toggleSelect(user.id)} 
+                      className={`${selected.includes(user.id) ? "text-[var(--accent-primary)]" : "text-[var(--text-muted)]"} hover:text-white transition-colors`}
+                    >
+                      {selected.includes(user.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                    </button>
+                  </td>
+                  <td className="p-4 text-white font-mono text-sm">{user.email}</td>
+                  <td className="p-4 text-[var(--text-muted)] text-sm">
+                    {new Date(user.joinedAt).toLocaleDateString()} <span className="text-xs opacity-50">({new Date(user.joinedAt).toLocaleTimeString()})</span>
+                  </td>
+                  <td className="p-4">
+                    {user.source ? (
+                      <span className="px-2 py-1 rounded-md bg-slate-800 text-xs text-slate-300 border border-slate-700">
+                        {user.source}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-[var(--text-muted)] italic">Direct</span>
+                    )}
+                  </td>
                 </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+              
+              {initialData.length === 0 && (
+                  <tr>
+                      <td colSpan={4} className="p-8 text-center text-[var(--text-muted)]">
+                          No pending users found. The waitlist is clear!
+                      </td>
+                  </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

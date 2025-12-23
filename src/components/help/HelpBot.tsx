@@ -8,11 +8,15 @@ import { useSupport } from '@/context/SupportContext'
 import { getTicketAction } from '@/actions/support' 
 import { ExternalLink, Ticket, MessageCircle, Send, X, HelpCircle } from 'lucide-react' // 🆕 Icons
 import styles from './HelpBot.module.css'
+import { $Enums } from '@prisma/client'
+
+const { SupportStatus } = $Enums;
+
 
 // Type Definitions
 type TicketData = {
   id: string;
-  status: string;
+  status: SupportStatus;
   messages: {
     id: string;
     text: string;

@@ -25,8 +25,9 @@ export async function requestPasswordReset(formData: FormData) {
   }
 
   // 1. Check if user exists
+  const normalizedEmail = email.toLowerCase();
   const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() }
+    where: { email: normalizedEmail }
   });
 
   // Security: If user doesn't exist, we still return success to prevent email enumeration.

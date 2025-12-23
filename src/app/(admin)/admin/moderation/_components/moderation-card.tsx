@@ -168,8 +168,14 @@ export function ModerationCard({ report }: { report: ReportData }) {
              </div>
              <p className="text-white mb-4 whitespace-pre-wrap">{report.post.content}</p>
              {report.post.mediaUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-[var(--glass-border)]">
-                   <img src={report.post.mediaUrl} alt="Evidence" className="w-full object-cover max-h-48" />
+                <div className="mt-2 rounded-lg overflow-hidden border border-[var(--glass-border)] bg-black/20 relative">
+                   {/* eslint-disable-next-line @next/next/no-img-element */}
+                   <img 
+                      src={report.post.mediaUrl} 
+                      alt="Evidence" 
+                      loading="lazy"
+                      className="w-full object-contain max-h-64 md:max-h-48" 
+                    />
                 </div>
              )}
           </div>

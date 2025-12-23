@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import useSWR from 'swr'
 import { getConversations, getMessages, sendMessage } from '@/actions/messaging'
-import { Send, Search, ArrowLeft, Loader2, User as UserIcon, Flag } from 'lucide-react'
+import { Send, Search, ArrowLeft, Loader2, User as UserIcon, Flag, ShieldAlert } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import clsx from 'clsx'
 import { useSession } from 'next-auth/react'
@@ -176,25 +176,52 @@ export default function MessagingUI() {
                     
                     {messages?.map((msg: any) => {
                         const isMe = msg.senderId === session?.user?.id
+                        const isStaff = msg.sender?.role === 'ADMIN' || msg.sender?.role === 'MODERATOR';
+                        const isBot = msg.sender?.role === 'BOT' || msg.sender?.username === 'Help Bot';
+
                         return (
-                            <div key={msg.id} className={clsx("flex items-end gap-2 group", isMe ? "justify-end" : "justify-start")}>
-                                {!isMe && (
-                                    <button 
-                                        onClick={() => { setMessageToReport(msg.id); setReportModalOpen(true); }}
-                                        className="opacity-0 group-hover:opacity-100 p-2 text-[var(--text-muted)] hover:text-red-400 transition-all"
-                                        title="Report Message"
-                                    >
-                                        <Flag size={14} />
-                                    </button>
+                            <div key={msg.id} className={clsx("flex flex-col mb-2", isMe ? "items-end" : "items-start")}>
+                                
+                                {/* Staff Badge */}
+                                {!isMe && isStaff && (
+                                    <span className="flex items-center gap-1 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1 ml-1">
+                                        <ShieldAlert size={10} /> Peake Staff
+                                    </span>
                                 )}
-                                <div className={clsx(
-                                    "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed",
-                                    isMe 
-                                      ? "bg-[var(--accent-primary)] text-white rounded-tr-sm" 
-                                      : "bg-[var(--glass-card)] border border-[var(--glass-border)] text-[var(--text-primary)] rounded-tl-sm"
-                                )}>
-                                    {msg.content}
+
+                                {/* Bot Badge */}
+                                {!isMe && isBot && (
+                                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 ml-1">
+                                        Automated System
+                                    </span>
+                                )}
+
+                                <div className={clsx("flex items-end gap-2 group max-w-[85%]", isMe ? "flex-row-reverse" : "flex-row")}>
+                                    {!isMe && (
+                                        <button 
+                                            onClick={() => { setMessageToReport(msg.id); setReportModalOpen(true); }}
+                                            className="opacity-0 group-hover:opacity-100 p-2 text-[var(--text-muted)] hover:text-red-400 transition-all"
+                                            title="Report Message"
+                                        >
+                                            <Flag size={14} />
+                                        </button>
+                                    )}
+                                    <div className={clsx(
+                                        "p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
+                                        isMe 
+                                          ? "bg-[var(--accent-primary)] text-white rounded-tr-sm" 
+                                          : isStaff
+                                          ? "bg-gradient-to-br from-indigo-900/80 to-purple-900/80 border border-indigo-500/30 text-white rounded-tl-sm shadow-indigo-500/10"
+                                          : isBot
+                                          ? "bg-zinc-800/80 border border-white/5 text-gray-300 italic rounded-tl-sm"
+                                          : "bg-[var(--glass-card)] border border-[var(--glass-border)] text-[var(--text-primary)] rounded-tl-sm"
+                                    )}>
+                                        {msg.content}
+                                    </div>
                                 </div>
+                                <span className={clsx("text-[10px] text-[var(--text-muted)] mt-1", isMe ? "mr-1" : "ml-1")}>
+                                   {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
+                                </span>
                             </div>
                         )
                     })}
