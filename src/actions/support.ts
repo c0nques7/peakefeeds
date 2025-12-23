@@ -5,9 +5,8 @@ import { authOptions } from "@/lib/auth.config"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { Ticket } from "@/context/SupportContext"
-import { $Enums, NotificationType, UserRole } from "@prisma/client"
+import { SupportStatus, SupportPriority, NotificationType, UserRole } from "@prisma/client"
 
-const { SupportStatus, SupportPriority } = $Enums;
 
 // --- 1. FETCHING ACTIONS ---
 
