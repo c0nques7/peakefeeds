@@ -156,113 +156,62 @@ export async function resolveReport({
       data: {
         status: verdict === "DISMISS" ? "DISMISSED" : "RESOLVED",
         resolverId: session.user.id,
-            },
-          });
-      
-          await createAdminLog({
-            adminId: session.user.id,
-            eventType: AdminLogType.REPORT_RESOLVE,
-            targetResource: `Report:${reportId}`,
-            details: { verdict, penaltyType, notes }
-          });
-      
-          revalidatePath("/admin/moderation");
-              return { success: true };
+      },
+    });
 
-      });
+    await createAdminLog({
+      adminId: session.user.id,
+      eventType: AdminLogType.REPORT_RESOLVE,
+      targetResource: `Report:${reportId}`,
+      details: { verdict, penaltyType, notes }
+    });
 
+    revalidatePath("/admin/moderation");
+    return { success: true };
+  });
+}
+
+/**
+ * Toggles the 'isLocked' status for a piece of content.
+ */
+export async function toggleLockContent({
+  targetId,
+  targetType,
+  lockState
+}: {
+  targetId: string;
+  targetType: "POST" | "COMMENT" | "CHANNEL" | "USER";
+  lockState: boolean;
+}) {
+  const session = await requireStaff();
+
+  try {
+    switch (targetType) {
+      case "POST":
+        await prisma.post.update({ where: { id: targetId }, data: { isLocked: lockState } });
+        break;
+      case "COMMENT":
+        await prisma.comment.update({ where: { id: targetId }, data: { isLocked: lockState } });
+        break;
+      case "CHANNEL":
+        await prisma.channel.update({ where: { id: targetId }, data: { isLocked: lockState } });
+        break;
+      case "USER":
+        await prisma.user.update({ where: { id: targetId }, data: { isLocked: lockState } });
+        break;
     }
 
-    
+    await createAdminLog({
+      adminId: session.user.id,
+      eventType: lockState ? AdminLogType.CONTENT_LOCK : AdminLogType.CONTENT_UNLOCK,
+      targetResource: `${targetType}:${targetId}`,
+      details: { targetType, targetId, lockState }
+    });
 
-    /**
-
-     * Toggles the 'isLocked' status for a piece of content.
-
-     */
-
-    export async function toggleLockContent({
-
-      targetId,
-
-      targetType,
-
-      lockState
-
-    }: {
-
-      targetId: string;
-
-      targetType: "POST" | "COMMENT" | "CHANNEL" | "USER";
-
-      lockState: boolean;
-
-    }) {
-
-      await requireStaff();
-
-    
-
-      try {
-
-        switch (targetType) {
-
-          case "POST":
-
-            await prisma.post.update({ where: { id: targetId }, data: { isLocked: lockState } });
-
-            break;
-
-          case "COMMENT":
-
-            await prisma.comment.update({ where: { id: targetId }, data: { isLocked: lockState } });
-
-            break;
-
-          case "CHANNEL":
-
-            await prisma.channel.update({ where: { id: targetId }, data: { isLocked: lockState } });
-
-            break;
-
-          case "USER":
-
-            await prisma.user.update({ where: { id: targetId }, data: { isLocked: lockState } });
-
-                    break;
-
-                }
-
-            
-
-                await createAdminLog({
-
-                  adminId: session.user.id,
-
-                  eventType: lockState ? AdminLogType.CONTENT_LOCK : AdminLogType.CONTENT_UNLOCK,
-
-                  targetResource: `${targetType}:${targetId}`,
-
-                  details: { targetType, targetId, lockState }
-
-                });
-
-            
-
-                revalidatePath("/"); // Aggressive revalidation
-
-            
-
-        return { success: true };
-
-      } catch (error) {
-
-        console.error("Lock error:", error);
-
-        return { success: false, error: "Failed to toggle lock." };
-
-      }
-
-    }
-
-    
+    revalidatePath("/"); // Aggressive revalidation
+    return { success: true };
+  } catch (error) {
+    console.error("Lock error:", error);
+    return { success: false, error: "Failed to toggle lock." };
+  }
+}
