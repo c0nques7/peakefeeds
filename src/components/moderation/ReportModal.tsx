@@ -113,12 +113,14 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
   const displayTitle = title || `Report ${targetType.charAt(0) + targetType.slice(1).toLowerCase()}`;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-3xl p-6 shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
         
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-white transition-colors touch-manipulation p-2 -m-2"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+          aria-label="Close"
         >
           <X size={20} />
         </button>
@@ -146,14 +148,16 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               {reportedUserId && (
                 <button 
                   onClick={() => { setShowSuccess(false); setShowBlockPrompt(true); }}
-                  className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 active:bg-zinc-300 transition-all flex items-center justify-center gap-2 touch-manipulation"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   Next: Security Options
                 </button>
               )}
               <button 
                 onClick={handleClose}
-                className="w-full bg-[var(--glass-panel)] text-[var(--text-primary)] font-bold py-3 rounded-xl hover:bg-[var(--glass-panel-hover)] transition-all"
+                className="w-full bg-[var(--glass-panel)] text-[var(--text-primary)] font-bold py-3 rounded-xl hover:bg-[var(--glass-panel-hover)] active:opacity-80 transition-all touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 Done
               </button>
@@ -199,7 +203,8 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               <button 
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : "Submit Report"}
               </button>
@@ -219,14 +224,16 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               <button 
                 onClick={handleBlock}
                 disabled={isBlocking}
-                className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-white text-black hover:bg-zinc-200 active:bg-zinc-300 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isBlocking ? <Loader2 className="animate-spin" size={18} /> : "Yes, Block User"}
               </button>
               <button 
                 onClick={handleClose}
                 disabled={isBlocking}
-                className="w-full bg-[var(--glass-panel)] hover:bg-[var(--glass-panel-hover)] text-[var(--text-primary)] font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                className="w-full bg-[var(--glass-panel)] hover:bg-[var(--glass-panel-hover)] active:opacity-80 text-[var(--text-primary)] font-bold py-3 rounded-xl transition-all disabled:opacity-50 touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 No, just close
               </button>
