@@ -110,21 +110,36 @@ export default async function AdminPostsPage({
 
                 {/* Safety Status */}
                 <td className="p-4 align-top">
-                  {post._count.reports > 0 ? (
-                    <span className={`${styles.badge} ${styles.badgeRed} flex items-center gap-1 w-fit`}>
-                      <AlertTriangle size={12} />
-                      {post._count.reports} Report{post._count.reports > 1 ? 's' : ''}
-                    </span>
-                  ) : (
-                    <span className={`${styles.badge} ${styles.badgeGreen}`}>
-                      Clean
-                    </span>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    {post._count.reports > 0 ? (
+                      <span className={`${styles.badge} ${styles.badgeRed} flex items-center gap-1 w-fit`}>
+                        <AlertTriangle size={12} />
+                        {post._count.reports} Report{post._count.reports > 1 ? 's' : ''}
+                      </span>
+                    ) : (
+                      <span className={`${styles.badge} ${styles.badgeGreen} w-fit`}>
+                        Clean
+                      </span>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-1">
+                      {post.isVerified && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
+                          Verified
+                        </span>
+                      )}
+                      {post.isLocked && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">
+                          Locked
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </td>
 
                 {/* Actions */}
                 <td className="p-4 align-top text-right">
-                  <PostActions postId={post.id} />
+                  <PostActions post={post} />
                 </td>
               </tr>
             ))}
