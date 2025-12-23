@@ -44,7 +44,7 @@ async function checkAuth(channelId: string) {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { channelId: string } }
+  { params }: { params: Promise<{ channelId: string }> }
 ) {
   const { channelId } = await params;
   const auth = await checkAuth(channelId);
@@ -84,7 +84,7 @@ const UpdatePermissionSchema = z.object({
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { channelId: string } }
+  { params }: { params: Promise<{ channelId: string }> }
 ) {
   const { channelId } = await params;
   const auth = await checkAuth(channelId);
@@ -127,7 +127,7 @@ export async function POST(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { channelId: string } }
+  { params }: { params: Promise<{ channelId: string }> }
 ) {
   const { channelId } = await params;
   const auth = await checkAuth(channelId);
