@@ -4,13 +4,19 @@ import { z } from 'zod';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
-import { ReportReason, ReportTargetType, UserRole, NotificationType } from '@prisma/client';
+import { 
+  ReportReason, 
+  ReportTargetType, 
+  UserRole, 
+  NotificationType,
+  Report as PrismaReport // Alias the type to avoid collision with DOM Report
+} from '@prisma/client';
 
 const SubmitReportSchema = z.object({
   targetId: z.string().min(1),
   targetType: z.nativeEnum(ReportTargetType),
   reason: z.nativeEnum(ReportReason),
-  details: z.string().optional(),
+  details: z.string().optional().nullable(),
 });
 
 export type ReportState = {
@@ -24,6 +30,7 @@ export type ReportState = {
   message?: string | null;
   success?: boolean;
   reportedUserId?: string;
+  reportId?: string;
 }
 
 export async function submitReport(
@@ -33,7 +40,7 @@ export async function submitReport(
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return { message: "You must be signed in to submit a report." };
+    return { success: false, message: "You must be signed in to submit a report." };
   }
 
   const validatedFields = SubmitReportSchema.safeParse({
@@ -45,6 +52,7 @@ export async function submitReport(
 
   if (!validatedFields.success) {
     return {
+      success: false,
       errors: validatedFields.error.flatten().fieldErrors,
       message: "Invalid report data.",
     };
@@ -56,20 +64,20 @@ export async function submitReport(
     let reportedUserId: string | undefined;
     let reportData: any = {
       reason,
-      details,
+      details: details || null,
       status: "PENDING",
       targetType,
       reporterId: session.user.id,
     };
 
-    // Handle different target types to find the reported user and set the correct field
+    // 1. Resolve target details
     switch (targetType) {
       case ReportTargetType.MESSAGE:
         const message = await prisma.directMessage.findUnique({
           where: { id: targetId },
           select: { senderId: true }
         });
-        if (!message) return { message: "Message not found." };
+        if (!message) return { success: false, message: "Message not found." };
         reportedUserId = message.senderId;
         reportData.messageId = targetId;
         reportData.reportedProfileId = message.senderId;
@@ -80,7 +88,7 @@ export async function submitReport(
           where: { id: targetId },
           select: { authorId: true }
         });
-        if (!post) return { message: "Post not found." };
+        if (!post) return { success: false, message: "Post not found." };
         reportedUserId = post.authorId;
         reportData.postId = targetId;
         reportData.reportedProfileId = post.authorId;
@@ -91,7 +99,7 @@ export async function submitReport(
           where: { id: targetId },
           select: { authorId: true }
         });
-        if (!comment) return { message: "Comment not found." };
+        if (!comment) return { success: false, message: "Comment not found." };
         reportedUserId = comment.authorId;
         reportData.commentId = targetId;
         reportData.reportedProfileId = comment.authorId;
@@ -102,7 +110,7 @@ export async function submitReport(
           where: { id: targetId },
           select: { id: true }
         });
-        if (!user) return { message: "User not found." };
+        if (!user) return { success: false, message: "User not found." };
         reportedUserId = user.id;
         reportData.reportedProfileId = targetId;
         break;
@@ -112,29 +120,26 @@ export async function submitReport(
           where: { id: targetId },
           select: { creatorId: true }
         });
-        if (!channel) return { message: "Channel not found." };
+        if (!channel) return { success: false, message: "Channel not found." };
         reportedUserId = channel.creatorId;
         reportData.channelId = targetId;
         reportData.reportedProfileId = channel.creatorId;
         break;
 
       case ReportTargetType.ADVERTISEMENT:
-        // Advertisements might not have a direct user in our system if they are external
         reportData.adId = targetId;
         break;
     }
 
-    const report = await prisma.report.create({
+    // 2. Create the record in DB 
+    // We use the lowercase 'report' property on the prisma instance
+    const newReport: PrismaReport = await prisma.report.create({
       data: reportData,
     });
 
-    // Notify Admins and Moderators
+    // 3. Handle Notifications
     const adminsAndMods = await prisma.user.findMany({
-      where: {
-        role: {
-          in: [UserRole.ADMIN, UserRole.MODERATOR]
-        }
-      },
+      where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
       select: { id: true }
     });
 
@@ -144,7 +149,7 @@ export async function submitReport(
           userId: admin.id,
           actorId: session.user.id,
           type: NotificationType.REPORT,
-          reportId: report.id,
+          reportId: newReport.id,
         }))
       });
     }
@@ -152,10 +157,21 @@ export async function submitReport(
     return { 
       success: true, 
       message: "Report submitted successfully.",
-      reportedUserId 
+      reportedUserId,
+      reportId: newReport.id
     };
-  } catch (error) {
-    console.error("Failed to submit report:", error);
-    return { message: "Database Error: Could not submit report." };
+
+  } catch (error: any) {
+    console.error("REPORT_SUBMISSION_ERROR:", error);
+    
+    // IMPORTANT: Even if the DB fails (e.g., column missing), 
+    // returning success: false allows the client-side code to 
+    // actually finish the request and close the modal.
+    return { 
+      success: false, 
+      message: error.code === 'P2022' 
+        ? "System Error: Database schema mismatch. Please run 'npx prisma db push'." 
+        : "Failed to submit report. Please try again." 
+    };
   }
 }

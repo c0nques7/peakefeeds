@@ -15,32 +15,23 @@ datasource db {
 // 2. Enums
 // --------------------------------------
 
-// GLOBAL USER ROLES
 enum UserRole {
-  STANDARD      // Default user: Post, Comment, Like
-  
-  // Commercial & Creators
-  BUSINESS      // Corporate entities: Ads, Analytics, Manager of Influencers
-  INFLUENCER    // Paid creators: Managed by Business, Wallet Payouts
-  
-  // Trust & Transparency (The Truth Layer)
-  FACT_CHECKER  // Independent auditors: Can attach context/notes to posts
-  BOT           // Automated/API accounts: Must be clearly labeled
-  GOVERNMENT    // Official public sector: High-tier verification for alerts
-  
-  // Platform Management
-  MODERATOR     // Global moderation: Can delete/hide content platform-wide
-  ADMIN         // Superuser: Full system access
+  STANDARD
+  BUSINESS
+  INFLUENCER
+  FACT_CHECKER
+  BOT
+  GOVERNMENT
+  MODERATOR
+  ADMIN
 }
 
-// CHANNEL-SPECIFIC PERMISSIONS
 enum ChannelRole {
-  MEMBER        // Standard subscriber
-  MODERATOR     // Can delete/pin posts in this specific channel
-  OWNER         // Creator: Can edit settings, ban users from channel
+  MEMBER
+  MODERATOR
+  OWNER
 }
 
-// POST TYPES
 enum PostType {
   TEXT
   LONGFORM
@@ -57,15 +48,14 @@ enum ReactionType {
   DISLIKE
 }
 
-// 🛡️ MODERATION & REPORTING ENUMS
 enum ReportReason {
   SPAM
   HATE_SPEECH
   VIOLENCE
-  MISINFORMATION          // Fact check related
-  COPYRIGHT_INFRINGEMENT  // Ownership violation
-  IMPERSONATION           // Identity fraud (User)
-  TRADEMARK_VIOLATION     // Brand fraud (Channel)
+  MISINFORMATION
+  COPYRIGHT_INFRINGEMENT
+  IMPERSONATION
+  TRADEMARK_VIOLATION
   OTHER
 }
 
@@ -86,14 +76,13 @@ enum ReportTargetType {
 }
 
 enum PenaltyType {
-  WARNING                 // Just a notification
-  STRIKE_1_TIMEOUT        // 24hr mute
-  STRIKE_2_SUSPENSION     // 7-day ban
-  PERMANENT_BAN           // Account locked
-  CONTENT_REMOVAL         // Content gone, no strike
+  WARNING
+  STRIKE_1_TIMEOUT
+  STRIKE_2_SUSPENSION
+  PERMANENT_BAN
+  CONTENT_REMOVAL
 }
 
-// 🔔 NEW: Notification Types
 enum NotificationType {
   LIKE
   COMMENT
@@ -117,71 +106,42 @@ model User {
   emailVerified   DateTime?
   image           String?
   passwordHash    String?
-  
-  // 🛡️ Web3 Identity
   walletAddress   String?   @unique
-
-  // GLOBAL ROLE
   role            UserRole  @default(STANDARD)
-
-  // 🛡️ SAFETY & STANDING (The Justice System)
   strikeCount     Int       @default(0)
   isBanned        Boolean   @default(false)
   isLocked        Boolean   @default(false)
-  mutedUntil      DateTime? // If set, user cannot post/comment
-
-  // BUSINESS MANAGEMENT
+  mutedUntil      DateTime?
   managerId       String?
   manager         User?     @relation("BusinessManagement", fields: [managerId], references: [id])
   managedUsers    User[]    @relation("BusinessManagement")
-  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  // --- Relations ---
   accounts        Account[]
   sessions        Session[]
-
-  // Content Creation
-  channelsCreated Channel[]        @relation("CreatedChannels")
+  channelsCreated Channel[] @relation("CreatedChannels")
   posts           Post[]
   comments        Comment[]
-  
-  // Engagement
   subscriptions   Subscription[]
-  likes           Reaction[] 
+  likes           Reaction[]
 
-  // Moderation Relations
   reportsFiled    Report[]  @relation("ReportedBy")
   reportsResolved Report[]  @relation("ResolvedBy")
-  reportsAgainst  Report[]  @relation("ProfileReported") // Reports filed against this user
+  reportsAgainst  Report[]  @relation("ProfileReported")
   
   penaltiesReceived Penalty[] @relation("ReceivedPenalties")
   penaltiesIssued   Penalty[] @relation("IssuedPenalties")
-  
-  // Monetization
   adsWatched      AdView[]
-
-  // 🚀 GROWTH ENGINE
   invitesIssued   InviteCode[] @relation("IssuedInvites")
   inviteUsed      InviteCode?  @relation("UsedInvite")
-
-  // 🆘 SUPPORT SYSTEM
   supportTickets  SupportTicket[]
-
-  // 🔔 NOTIFICATIONS
   notificationsReceived Notification[] @relation("NotificationsReceived")
   notificationsSent     Notification[] @relation("NotificationsTriggered")
-
-  // 💬 MESSAGING
-  conversations Conversation[] @relation("ConversationParticipants")
-  messagesSent  DirectMessage[] @relation("SentMessages")
-
-  // 14. Blocking System
+  conversations   Conversation[] @relation("ConversationParticipants")
+  messagesSent    DirectMessage[] @relation("SentMessages")
   blocksInitiated Block[] @relation("BlocksInitiated")
   blocksReceived  Block[] @relation("BlocksReceived")
-
-  // 15. Admin Logs
   adminLogs       AdminLog[] @relation("AdminActions")
 }
 
@@ -192,17 +152,13 @@ model Channel {
   description   String?
   tags          String[]
   isLocked      Boolean   @default(false)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // --- Relations ---
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   creatorId     String
-  creator       User             @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
-  
+  creator       User      @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
   subscribers   Subscription[]
   posts         Post[]
-  reports       Report[] // Reports filed against this channel
+  reports       Report[]
 
   @@index([name])
 }
@@ -210,14 +166,10 @@ model Channel {
 model Subscription {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   channelId String
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
-
   joinedAt  DateTime @default(now())
   role      ChannelRole @default(MEMBER)
-
-  // Granular Permissions
   canPost        Boolean @default(true)
   canComment     Boolean @default(true)
   canDeletePosts Boolean @default(false)
@@ -227,160 +179,99 @@ model Subscription {
   @@index([userId])
 }
 
-// --------------------------------------
-// 4. Post and Media Models
-// --------------------------------------
-
 model Post {
   id              String    @id @default(cuid())
   title           String?
   content         String    @db.Text
-  
-  // Media Handling
   type            PostType  @default(TEXT)
   mediaUrl        String?
-  embedUrl        String?   
+  embedUrl        String?
   mediaHash       String?
-
-  // Link Metadata
   linkTitle       String?
   linkDescription String?   @db.Text
   linkImage       String?
-  linkDomain      String?   // e.g. "nytimes.com"
-  
-  // 🛡️ THE TRUTH LAYER (Verification)
-  isVerified           Boolean   @default(false)
-  isLocked             Boolean   @default(false)
-  
-  // 1. The Data Integrity
-  contentHash          String?   // SHA256(Content + Salt)
-  salt                 String?   // Random pepper for GDPR compliance
-  signature            String?   // User's cryptographic signature
-  
-  // 2. The Blockchain Anchor
-  verificationTx       String?   // The Optimism Transaction Hash (0x...)
-  verificationSource   String?   // "WALLET" | "HYPELAB" | "GOOGLE" (Who paid gas?)
-
-  // Post Reactions (Cached Counts)
-  likesCount       Int       @default(0)
-  dislikesCount    Int       @default(0)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  channelId String
-  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  likes     Reaction[] 
-  
-  // Safety
-  reports   Report[]
-  
-  // 🔔 Notifications linked to this post
-  notifications Notification[]
+  linkDomain      String?
+  isVerified      Boolean   @default(false)
+  isLocked        Boolean   @default(false)
+  contentHash     String?
+  salt            String?
+  signature       String?
+  verificationTx  String?
+  verificationSource String?
+  likesCount      Int       @default(0)
+  dislikesCount   Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  channelId       String
+  channel         Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments        Comment[]
+  likes           Reaction[]
+  reports         Report[]
+  notifications   Notification[]
 
   @@index([channelId, createdAt(sort: Desc)])
   @@index([authorId])
 }
 
-// --------------------------------------
-// 5. Engagement Models
-// --------------------------------------
-
 model Comment {
   id        String    @id @default(cuid())
   content   String    @db.Text
   isLocked  Boolean   @default(false)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Author
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   authorId  String
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  // Parent Post
   postId    String
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  // Threading
   parentId  String?
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
-
-  // 🔔 Notifications linked to this comment
   notifications Notification[]
-
-  // Safety
-  reports       Report[]
+  reports   Report[]
 
   @@index([postId])
   @@index([parentId])
 }
 
-model Reaction { 
+model Reaction {
   id        String    @id @default(cuid())
-  createdAt DateTime @default(now())
-
-  type      ReactionType @default(LIKE) 
-  
+  createdAt DateTime  @default(now())
+  type      ReactionType @default(LIKE)
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   postId    String
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId, postId])
   @@index([postId])
 }
-
-// --------------------------------------
-// 6. Safety & Moderation (The Justice System)
-// --------------------------------------
 
 model Report {
   id         String    @id @default(cuid())
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  
   reason     ReportReason
   details    String?      @db.Text
   status     ReportStatus @default(PENDING)
   targetType ReportTargetType
-
-  // The Reporter
   reporterId String
   reporter   User     @relation("ReportedBy", fields: [reporterId], references: [id])
-  
-  // Sparse Fields
-  postId       String?
-  post         Post?     @relation(fields: [postId], references: [id], onDelete: SetNull)
-
+  postId     String?
+  post       Post?     @relation(fields: [postId], references: [id], onDelete: SetNull)
   reportedProfileId String?
   reportedProfile   User?     @relation("ProfileReported", fields: [reportedProfileId], references: [id])
-
-  channelId    String?
-  channel      Channel? @relation(fields: [channelId], references: [id])
-
-  messageId    String?
-  message      DirectMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
-
-  commentId    String?
-  comment      Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
-
-  adId         String? // Optional ID for external ads
-
-  // Resolution
+  channelId  String?
+  channel    Channel? @relation(fields: [channelId], references: [id])
+  messageId  String?
+  message    DirectMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  commentId  String?
+  comment    Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  adId       String?
   resolverId String?
   resolver   User?  @relation("ResolvedBy", fields: [resolverId], references: [id])
-  
-  // Penalty
   penalty    Penalty?
-
-  // Notifications
   notifications Notification[]
 
   @@index([status])
@@ -390,49 +281,31 @@ model Report {
 model Penalty {
   id            String      @id @default(cuid())
   createdAt     DateTime    @default(now())
-  
   type          PenaltyType
-  reason        String      @db.Text 
-  
-  expiresAt     DateTime?   // Null = Permanent
+  reason        String      @db.Text
+  expiresAt     DateTime?
   isActive      Boolean     @default(true)
-
-  // Relations
-  userId        String      // The offender
+  userId        String
   user          User        @relation("ReceivedPenalties", fields: [userId], references: [id])
-  
-  issuerId      String      // The Moderator
+  issuerId      String
   issuer        User        @relation("IssuedPenalties", fields: [issuerId], references: [id])
-  
   reportId      String?     @unique
   report        Report?     @relation(fields: [reportId], references: [id])
 
   @@index([userId])
 }
 
-// --------------------------------------
-// 7. Ad Framework
-// --------------------------------------
-
 model AdView {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-
-  provider  String   // "HYPELAB", "GOOGLE", "UNITY"
-  
-  // Monetization Data
-  txHash     String? // If we sponsored gas, track it here
-  revenueEst Float?  // Estimated earning from this view (USD)
-
+  provider  String
+  txHash     String?
+  revenueEst Float?
   userId     String
   user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
-
-// --------------------------------------
-// 8. Marketing & Waitlist
-// --------------------------------------
 
 enum WaitlistStatus {
   PENDING
@@ -441,21 +314,14 @@ enum WaitlistStatus {
 }
 
 model Waitlist {
-  id        String         @id @default(cuid())
-  email     String         @unique
-  joinedAt  DateTime       @default(now())
-  
+  id        String          @id @default(cuid())
+  email     String          @unique
+  joinedAt  DateTime        @default(now())
   status    WaitlistStatus @default(PENDING)
-  
-  // Marketing Attribution
-  source    String?    
-  medium    String?    
-  campaign  String?    
+  source    String?
+  medium    String?
+  campaign  String?
 }
-
-// --------------------------------------
-// 9. NextAuth Boilerplate
-// --------------------------------------
 
 model Account {
   id                 String  @id @default(cuid())
@@ -470,7 +336,6 @@ model Account {
   scope              String?
   id_token           String? @db.Text
   session_state      String?
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -492,47 +357,27 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// --------------------------------------
-// 10. The Invite System
-// --------------------------------------
-
 model InviteCode {
   id        String   @id @default(cuid())
   code      String   @unique
   createdAt DateTime @default(now())
-
-  usedAt    DateTime? 
-  
-  issuerId  String?  
+  usedAt    DateTime?
+  issuerId  String?
   issuer    User?     @relation("IssuedInvites", fields: [issuerId], references: [id])
-
   usedById  String?   @unique
   usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id])
 }
 
-// --------------------------------------
-// 11. Support System
-// --------------------------------------
-
 model SupportTicket {
   id              String   @id @default(cuid())
-  status          String   @default("open") // "open", "resolved", "closed"
-  
-  // PRIORITY SCALE (0-5)
-  severity        Int      @default(0) 
-
+  status          String   @default("open")
+  severity        Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
-  // Link to a registered user
   userId          String?
   user            User?    @relation(fields: [userId], references: [id])
-  
-  // The conversation history
   messages        TicketMessage[]
-  
-  // 🔔 Notifications linked to this ticket
-  notifications Notification[]
+  notifications   Notification[]
 
   @@index([status])
   @@index([userId])
@@ -543,70 +388,42 @@ model TicketMessage {
   text            String        @db.Text
   sender          String        // "user", "admin", "bot"
   createdAt       DateTime      @default(now())
-  
-  // Relationship to the ticket
   ticketId        String
   ticket          SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  
-  // Optional: If you want to know WHICH admin replied
-  adminId         String?       
-  
+  adminId         String?
+
   @@index([ticketId])
 }
-
-// --------------------------------------
-// 12. Notification System (NEW)
-// --------------------------------------
 
 model Notification {
   id        String           @id @default(cuid())
   createdAt DateTime         @default(now())
   isRead    Boolean          @default(false)
   type      NotificationType
-
-  // 1. The Recipient (Who sees the red dot?)
   userId    String
   user      User             @relation("NotificationsReceived", fields: [userId], references: [id], onDelete: Cascade)
-
-  // 2. The Trigger (Who did it?) - Optional for System messages
   actorId   String?
   actor     User?            @relation("NotificationsTriggered", fields: [actorId], references: [id], onDelete: Cascade)
-
-  // 3. The Context (Polymorphic Links - only one usually populated)
   postId    String?
   post      Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
-
   commentId String?
   comment   Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
-
   ticketId  String?
   ticket    SupportTicket?   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-
   reportId  String?
   report    Report?          @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
-  // 4. Performance: Indexing for the "Show my unread" query
-  @@index([userId, isRead]) 
+  @@index([userId, isRead])
   @@index([createdAt])
   @@index([reportId])
 }
-
-// --------------------------------------
-// 13. User Messaging (DMs)
-// --------------------------------------
 
 model Conversation {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // The participants (Usually 2 for DMs, but allows groups later)
   participants User[] @relation("ConversationParticipants")
-
-  // The messages in this chat
   messages     DirectMessage[]
-
-  // For sorting inbox by most recent activity
   lastMessageAt DateTime @default(now())
 
   @@index([lastMessageAt])
@@ -616,45 +433,27 @@ model DirectMessage {
   id        String   @id @default(cuid())
   content   String   @db.Text
   createdAt DateTime @default(now())
-
-  // Who sent it?
   senderId  String
   sender    User   @relation("SentMessages", fields: [senderId], references: [id])
-
-  // Where does it belong?
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  // Read Status (Simplest version: If created > user's last view)
-  // We can add a specialized "ReadReceipt" model later if needed
   isRead    Boolean @default(false)
-
-  // Safety
   reports   Report[]
 
   @@index([conversationId])
 }
-// --------------------------------------
-// 14. Blocking System
-// --------------------------------------
 
 model Block {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-
   blockerId String
   blocker   User     @relation("BlocksInitiated", fields: [blockerId], references: [id], onDelete: Cascade)
-
   blockedId String
   blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
   @@index([blockerId])
 }
-
-// --------------------------------------
-// 15. Admin Logging System
-// --------------------------------------
 
 enum AdminLogType {
   AUTH_LOGIN
@@ -671,13 +470,11 @@ enum AdminLogType {
 model AdminLog {
   id             String       @id @default(cuid())
   createdAt      DateTime     @default(now())
-  
   adminId        String
   admin          User         @relation("AdminActions", fields: [adminId], references: [id])
-  
   eventType      AdminLogType
-  targetResource String?      // e.g., "User:cl...","Post:cl...", "Config:Waitlist"
-  details        Json?        // e.g., { old: ..., new: ... }
+  targetResource String?
+  details        Json?
   ipAddress      String?
   userAgent      String?
 

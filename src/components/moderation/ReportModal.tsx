@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2, X, AlertTriangle } from 'lucide-react';
+import { Loader2, X, AlertTriangle, CheckCircle2, Ticket } from 'lucide-react';
 import { toast } from 'sonner';
 import { submitReport } from '@/actions/report-actions';
 import { blockUser } from '@/actions/block-user';
@@ -34,6 +34,31 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
   const [showBlockPrompt, setShowBlockPrompt] = useState(false);
   const [reportedUserId, setReportedUserId] = useState<string | null>(null);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [reportId, setReportId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setDetails('');
+    setReason('SPAM');
+    setShowBlockPrompt(false);
+    setShowSuccess(false);
+    setReportId(null);
+    setReportedUserId(null);
+    setIsSubmitting(false);
+    setIsBlocking(false);
+  };
+
+  const handleClose = () => {
+    onClose();
+    resetForm();
+  };
+
+  // Reset form whenever it opens or the target changes
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, targetId]);
 
   if (!isOpen || !targetId) return null;
 
@@ -50,13 +75,9 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
     try {
       const result = await submitReport({}, formData);
       if (result.success) {
-        toast.success("Report submitted.");
-        if (result.reportedUserId) {
-          setReportedUserId(result.reportedUserId);
-          setShowBlockPrompt(true);
-        } else {
-          handleClose();
-        }
+        setReportId(result.reportId || null);
+        setReportedUserId(result.reportedUserId || null);
+        setShowSuccess(true);
       } else {
         toast.error(result.message || "Failed to submit report.");
       }
@@ -89,18 +110,6 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
     }
   };
 
-  const resetForm = () => {
-    setDetails('');
-    setReason('SPAM');
-    setShowBlockPrompt(false);
-    setReportedUserId(null);
-  };
-
-  const handleClose = () => {
-    onClose();
-    resetForm();
-  };
-
   const displayTitle = title || `Report ${targetType.charAt(0) + targetType.slice(1).toLowerCase()}`;
 
   return createPortal(
@@ -114,7 +123,43 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
           <X size={20} />
         </button>
 
-        {!showBlockPrompt ? (
+        {showSuccess ? (
+          <div className="text-center py-4 animate-in zoom-in-95 duration-300">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-4 text-emerald-400 border border-emerald-500/30">
+              <CheckCircle2 size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Report Successful</h2>
+            <p className="text-[var(--text-muted)] text-sm mb-6">
+              Thank you for helping us keep PeakeFeeds safe. Our moderators will review this shortly.
+            </p>
+            
+            <div className="bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-2xl p-4 mb-8 flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px] uppercase font-bold tracking-widest">
+                <Ticket size={12} /> Ticket ID
+              </div>
+              <code className="text-[var(--accent-primary)] font-mono text-lg font-bold select-all">
+                {reportId || 'PENDING'}
+              </code>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {reportedUserId && (
+                <button 
+                  onClick={() => { setShowSuccess(false); setShowBlockPrompt(true); }}
+                  className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-all flex items-center justify-center gap-2"
+                >
+                  Next: Security Options
+                </button>
+              )}
+              <button 
+                onClick={handleClose}
+                className="w-full bg-[var(--glass-panel)] text-[var(--text-primary)] font-bold py-3 rounded-xl hover:bg-[var(--glass-panel-hover)] transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        ) : !showBlockPrompt ? (
           <>
             <div className="text-center mb-6">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500/20 mb-3 text-red-400 border border-red-500/30">

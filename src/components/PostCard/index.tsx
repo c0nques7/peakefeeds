@@ -346,7 +346,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                      <div className="absolute right-0 top-8 w-40 bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
                         {!post.isVerified && (currentUserId === post.author.id || currentUserId === post.channel?.creatorId || post.viewerCanDelete) && (
                             <>
-                                {(currentUserId === post.author.id || currentUserId === post.channel?.creatorId || (post.viewerChannelRole === 'MODERATOR' || post.viewerChannelRole === 'OWNER')) && (
+                                {(currentUserId === post.author.id || currentUserId === post.channel?.creatorId || (post.viewerChannelRole === 'MODERATOR' || post.viewerChannelRole === 'OWNER' || post.viewerChannelRole === 'ADMIN')) && (
                                     <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-[var(--accent-primary)]/10 text-[var(--text-primary)] flex items-center gap-2 border-b border-[var(--glass-border)]">
                                         <Edit2 size={12} /> Edit Post
                                     </button>

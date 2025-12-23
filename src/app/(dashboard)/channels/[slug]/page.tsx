@@ -119,8 +119,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           contentHash: post.contentHash ?? null,
           
           // 🟢 ADDED: Viewer context for permissions
-          viewerChannelRole: viewerSubscription?.role || null,
-          viewerCanDelete: viewerSubscription?.canDeletePosts || false,
+          viewerChannelRole: isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (viewerSubscription?.role || null)),
+          viewerCanDelete: isGlobalAdmin || isCreator || viewerSubscription?.canDeletePosts || false,
           
           author: {
              ...post.author,
