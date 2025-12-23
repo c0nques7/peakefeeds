@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, ReactNode } from 'react'
-import { $Enums } from '@prisma/client'
+import { SupportStatus, SupportPriority} from '@prisma/client'
 import { 
   createTicketAction, 
   addMessageAction, 
@@ -13,8 +13,6 @@ import {
   updateInternalNotesAction,
   sendMessageToUserAction
 } from '@/actions/support'
-
-const { SupportStatus, SupportPriority } = $Enums;
 
 // --- TYPES ---
 // We keep the types here so they can be imported by HelpBot/AdminConsole
