@@ -22,13 +22,11 @@ import {
   AlertCircle,
   Eye
 } from 'lucide-react'
-import { $Enums } from '@prisma/client'
+import { SupportStatus, SupportPriority } from '@prisma/client'
 import styles from '@/app/(admin)/admin/admin.module.css'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
-
-const { SupportStatus, SupportPriority } = $Enums;
 
 // Support Queue Management Interface
 export default function SupportQueue() {
