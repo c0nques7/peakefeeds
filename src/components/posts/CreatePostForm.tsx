@@ -84,6 +84,10 @@ export default function CreatePostForm({
   const [postSalt, setPostSalt] = useState<string | null>(null);
   const [adProofToken, setAdProofToken] = useState<string | null>(null);
 
+  // 7. Verification Confirmation
+  const [showVerifyWarning, setShowVerifyWarning] = useState(false);
+  const [pendingVerifyChoice, setPendingVerifyChoice] = useState<'WALLET' | 'AD' | null>(null);
+
   // --- Effects ---
   useEffect(() => {
     if (content.trim()) {
@@ -122,7 +126,14 @@ export default function CreatePostForm({
   // --- Verification Logic ---
   const handleVerifyClick = useCallback(async (choice: 'WALLET' | 'AD') => {
     if (!content.trim()) { toast.warning("Please enter content first."); return; }
-    if (!postHash) return; 
+    setPendingVerifyChoice(choice);
+    setShowVerifyWarning(true);
+  }, [content]);
+
+  const confirmVerification = useCallback(async () => {
+    const choice = pendingVerifyChoice;
+    if (!choice || !postHash) return; 
+    setShowVerifyWarning(false);
 
     if (!isConnected || !address) {
         redirectToProfile();
@@ -183,8 +194,9 @@ export default function CreatePostForm({
       resetAdState(); 
     } finally {
       setIsPreparing(false);
+      setPendingVerifyChoice(null);
     }
-  }, [content, postHash, address, isConnected, signMessageAsync, startVerification, resetAdState, router, username, linkedWallet]);
+  }, [pendingVerifyChoice, postHash, address, isConnected, signMessageAsync, startVerification, resetAdState, router, username, linkedWallet]);
 
   const isPostReady = content.trim() && (method === 'SKIP' || signature);
   const isButtonDisabled = pending || isPreparing || !isPostReady;
@@ -198,6 +210,45 @@ export default function CreatePostForm({
           onSelectQuest={selectQuestFlow} 
           onCancel={() => { resetAdState(); setMethod('NONE'); setIsPreparing(false); }} 
       />
+
+      {/* Verification Warning Modal */}
+      {showVerifyWarning && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="relative w-full max-w-md bg-zinc-900 border border-amber-500/30 rounded-3xl shadow-2xl p-6 overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-orange-600" />
+            
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-amber-500/20 rounded-full text-amber-500">
+                <ShieldCheck size={32} />
+              </div>
+            </div>
+
+            <h3 className="text-xl font-bold text-white text-center mb-2">Blockchain Finality Notice</h3>
+            <p className="text-zinc-300 text-sm text-center leading-relaxed mb-6">
+              Verified posts are cryptographically signed and anchored to the blockchain. 
+              <span className="text-amber-400 font-bold block mt-2">
+                Once published, this content cannot be edited or deleted.
+              </span>
+              Please ensure you have reviewed your content thoroughly.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={confirmVerification}
+                className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-all shadow-lg"
+              >
+                I Understand, Proceed
+              </button>
+              <button 
+                onClick={() => { setShowVerifyWarning(false); setPendingVerifyChoice(null); }}
+                className="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-all"
+              >
+                Cancel & Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="mb-2">
         <div className="flex justify-between items-end mb-3">

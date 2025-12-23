@@ -1,7 +1,9 @@
 'use client'
-import React from 'react';
-import { PlayCircle, Award, X, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { PlayCircle, Award, X, Loader2, Flag } from 'lucide-react';
 import { MediatorStatus } from '@/hooks/useAdMediator';
+import ReportModal from '../moderation/ReportModal';
+import { ReportTargetType } from '@prisma/client';
 
 interface AdPlayerOverlayProps {
   status: MediatorStatus;
@@ -14,6 +16,7 @@ interface AdPlayerOverlayProps {
 export const AdPlayerOverlay = ({ 
   status, provider, onSelectVideo, onSelectQuest, onCancel 
 }: AdPlayerOverlayProps) => {
+  const [reportModalOpen, setReportModalOpen] = useState(false);
   
   if (status === 'IDLE') return null;
 
@@ -62,32 +65,52 @@ export const AdPlayerOverlay = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
       <div className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
-          <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
-             {status === 'LOADING' ? 'Connecting...' : `Powered by ${provider || 'Peake'}`}
-          </span>
-          <button onClick={onCancel} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-white">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="relative aspect-video bg-black flex flex-col items-center justify-center">
-          {status === 'LOADING' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-10">
-              <Loader2 className="animate-spin text-emerald-500 mb-4" size={40} />
-              <p className="text-sm text-zinc-400">Loading Content...</p>
-            </div>
-          )}
+                    <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
+                       {status === 'LOADING' ? 'Connecting...' : `Powered by ${provider || 'Peake'}`}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {(status === 'SHOWING' || status === 'LOADING' || status === 'ERROR') && (
+                        <button 
+                          onClick={() => setReportModalOpen(true)}
+                          className="p-2 hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-red-400 transition-colors"
+                          title="Report Ad"
+                        >
+                          <Flag size={18} />
+                        </button>
+                      )}
+                      <button onClick={onCancel} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-white">
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </div>
           
-          {status === 'ERROR' && (
-             <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-20">
-                <p className="text-red-400 font-bold">Verification Failed</p>
-                <button onClick={onCancel} className="mt-4 text-xs px-4 py-2 bg-zinc-800 rounded">Close</button>
-             </div>
-          )}
+                  <div className="relative aspect-video bg-black flex flex-col items-center justify-center">
+                    {status === 'LOADING' && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-10">
+                        <Loader2 className="animate-spin text-emerald-500 mb-4" size={40} />
+                        <p className="text-sm text-zinc-400">Loading Content...</p>
+                      </div>
+                    )}
+                    
+                    {status === 'ERROR' && (
+                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-20">
+                          <p className="text-red-400 font-bold">Verification Failed</p>
+                          <button onClick={onCancel} className="mt-4 text-xs px-4 py-2 bg-zinc-800 rounded">Close</button>
+                       </div>
+                    )}
+                    
+                    <div id="peake-ad-container" className="w-full h-full" />
+                  </div>
+                </div>
           
-          <div id="peake-ad-container" className="w-full h-full" />
-        </div>
-      </div>
-    </div>
-  );
-};
+                <ReportModal 
+                  isOpen={reportModalOpen}
+                  onClose={() => setReportModalOpen(false)}
+                  targetId={provider || 'unknown-ad'}
+                  targetType={ReportTargetType.ADVERTISEMENT}
+                  title="Report Advertisement"
+                />
+              </div>
+            );
+          };
+          

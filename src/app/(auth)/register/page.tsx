@@ -34,6 +34,7 @@ export default function RegisterPage() {
       Object.entries(formData).forEach(([key, value]) => submission.append(key, value));
 
       const result = await registerUser(submission);
+      console.log("Registration result:", result);
 
       if (result?.error) {
         setError(result.error);

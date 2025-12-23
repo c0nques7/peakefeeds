@@ -1,3 +1,4 @@
+// Trivial change to force recompilation after Prisma generate
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { getServerSession } from "next-auth";
@@ -6,6 +7,10 @@ import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm"; 
 import { SubscribeButton } from "@/components/SubscribeButton";
 import { SearchBar } from "@/components/SearchBar"; 
+import ReportChannelButton from "@/components/channels/ReportChannelButton";
+import LockedOverlay from "@/components/moderation/LockedOverlay";
+import { Settings } from "lucide-react";
+import Link from "next/link";
 
 // ⚡️ SHARED LAYOUT STYLES
 import styles from "../../../(dashboard)/dashboard.module.css"; 
@@ -18,24 +23,32 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const { slug } = await params; 
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id || '';
+  const isGlobalAdmin = session?.user?.role === 'ADMIN';
 
   // 1. Fetch Channel Data
   const channel = await prisma.channel.findUnique({
     where: { slug: slug },
     select: {
-      id: true, name: true, description: true, slug: true, creatorId: true,
+      id: true, name: true, description: true, slug: true, creatorId: true, isLocked: true,
       _count: { select: { subscribers: true } },
       
       subscribers: {
         where: { userId: currentUserId },
-        select: { userId: true }, 
+        select: { 
+          userId: true, 
+          role: true,
+          canPost: true,
+          canComment: true,
+          canDeletePosts: true,
+          canPinPosts: true
+        }, 
         take: 1, 
       },
 
       posts: {
         orderBy: { createdAt: 'desc' },
         select: {
-            id: true, title: true, content: true, createdAt: true, isVerified: true,
+            id: true, title: true, content: true, createdAt: true, isVerified: true, isLocked: true,
             contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
             likesCount: true, dislikesCount: true,
             
@@ -46,7 +59,17 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
             linkDomain: true,
             
             author: { 
-                select: { id: true, name: true, username: true, image: true, role: true } 
+                select: { 
+                    id: true, 
+                    name: true, 
+                    username: true, 
+                    image: true, 
+                    role: true,
+                    subscriptions: {
+                        where: { channel: { slug: slug } },
+                        select: { role: true }
+                    }
+                } 
             },
             channel: { select: { id: true, name: true, slug: true, creatorId: true } },
             comments: {
@@ -54,7 +77,16 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                 orderBy: { createdAt: 'asc' },
                 select: {
                     id: true, content: true, parentId: true,
-                    author: { select: { id: true, username: true } }
+                    author: { 
+                        select: { 
+                            id: true, 
+                            username: true,
+                            subscriptions: {
+                                where: { channel: { slug: slug } },
+                                select: { role: true }
+                            }
+                        } 
+                    }
                 }
             },
             likes: currentUserId ? {
@@ -72,6 +104,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   }
 
   // 2. Transform Data (Fix Dates & Nulls)
+  const viewerSubscription = channel.subscribers[0];
+  
   const formattedPosts = channel.posts.map((post) => {
       // @ts-ignore
       const userReaction = post.likes?.[0]?.type || null;
@@ -84,16 +118,23 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           signature: post.signature ?? null,
           contentHash: post.contentHash ?? null,
           
-          // 🟢 ADDED: Explicitly pass link metadata
-          linkTitle: post.linkTitle ?? null,
-          linkDescription: post.linkDescription ?? null,
-          linkImage: post.linkImage ?? null,
-          linkDomain: post.linkDomain ?? null,
+          // 🟢 ADDED: Viewer context for permissions
+          viewerChannelRole: viewerSubscription?.role || null,
+          viewerCanDelete: viewerSubscription?.canDeletePosts || false,
           
           author: {
              ...post.author,
-             role: post.author.role ?? 'USER'
+             role: post.author.role ?? 'USER',
+             channelRole: post.author.subscriptions?.[0]?.role || null
           },
+
+          comments: post.comments.map((c: any) => ({
+              ...c,
+              author: {
+                  ...c.author,
+                  channelRole: c.author.subscriptions?.[0]?.role || null
+              }
+          })),
 
           _count: {
               comments: post._count.comments,
@@ -114,7 +155,9 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
       </div>
       {/* CHANNEL HEADER */}
       <div className="mb-10 relative z-10"> 
-        <div className="backdrop-blur-xl rounded-[2rem] p-8 text-center shadow-xl border border-[var(--glass-border)] bg-[var(--glass-card)] w-full">
+        <div className="relative backdrop-blur-xl rounded-[2rem] p-8 text-center shadow-xl border border-[var(--glass-border)] bg-[var(--glass-card)] w-full overflow-hidden">
+          {channel.isLocked && <LockedOverlay message="This Channel is Under Review by PeakeFeeds Admins. You can still view its content, but new posts and interactions are disabled." />}
+          
           <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-[var(--text-primary)]">
             {channel.name}
           </h1>
@@ -128,17 +171,23 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
              </div>
 
              {currentUserId && !isCreator && (
-                <SubscribeButton
-                    channelId={channel.id}
-                    channelSlug={channel.slug}
-                    isSubscribedInitial={isSubscribedInitial}
-                />
+                <>
+                  <SubscribeButton
+                      channelId={channel.id}
+                      channelSlug={channel.slug}
+                      isSubscribedInitial={isSubscribedInitial}
+                  />
+                  <ReportChannelButton channelId={channel.id} />
+                </>
              )}
 
-             {isCreator && (
-                <span className="px-4 py-1.5 rounded-full border border-purple-500 text-purple-500 bg-purple-500/10 text-sm font-bold">
-                    You are the Creator
-                </span>
+             {(isCreator || isGlobalAdmin) && (
+                <Link 
+                  href={`/channels/${channel.slug}/settings`}
+                  className="px-4 py-1.5 rounded-full border border-purple-500 text-purple-500 bg-purple-500/10 text-sm font-bold flex items-center gap-2 hover:bg-purple-500/20 transition-all"
+                >
+                    <Settings size={14} /> Manage Channel
+                </Link>
              )}
           </div>
         </div>
@@ -146,7 +195,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
 
       {/* CREATE POST FORM */}
       {currentUserId && (
-          <div className="mb-8 rounded-2xl p-4 shadow-lg border border-[var(--glass-border)] bg-[var(--glass-panel)]">
+          <div className="relative mb-8 rounded-2xl p-4 shadow-lg border border-[var(--glass-border)] bg-[var(--glass-panel)] overflow-hidden">
+              {channel.isLocked && <LockedOverlay message="New posts are disabled while this channel is under review." />}
               <CreatePostForm 
                   channelId={channel.id} 
                   userImage={session?.user?.image}
@@ -169,6 +219,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                     key={post.id} 
                     post={post} 
                     initialReaction={post.currentUserReaction}
+                    currentUserId={currentUserId}
                 />
             ))
           )}

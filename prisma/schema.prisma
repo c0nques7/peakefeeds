@@ -81,6 +81,8 @@ enum ReportTargetType {
   USER
   CHANNEL
   MESSAGE
+  COMMENT
+  ADVERTISEMENT
 }
 
 enum PenaltyType {
@@ -100,6 +102,7 @@ enum NotificationType {
   SYSTEM
   TICKET_REPLY
   MESSAGE
+  REPORT
 }
 
 // --------------------------------------
@@ -124,6 +127,7 @@ model User {
   // 🛡️ SAFETY & STANDING (The Justice System)
   strikeCount     Int       @default(0)
   isBanned        Boolean   @default(false)
+  isLocked        Boolean   @default(false)
   mutedUntil      DateTime? // If set, user cannot post/comment
 
   // BUSINESS MANAGEMENT
@@ -176,6 +180,9 @@ model User {
   // 14. Blocking System
   blocksInitiated Block[] @relation("BlocksInitiated")
   blocksReceived  Block[] @relation("BlocksReceived")
+
+  // 15. Admin Logs
+  adminLogs       AdminLog[] @relation("AdminActions")
 }
 
 model Channel {
@@ -184,6 +191,7 @@ model Channel {
   slug          String    @unique
   description   String?
   tags          String[]
+  isLocked      Boolean   @default(false)
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -208,6 +216,12 @@ model Subscription {
 
   joinedAt  DateTime @default(now())
   role      ChannelRole @default(MEMBER)
+
+  // Granular Permissions
+  canPost        Boolean @default(true)
+  canComment     Boolean @default(true)
+  canDeletePosts Boolean @default(false)
+  canPinPosts    Boolean @default(false)
 
   @@id([userId, channelId])
   @@index([userId])
@@ -236,6 +250,7 @@ model Post {
   
   // 🛡️ THE TRUTH LAYER (Verification)
   isVerified           Boolean   @default(false)
+  isLocked             Boolean   @default(false)
   
   // 1. The Data Integrity
   contentHash          String?   // SHA256(Content + Salt)
@@ -278,6 +293,7 @@ model Post {
 model Comment {
   id        String    @id @default(cuid())
   content   String    @db.Text
+  isLocked  Boolean   @default(false)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -297,6 +313,9 @@ model Comment {
 
   // 🔔 Notifications linked to this comment
   notifications Notification[]
+
+  // Safety
+  reports       Report[]
 
   @@index([postId])
   @@index([parentId])
@@ -349,12 +368,20 @@ model Report {
   messageId    String?
   message      DirectMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
+  commentId    String?
+  comment      Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+
+  adId         String? // Optional ID for external ads
+
   // Resolution
   resolverId String?
   resolver   User?  @relation("ResolvedBy", fields: [resolverId], references: [id])
   
   // Penalty
   penalty    Penalty?
+
+  // Notifications
+  notifications Notification[]
 
   @@index([status])
   @@index([reporterId])
@@ -555,9 +582,13 @@ model Notification {
   ticketId  String?
   ticket    SupportTicket?   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
+  reportId  String?
+  report    Report?          @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
   // 4. Performance: Indexing for the "Show my unread" query
   @@index([userId, isRead]) 
   @@index([createdAt])
+  @@index([reportId])
 }
 
 // --------------------------------------
@@ -619,4 +650,38 @@ model Block {
 
   @@unique([blockerId, blockedId])
   @@index([blockerId])
+}
+
+// --------------------------------------
+// 15. Admin Logging System
+// --------------------------------------
+
+enum AdminLogType {
+  AUTH_LOGIN
+  AUTH_LOGOUT
+  USER_UPDATE
+  USER_DELETE
+  CONTENT_LOCK
+  CONTENT_UNLOCK
+  REPORT_RESOLVE
+  CONFIG_CHANGE
+  ADMIN_ACTION
+}
+
+model AdminLog {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  
+  adminId        String
+  admin          User         @relation("AdminActions", fields: [adminId], references: [id])
+  
+  eventType      AdminLogType
+  targetResource String?      // e.g., "User:cl...","Post:cl...", "Config:Waitlist"
+  details        Json?        // e.g., { old: ..., new: ... }
+  ipAddress      String?
+  userAgent      String?
+
+  @@index([adminId])
+  @@index([eventType])
+  @@index([createdAt])
 }

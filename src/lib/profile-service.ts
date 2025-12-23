@@ -10,6 +10,7 @@ export type ProfileData = {
     walletAddress: string | null;
     createdAt: Date;
     role: UserRole; 
+    isLocked: boolean;
     
     _count: {
         posts: number;
@@ -96,6 +97,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
             walletAddress: true,
             createdAt: true,
             role: true,
+            isLocked: true,
             
             _count: {
                 select: {
@@ -108,7 +110,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
                 take: 50,
                 orderBy: { createdAt: 'desc' },
                 select: {
-                    id: true, title: true, content: true, createdAt: true, isVerified: true,
+                    id: true, title: true, content: true, createdAt: true, isVerified: true, isLocked: true,
                     contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
                     
                     // 🆕 SELECT LINK METADATA

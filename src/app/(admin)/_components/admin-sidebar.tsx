@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-// 🟢 Added FileText to imports
+// 🟢 Added FileText, ScrollText, Hash to imports
 import { 
-  ShieldAlert, Users, LayoutDashboard, LogOut, Activity, Ticket, Menu, X, FileText 
+  ShieldAlert, Users, LayoutDashboard, LogOut, Activity, Ticket, Menu, X, FileText, ScrollText, Hash 
 } from "lucide-react";
 import styles from "@/app/(admin)/admin/admin.module.css";
 
@@ -58,6 +58,12 @@ export function AdminSidebar() {
           
           {/* 🟢 New Post Management Link */}
           <NavLink href="/admin/posts" icon={<FileText size={18} />} label="Post Management" active={pathname.startsWith("/admin/posts")} onClick={handleLinkClick} />
+          
+          {/* 🟢 New Admin Logging Link */}
+          <NavLink href="/admin/logs" icon={<ScrollText size={18} />} label="Admin Logging" active={pathname.startsWith("/admin/logs")} onClick={handleLinkClick} />
+
+          {/* 🟢 New Channel Management Link */}
+          <NavLink href="/admin/channels" icon={<Hash size={18} />} label="Channel Management" active={pathname.startsWith("/admin/channels")} onClick={handleLinkClick} />
         </nav>
 
         <div className="p-4 border-t border-[var(--glass-border)]">

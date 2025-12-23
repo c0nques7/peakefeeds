@@ -12,6 +12,11 @@ import { createComment } from '@/actions/create-comment'
 import { deleteComment, updateComment } from '@/actions/comment-actions'
 import { toast } from 'sonner' 
 import clsx from 'clsx'
+import ReportModal from '../moderation/ReportModal'
+import LockedOverlay from '../moderation/LockedOverlay'
+import { ReportTargetType } from '@prisma/client'
+import { Flag } from 'lucide-react'
+import { MOD_TAG } from '@/lib/constants'
 
 // --- HELPER: Embed Logic for Comments ---
 const CommentEmbed = ({ url }: { url: string }) => {
@@ -146,6 +151,15 @@ const GenericLinkCard = ({ url, icon, label }: any) => (
     </a>
 );
 
+const ModBadge = ({ channelRole }: { channelRole: string | null }) => {
+    if (!channelRole || (channelRole !== 'MODERATOR' && channelRole !== 'OWNER')) return null;
+    return (
+        <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded ml-1 align-middle tracking-tighter">
+            {MOD_TAG}
+        </span>
+    );
+};
+
 // --- MAIN COMPONENT ---
 
 interface CommentItemProps {
@@ -179,6 +193,7 @@ export function CommentItem({
   const [editText, setEditText] = useState(comment.content);
   const [showMenu, setShowMenu] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const isCommentAuthor = currentUserId && (
       currentUserId === comment.authorId || 
@@ -216,6 +231,10 @@ export function CommentItem({
   // --- Handlers ---
 
   const handleReply = async () => {
+    if (comment.isLocked) {
+        toast.error("This comment is locked for review.");
+        return;
+    }
     if (!replyText.trim()) return;
     setIsSubmitting(true);
     
@@ -244,6 +263,10 @@ export function CommentItem({
   };
 
   const handleUpdate = async () => {
+    if (comment.isLocked) {
+        toast.error("This comment is locked for review.");
+        return;
+    }
     if (!editText.trim() || editText === comment.content) {
         setIsEditing(false);
         return;
@@ -270,6 +293,10 @@ export function CommentItem({
   };
 
   const confirmDelete = async () => {
+    if (comment.isLocked) {
+        toast.error("This comment is locked for review.");
+        return;
+    }
     setIsSubmitting(true);
     const res = await deleteComment(comment.id, channelSlug);
     
@@ -321,6 +348,7 @@ export function CommentItem({
             "bg-gray-50 dark:bg-white/5 overflow-visible",
             randomBorderClass
         )}>
+            {comment.isLocked && <LockedOverlay className="rounded-2xl" />}
             
             {/* DELETE OVERLAY */}
             <div 
@@ -344,18 +372,25 @@ export function CommentItem({
 
             {/* HEADER */}
             <div className="flex justify-between items-start mb-1">
-                <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
-                    @{comment.author?.username || 'user'}
-                </span>
+                <div className="flex items-center">
+                    <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
+                        @{comment.author?.username || 'user'}
+                    </span>
+                    <ModBadge channelRole={comment.author?.channelRole} />
+                </div>
                 
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] text-gray-400 dark:text-gray-500">
                         {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : 'Just now'}
                     </span>
                     
-                    {/* MENU TOGGLE */}
-                    {(canEdit || canDelete) && (
-                        <div className="relative">
+                                {/* MENU TOGGLE */}
+                    
+                                {currentUserId && (
+                    
+                                    <div className="relative">
+                    
+                    
                             <button onClick={() => setShowMenu(!showMenu)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 -mr-1">
                                 <MoreVertical size={14} />
                             </button>
@@ -373,6 +408,11 @@ export function CommentItem({
                                         {canDelete && (
                                             <button onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
                                                 <Trash size={10} className="mr-2"/> Delete
+                                            </button>
+                                        )}
+                                        {!isCommentAuthor && (
+                                            <button onClick={() => { setReportModalOpen(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                                                <Flag size={10} className="mr-2"/> Report
                                             </button>
                                         )}
                                     </div>
@@ -455,9 +495,17 @@ export function CommentItem({
                         onEdit={onEdit}     // Pass down
                     />
                 ))}
-            </div>
-        )}
-      </div>
-    </div>
-  )
-}
+                        </div>
+                    )}
+                  </div>
+            
+                  <ReportModal 
+                    isOpen={reportModalOpen}
+                    onClose={() => setReportModalOpen(false)}
+                    targetId={comment.id}
+                    targetType={ReportTargetType.COMMENT}
+                  />
+                </div>
+              )
+            }
+            

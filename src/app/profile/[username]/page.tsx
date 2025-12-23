@@ -9,6 +9,8 @@ import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { SearchBar } from "@/components/SearchBar"; 
 import MessageButton from "@/components/messaging/MessageButton"; 
 import BlockUserButton from "@/components/profile/BlockUserButton";
+import ReportUserButton from "@/components/profile/ReportUserButton";
+import LockedOverlay from "@/components/moderation/LockedOverlay";
 
 // Shared Layout Styles
 import styles from "../../(dashboard)/dashboard.module.css"; 
@@ -117,6 +119,8 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
             {/* PROFILE HEADER */}
             <header className="mb-8 rounded-[2rem] p-8 text-center relative overflow-hidden bg-[var(--glass-card)] border border-[var(--glass-border)] shadow-xl">
                 
+                {profile.isLocked && <LockedOverlay message="This Account is Under Review by PeakeFeeds Admins. Interaction with this user is temporarily disabled." />}
+                
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[var(--accent-primary)]/10 to-transparent pointer-events-none" />
 
                 <div className="relative z-10">
@@ -152,6 +156,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                                 
                                 <MessageButton recipientId={profile.id} />
                                 <BlockUserButton userId={profile.id} />
+                                <ReportUserButton userId={profile.id} />
                             </>
                         )}
                     </div>
@@ -168,7 +173,9 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
             </section>
 
             {/* CONTENT */}
-            <section>
+            <section className="relative overflow-hidden rounded-3xl">
+                {profile.isLocked && <LockedOverlay className="z-20" message="Interacting with this user's content is disabled during review." />}
+                
                 <ProfileTabs 
                     activeTab={activeTab} 
                     username={profile.username || 'user'} 

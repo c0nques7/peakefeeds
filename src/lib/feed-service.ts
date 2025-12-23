@@ -8,6 +8,7 @@ export type FeedPost = {
   content: string;
   createdAt: string; 
   isVerified: boolean;
+  isLocked: boolean;
   contentHash: string | null;
   signature: string | null;
   embedUrl: string | null;
@@ -59,7 +60,7 @@ export type FeedPost = {
 
 // 2. Shared Selection Logic
 const feedSelect = {
-  id: true, title: true, content: true, createdAt: true, isVerified: true,
+  id: true, title: true, content: true, createdAt: true, isVerified: true, isLocked: true,
   contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
   likesCount: true, dislikesCount: true,
   
@@ -125,6 +126,7 @@ function transformPosts(posts: any[]): FeedPost[] {
       createdAt: post.createdAt.toISOString(), 
 
       isVerified: post.isVerified,
+      isLocked: post.isLocked,
       contentHash: post.contentHash,
       signature: post.signature,
       embedUrl: post.embedUrl,

@@ -8,6 +8,7 @@ interface CreateNotificationParams {
   postId?: string;
   commentId?: string;
   ticketId?: string;
+  reportId?: string;
 }
 
 export async function createNotification({
@@ -17,6 +18,7 @@ export async function createNotification({
   postId,
   commentId,
   ticketId,
+  reportId,
 }: CreateNotificationParams) {
   try {
     if (actorId === recipientId) return;
@@ -29,6 +31,7 @@ export async function createNotification({
         postId,
         commentId,
         ticketId,
+        reportId,
         isRead: false,
       },
     });
@@ -43,6 +46,7 @@ export async function createNotification({
         postId,
         commentId,
         ticketId,
+        reportId,
       },
     });
   } catch (error) {

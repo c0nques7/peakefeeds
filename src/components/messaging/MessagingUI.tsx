@@ -7,7 +7,8 @@ import { Send, Search, ArrowLeft, Loader2, User as UserIcon, Flag } from 'lucide
 import { formatDistanceToNow } from 'date-fns'
 import clsx from 'clsx'
 import { useSession } from 'next-auth/react'
-import ReportMessageModal from './ReportMessageModal'
+import ReportModal from '../moderation/ReportModal'
+import { ReportTargetType } from '@prisma/client'
 
 export default function MessagingUI() {
   const { data: session } = useSession()
@@ -231,10 +232,11 @@ export default function MessagingUI() {
          )}
       </div>
 
-      <ReportMessageModal 
+      <ReportModal
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
-        messageId={messageToReport}
+        targetId={messageToReport}
+        targetType={ReportTargetType.MESSAGE}
       />
     </div>
   )

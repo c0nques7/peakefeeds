@@ -9,9 +9,12 @@
 
 import { prisma } from "@/lib/db";
 import { requireStaff, requireRole } from "@/lib/rbac";
-import { UserRole, PenaltyType } from "@prisma/client";
+import { UserRole, PenaltyType, AdminLogType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
+import { createAdminLog } from "@/lib/admin-logger";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth.config";
 
 // 🟢 NEW: Email Infrastructure
 import { Resend } from 'resend';
@@ -63,6 +66,13 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
     data: { role: newRole }
   });
 
+  await createAdminLog({
+    adminId: (await getServerSession(authOptions))?.user?.id || '', // Need better way to get ID here or pass it
+    eventType: AdminLogType.USER_UPDATE,
+    targetResource: `User:${userId}`,
+    details: { action: "ROLE_CHANGE", newRole }
+  });
+
   revalidatePath(`/admin/users/${userId}`);
   return { success: true };
 }
@@ -93,6 +103,13 @@ export async function toggleBan(userId: string, shouldBan: boolean, reason?: str
         }
       });
     }
+  });
+
+  await createAdminLog({
+    adminId: session.user.id,
+    eventType: AdminLogType.USER_UPDATE,
+    targetResource: `User:${userId}`,
+    details: { action: shouldBan ? "BAN" : "UNBAN", reason }
   });
 
   revalidatePath(`/admin/users/${userId}`);

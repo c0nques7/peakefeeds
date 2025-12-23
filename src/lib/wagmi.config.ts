@@ -32,12 +32,12 @@ export const appKit = createAppKit({
   metadata: {
     name: 'Peake Feeds',
     description: 'The Truth Layer',
-    url: 'https://peakefeeds.com', 
-    icons: ['https://peakefeeds.com/logo.png']
+    url: typeof window !== 'undefined' ? window.location.origin : 'https://peakefeeds.com', 
+    icons: [typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : 'https://peakefeeds.com/logo.png']
   },
   themeMode: 'dark',
   features: {
-    analytics: true, 
+    analytics: false, 
     email: false, // Disable email login (Web3 only)
     socials: []   // Disable social login
   }

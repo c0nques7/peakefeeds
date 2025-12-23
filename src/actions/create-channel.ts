@@ -2,11 +2,12 @@
 
 import { z } from 'zod';
 import { getServerSession } from "next-auth"; 
-import { authOptions } from "@/lib/auth.config"; // Point to your v4 config
-import { prisma } from '@/lib/db'; // Point to your DB instance
+import { authOptions } from "@/lib/auth.config"; 
+import { prisma } from '@/lib/db'; 
 import { revalidatePath } from 'next/cache';
 import slugify from 'slugify';
 import { redirect } from 'next/navigation';
+import { ChannelRole } from '@prisma/client';
 
 // ---------------------------------------------------------
 // 1. Zod Validation Schema
@@ -104,10 +105,11 @@ export async function createChannel(
         description: description || '',
         tags: tagsArray,
         creatorId: session.user.id,
-        // Auto-subscribe the creator
+        // Auto-subscribe the creator as OWNER
         subscribers: {
             create: {
-                userId: session.user.id
+                userId: session.user.id,
+                role: ChannelRole.OWNER
             }
         }
       },

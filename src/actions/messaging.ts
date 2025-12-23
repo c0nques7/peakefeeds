@@ -23,10 +23,29 @@ export async function getConversations() {
   if (!session?.user?.id) return { error: "Unauthorized" }
 
   try {
+    // 0. Get blocked users
+    const blocks = await prisma.block.findMany({
+      where: {
+        OR: [
+          { blockerId: session.user.id },
+          { blockedId: session.user.id }
+        ]
+      },
+      select: { blockerId: true, blockedId: true }
+    })
+
+    const blockedUserIds = new Set(
+      blocks.flatMap(b => [b.blockerId, b.blockedId])
+    )
+    blockedUserIds.delete(session.user.id)
+
     // A. Fetch DMs
     const dms = await prisma.conversation.findMany({
       where: {
-        participants: { some: { id: session.user.id } }
+        participants: { 
+          some: { id: session.user.id },
+          none: { id: { in: Array.from(blockedUserIds) } }
+        }
       },
       include: {
         participants: { select: { id: true, username: true, image: true } },
@@ -138,6 +157,21 @@ export async function getMessages(conversationId: string) {
     })
 
     if (conversation && conversation.participants.some(p => p.id === session.user.id)) {
+       const otherParticipant = conversation.participants.find(p => p.id !== session.user.id)
+       
+       if (otherParticipant) {
+          const block = await prisma.block.findFirst({
+            where: {
+              OR: [
+                { blockerId: session.user.id, blockedId: otherParticipant.id },
+                { blockerId: otherParticipant.id, blockedId: session.user.id }
+              ]
+            }
+          })
+          
+          if (block) return { error: "You cannot view this conversation." }
+       }
+
        const messages = await prisma.directMessage.findMany({
          where: { conversationId },
          orderBy: { createdAt: 'asc' },
@@ -175,6 +209,32 @@ export async function sendMessage(id: string, content: string) {
     }
 
     // B. Send DM (Standard)
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: { participants: true }
+    })
+
+    if (!conversation) {
+      return { error: "Conversation not found" }
+    }
+
+    const recipient = conversation.participants.find(p => p.id !== session.user.id)
+    if (recipient) {
+      // Check for blocks (either way)
+      const block = await prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: session.user.id, blockedId: recipient.id },
+            { blockerId: recipient.id, blockedId: session.user.id }
+          ]
+        }
+      })
+
+      if (block) {
+        return { error: "You cannot message this user." }
+      }
+    }
+
     const message = await prisma.directMessage.create({
       data: {
         content,
@@ -190,20 +250,12 @@ export async function sendMessage(id: string, content: string) {
     })
 
     // Notify Recipient
-    const conversation = await prisma.conversation.findUnique({
-      where: { id },
-      include: { participants: true }
-    })
-
-    if (conversation) {
-      const recipient = conversation.participants.find(p => p.id !== session.user.id)
-      if (recipient) {
-        await createNotification({
-          type: 'MESSAGE',
-          actorId: session.user.id,
-          recipientId: recipient.id,
-        })
-      }
+    if (recipient) {
+      await createNotification({
+        type: 'MESSAGE',
+        actorId: session.user.id,
+        recipientId: recipient.id,
+      })
     }
 
     revalidatePath(`/messages/${id}`)
@@ -218,6 +270,20 @@ export async function sendMessage(id: string, content: string) {
 export async function startConversation(recipientId: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { error: "Unauthorized" }
+
+  // Check for blocks (either way)
+  const block = await prisma.block.findFirst({
+    where: {
+      OR: [
+        { blockerId: session.user.id, blockedId: recipientId },
+        { blockerId: recipientId, blockedId: session.user.id }
+      ]
+    }
+  })
+
+  if (block) {
+    return { error: "You cannot message this user." }
+  }
 
   const existing = await prisma.conversation.findFirst({
     where: {

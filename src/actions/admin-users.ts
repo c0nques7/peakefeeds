@@ -2,10 +2,11 @@
 
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/rbac";
-import { UserRole, Prisma } from "@prisma/client";
+import { UserRole, Prisma, AdminLogType } from "@prisma/client";
 import { hash } from "argon2";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
+import { createAdminLog } from "@/lib/admin-logger";
 
 // Email Infrastructure
 import { Resend } from 'resend';
@@ -180,6 +181,14 @@ export async function createUser(formData: FormData) {
     }
 
     revalidatePath("/admin/users");
+
+    await createAdminLog({
+      adminId: (await requireStaff()).user.id,
+      eventType: AdminLogType.USER_UPDATE, // Or create new USER_CREATE type
+      targetResource: `User:${username}`,
+      details: { email, role, generatedInvites: shouldGenerateInvites }
+    });
+
     return { success: true };
 
   } catch (err) {
