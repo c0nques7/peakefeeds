@@ -5,26 +5,19 @@ import { authOptions } from "@/lib/auth.config"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { Ticket } from "@/context/SupportContext"
+// Fixed imports: Always import enums directly from @prisma/client for Type safety
 import { SupportStatus, SupportPriority, NotificationType, UserRole } from "@prisma/client"
-
 
 // --- 1. FETCHING ACTIONS ---
 
-// ADMIN ONLY: Fetch ALL tickets for the dashboard
 export async function getAllTicketsAction() {
   const session = await getServerSession(authOptions);
-  console.log("getAllTicketsAction: Session check:", { 
-    id: session?.user?.id, 
-    role: session?.user?.role 
-  });
-
+  
   if (!session?.user?.id || (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.MODERATOR)) {
-    console.error("getAllTicketsAction: Unauthorized access attempt");
     return { success: false, error: "Unauthorized" };
   }
 
   try {
-    console.log("getAllTicketsAction: Querying database...");
     const [tickets, staff] = await Promise.all([
       prisma.supportTicket.findMany({
         orderBy: { updatedAt: 'desc' },
@@ -66,7 +59,7 @@ export async function getAllTicketsAction() {
       }));
 
       const directMsgs = t.directMessages.map(m => ({
-        sender: 'admin' as const, // Admin sent DMs from Support Queue
+        sender: 'admin' as const,
         text: m.content,
         timestamp: m.createdAt.getTime(),
         isDM: true,
@@ -81,8 +74,8 @@ export async function getAllTicketsAction() {
 
       return {
         id: t.id,
-        status: t.status as SupportStatus,
-        priority: t.priority as SupportPriority,
+        status: t.status,
+        priority: t.priority,
         severity: t.severity,
         unreadAdminCount: 0, 
         userId: t.userId,
@@ -94,15 +87,12 @@ export async function getAllTicketsAction() {
       };
     });
 
-    console.log(`Successfully fetched ${mappedTickets.length} tickets`);
     return { success: true, data: mappedTickets };
   } catch (error: any) {
-    console.error("getAllTicketsAction: FATAL_ERROR:", error);
     return { success: false, error: error.message || "Failed to load tickets" }
   }
 }
 
-// USER ONLY: Fetch a SINGLE ticket (For HelpBot polling)
 export async function getTicketAction(ticketId: string) {
   try {
     const ticket = await prisma.supportTicket.findUnique({
@@ -113,7 +103,7 @@ export async function getTicketAction(ticketId: string) {
         }
       }
     })
-    
+
     if (!ticket) return { success: false, error: "Ticket not found" }
 
     let assignee = null;
@@ -123,7 +113,7 @@ export async function getTicketAction(ticketId: string) {
         select: { id: true, username: true, name: true }
       });
     }
-    
+
     const mappedTicket: Ticket = {
       id: ticket.id,
       status: ticket.status,
@@ -142,13 +132,12 @@ export async function getTicketAction(ticketId: string) {
         isInternal: m.isInternal
       }))
     }
-    
+
     return { success: true, data: mappedTicket }
   } catch (error) {
     return { success: false, error: "Failed to load ticket" }
   }
 }
-
 
 // --- 2. MUTATION ACTIONS ---
 
@@ -157,7 +146,6 @@ export async function createTicketAction(initialMsg: string) {
   const userId = session?.user?.id || null 
 
   try {
-    console.log("Creating ticket for user:", userId);
     const ticket = await prisma.supportTicket.create({
       data: {
         status: SupportStatus.OPEN,
@@ -173,16 +161,12 @@ export async function createTicketAction(initialMsg: string) {
         }
       }
     })
-    console.log("Ticket created successfully:", ticket.id);
 
-    if (userId) {
-        revalidatePath('/messages')
-    }
+    if (userId) { revalidatePath('/messages') }
     revalidatePath('/admin/support')
 
     return { success: true, ticketId: ticket.id }
   } catch (error: any) {
-    console.error("CREATE_TICKET_ERROR:", error);
     return { success: false, error: error.message || "Failed to create ticket" }
   }
 }
@@ -197,14 +181,13 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
         isInternal
       }
     })
-    
+
     const ticket = await prisma.supportTicket.update({
       where: { id: ticketId },
       data: { updatedAt: new Date() },
       include: { user: true }
     })
 
-    // Notify user if admin/bot replied in log AND it is NOT internal
     if (ticket.userId && !isInternal && (sender === 'admin' || sender === 'bot')) {
       await prisma.notification.create({
         data: {
@@ -214,7 +197,7 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
         }
       })
     }
-    
+
     revalidatePath(`/messages/${ticketId}`)
     revalidatePath('/messages')
     revalidatePath('/admin/support')
@@ -245,7 +228,7 @@ export async function resolveTicketAction(ticketId: string) {
       data: { status: SupportStatus.RESOLVED },
       include: { user: true }
     })
-    
+
     if (ticket.userId) {
       await prisma.notification.create({
         data: {
@@ -258,7 +241,7 @@ export async function resolveTicketAction(ticketId: string) {
 
     revalidatePath('/messages')
     revalidatePath('/admin/support')
-    
+
     return { success: true }
   } catch (error) {
     return { success: false, error }
@@ -336,13 +319,12 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
   try {
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
-      select: { userId: true, assigneeId: true }
+      // FIX: Added 'id: true' to the select block
+      select: { id: true, userId: true, assigneeId: true }
     })
 
     if (!ticket || !ticket.userId) return { success: false, error: "User not found for this ticket" }
-    
-    // Strict assignment check
-    if (!ticket.assigneeId) return { success: false, error: "Ticket must be assigned to an admin before messaging" }
+    if (!ticket.assigneeId) return { success: false, error: "Ticket must be assigned before messaging" }
 
     let conversation = await prisma.conversation.findFirst({
       where: {
@@ -386,7 +368,6 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    console.error("FAILED_TO_SEND_MESSAGE:", error)
     return { success: false, error }
   }
 }
