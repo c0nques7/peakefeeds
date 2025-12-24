@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { headers } from 'next/headers' 
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Web3Provider } from "@/components/providers/Web3Provider"; 
@@ -47,6 +48,7 @@ export default async function RootLayout({
             </Providers>
           </Web3Provider>
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   )
