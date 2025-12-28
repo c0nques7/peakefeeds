@@ -43,6 +43,14 @@ export type Ticket = {
     username: string | null;
     name: string | null;
   } | null;
+  user?: {
+    id: string;
+    username: string | null;
+    name: string | null;
+    email: string | null;
+    walletAddress: string | null;
+    createdAt: Date;
+  } | null;
   internalNotes?: string | null;
 }
 
