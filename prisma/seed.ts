@@ -1,4 +1,4 @@
-import { PrismaClient, PostType, ReactionType, UserRole, ReportReason, ReportTargetType, ReportStatus, PenaltyType, WaitlistStatus } from '@prisma/client';
+import { PrismaClient, PostType, ReactionType, UserRole, ReportReason, ReportTargetType, ReportStatus, PenaltyType, WaitlistStatus, SupportStatus } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
@@ -238,7 +238,7 @@ async function main() {
       const ticket = await prisma.supportTicket.create({
           data: {
               userId: user.id,
-              status: status,
+              status: status as SupportStatus,
               severity: severity,
               createdAt: faker.date.recent({ days: 10 }),
           }

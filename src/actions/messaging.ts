@@ -8,7 +8,6 @@ import { addMessageAction } from "@/actions/support" // Reuse existing support l
 import { revalidatePath } from "next/cache"
 import { SupportStatus } from "@prisma/client"
 
-
 // --- TYPES ---
 // A unified type so the UI doesn't know the difference
 type UnifiedConversation = {
