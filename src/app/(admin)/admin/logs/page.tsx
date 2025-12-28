@@ -3,17 +3,19 @@ import { AdminLogType } from "@prisma/client";
 import { formatDistanceToNow } from "date-fns";
 import { ShieldCheck, User, Info, Calendar, Terminal } from "lucide-react";
 import styles from "@/app/(admin)/admin/admin.module.css";
+import LogFilters from "./_components/LogFilters";
 
 interface LogsPageProps {
   searchParams: Promise<{
     page?: string;
     type?: string;
     adminId?: string;
+    search?: string;
   }>;
 }
 
 export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
-  const { page, type, adminId } = await searchParams;
+  const { page, type, adminId, search } = await searchParams;
   const currentPage = parseInt(page || "1");
   const eventType = type as AdminLogType | undefined;
 
@@ -21,6 +23,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
     page: currentPage,
     eventType,
     adminId,
+    search,
   });
 
   return (
@@ -37,6 +40,8 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
           {totalCount} Total Events
         </div>
       </div>
+
+      <LogFilters />
 
       {/* Logs Table */}
       <div className={`${styles.glassPanel} overflow-hidden`}>
@@ -106,7 +111,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
           {Array.from({ length: totalPages }).map((_, i) => (
             <a
               key={i}
-              href={`?page=${i + 1}${type ? `&type=${type}` : ''}${adminId ? `&adminId=${adminId}` : ''}`}
+              href={`?page=${i + 1}${type ? `&type=${type}` : ''}${adminId ? `&adminId=${adminId}` : ''}${search ? `&search=${search}` : ''}`}
               className={`px-4 py-2 rounded-lg border transition-all text-xs font-bold ${
                 currentPage === i + 1
                   ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
@@ -132,6 +137,7 @@ function getLogTypeStyles(type: AdminLogType) {
     case 'CONTENT_UNLOCK': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
     case 'REPORT_RESOLVE': return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
     case 'CONFIG_CHANGE': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    case 'SUPPORT_TICKET': return 'text-pink-400 bg-pink-500/10 border-pink-500/20';
     default: return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
   }
 }

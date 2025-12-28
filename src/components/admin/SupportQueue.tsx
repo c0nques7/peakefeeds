@@ -22,13 +22,13 @@ import {
   AlertCircle,
   Eye
 } from 'lucide-react'
-import { $Enums } from '@prisma/client'
+import { SupportStatus, SupportPriority } from '@prisma/client'
 import styles from '@/app/(admin)/admin/admin.module.css'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 
-const { SupportStatus, SupportPriority } = $Enums;
+
 
 // Support Queue Management Interface
 export default function SupportQueue() {
@@ -48,8 +48,6 @@ export default function SupportQueue() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<SupportStatus | 'ALL'>('ALL')
   const [assigneeFilter, setAssigneeFilter] = useState<string | 'ALL'>('ALL')
-  const [localNotes, setLocalNotes] = useState('')
-  const [isSavingNotes, setIsSavingNotes] = useState(false)
 
   const { data: tickets = [], mutate: mutateTickets } = useSWR(
     'admin-support-tickets', 
@@ -104,12 +102,6 @@ export default function SupportQueue() {
         setIsInternalNote(true);
     }
   }, [isAssigned, isDM]);
-
-  useEffect(() => {
-    if (currentTicket) {
-      setLocalNotes(currentTicket.internalNotes || '')
-    }
-  }, [selectedTicketId, currentTicket?.internalNotes])
 
   // Split messages for display
   const messagingFeed = useMemo(() => {
@@ -173,19 +165,6 @@ export default function SupportQueue() {
     const idToPass = staffId === "" ? null : staffId
     await updateTicketAssignee(currentTicket.id, idToPass)
     mutateTickets()
-  }
-
-  const handleSaveNotes = async () => {
-    if (!currentTicket) return
-    setIsSavingNotes(true)
-    await updateInternalNotes(currentTicket.id, localNotes)
-    await mutateTickets()
-    setIsSavingNotes(false)
-    toast.success("Summary updated")
-  }
-
-  const handleNotesChange = (notes: string) => {
-    setLocalNotes(notes)
   }
 
   const getPriorityColor = (p: SupportPriority) => {
@@ -493,52 +472,65 @@ export default function SupportQueue() {
                       <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/40 mb-3">
                         <UserPlus size={12} /> User Profile
                       </label>
-                      <div className="p-3 bg-white/5 rounded-lg border border-white/5">
-                        <p className="text-xs font-bold text-white mb-1">@{currentTicket.userId ? 'Found' : 'Guest'}</p>
-                        <p className="text-[10px] text-white/40 font-mono break-all">{currentTicket.userId || 'No associated account'}</p>
+                      <div className="p-3 bg-white/5 rounded-lg border border-white/5 space-y-3">
+                        {currentTicket.user ? (
+                          <>
+                            <div>
+                              <p className="text-xs font-bold text-white">{currentTicket.user.name || 'Unnamed User'}</p>
+                              <p className="text-[10px] text-white/40">@{currentTicket.user.username}</p>
+                            </div>
+                            
+                            {currentTicket.user.email && (
+                              <div>
+                                <p className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Email</p>
+                                <p className="text-[10px] text-white/70 font-mono break-all">{currentTicket.user.email}</p>
+                              </div>
+                            )}
+
+                            {currentTicket.user.walletAddress && (
+                              <div>
+                                <p className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Wallet</p>
+                                <p className="text-[10px] text-emerald-400/80 font-mono break-all">{currentTicket.user.walletAddress}</p>
+                              </div>
+                            )}
+
+                            <div>
+                               <p className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Joined</p>
+                               <p className="text-[10px] text-white/50">
+                                 {new Date(currentTicket.user.createdAt).toLocaleDateString()} 
+                                 <span className="opacity-50 ml-1">({formatDistanceToNow(new Date(currentTicket.user.createdAt), { addSuffix: true })})</span>
+                               </p>
+                            </div>
+                          </>
+                        ) : (
+                          <div>
+                            <p className="text-xs font-bold text-white mb-1">Guest User</p>
+                            <p className="text-[10px] text-white/40">No registered account associated with this ticket.</p>
+                          </div>
+                        )}
                       </div>
                    </div>
 
-                   {/* 2. INTERNAL NOTES FEED */}
-                   <div>
-                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-yellow-500/60 mb-3">
-                        <StickyNote size={12} /> Internal Admin Notes
+                   {/* 2. STAFF DISCUSSION LOG */}
+                   <div className="pt-4 border-t border-white/5">
+                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/40 mb-3">
+                        <MoreVertical size={12} /> Staff Discussion Log
                       </label>
-                      <div className="space-y-3">
+                      <div className="space-y-3 mt-3">
                          {internalNoteFeed.length === 0 ? (
-                            <p className="text-[10px] text-[var(--text-muted)] italic">No internal notes yet.</p>
+                            <p className="text-[10px] text-[var(--text-muted)] italic">No staff notes yet.</p>
                          ) : (
                             internalNoteFeed.map((note, idx) => (
-                               <div key={idx} className="p-3 bg-yellow-500/5 border border-yellow-500/10 rounded-lg text-xs">
-                                  <p className="text-yellow-100/90 leading-relaxed">{note.text}</p>
-                                  <div className="mt-2 flex justify-between items-center text-[9px] text-yellow-500/40 font-mono">
-                                     <span>Staff Note</span>
+                               <div key={idx} className="p-3 bg-white/5 border border-white/5 rounded-lg text-xs">
+                                  <p className="text-gray-300 leading-relaxed">{note.text}</p>
+                                  <div className="mt-2 flex justify-between items-center text-[9px] text-white/20 font-mono">
+                                     <span>{note.senderInfo?.username ? `@${note.senderInfo.username}` : 'Staff Note'}</span>
                                      <span>{formatDistanceToNow(note.timestamp, { addSuffix: true })}</span>
                                   </div>
                                </div>
                             ))
                          )}
                       </div>
-                   </div>
-
-                   {/* 3. CASE SUMMARY NOTES (TEXTAREA) */}
-                   <div className="pt-4 border-t border-white/5">
-                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/40 mb-3">
-                        <MoreVertical size={12} /> Case Summary
-                      </label>
-                      <textarea 
-                        className="w-full h-32 bg-black/30 border border-white/5 rounded-lg p-3 text-xs text-gray-300 focus:outline-none focus:border-white/20 transition-colors resize-none"
-                        placeholder="Case summary or private sticky notes..."
-                        value={localNotes}
-                        onChange={(e) => handleNotesChange(e.target.value)}
-                      />
-                      <button 
-                        onClick={handleSaveNotes}
-                        disabled={isSavingNotes || localNotes === (currentTicket.internalNotes || '')}
-                        className="w-full mt-2 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[10px] font-bold uppercase tracking-widest rounded transition-colors"
-                      >
-                        {isSavingNotes ? 'Saving...' : 'Save Summary'}
-                      </button>
                    </div>
                 </div>
               </div>

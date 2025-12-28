@@ -5,9 +5,8 @@ import { authOptions } from "@/lib/auth.config"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { Ticket } from "@/context/SupportContext"
-import { $Enums, NotificationType, UserRole } from "@prisma/client"
-
-const { SupportStatus, SupportPriority } = $Enums;
+import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType } from "@prisma/client"
+import { createAdminLog } from "@/lib/admin-logger"
 
 // --- 1. FETCHING ACTIONS ---
 
@@ -31,7 +30,12 @@ export async function getAllTicketsAction() {
         orderBy: { updatedAt: 'desc' },
         include: { 
           messages: { 
-            orderBy: { createdAt: 'asc' } 
+            orderBy: { createdAt: 'asc' },
+            include: {
+              admin: {
+                select: { id: true, username: true }
+              }
+            }
           },
           directMessages: {
             orderBy: { createdAt: 'asc' },
@@ -45,7 +49,14 @@ export async function getAllTicketsAction() {
             }
           },
           user: {
-            select: { id: true, username: true, name: true }
+            select: { 
+              id: true, 
+              username: true, 
+              name: true,
+              email: true,
+              walletAddress: true,
+              createdAt: true
+            }
           }
         }
       }),
@@ -63,7 +74,11 @@ export async function getAllTicketsAction() {
         text: m.text,
         timestamp: m.createdAt.getTime(),
         isDM: false,
-        isInternal: m.isInternal
+        isInternal: m.isInternal,
+        senderInfo: m.admin ? {
+          username: m.admin.username,
+          id: m.admin.id
+        } : undefined
       }));
 
       const directMsgs = t.directMessages.map(m => ({
@@ -87,6 +102,7 @@ export async function getAllTicketsAction() {
         severity: t.severity,
         unreadAdminCount: 0, 
         userId: t.userId,
+        user: t.user,
         assigneeId: t.assigneeId,
         assignee: t.assigneeId ? staffMap.get(t.assigneeId) : null,
         internalNotes: t.internalNotes,
@@ -110,7 +126,12 @@ export async function getTicketAction(ticketId: string) {
       where: { id: ticketId },
       include: { 
         messages: { 
-          orderBy: { createdAt: 'asc' } 
+          orderBy: { createdAt: 'asc' },
+          include: {
+            admin: {
+              select: { id: true, username: true }
+            }
+          }
         }
       }
     })
@@ -140,7 +161,11 @@ export async function getTicketAction(ticketId: string) {
         sender: m.sender as 'user' | 'admin' | 'bot',
         text: m.text,
         timestamp: m.createdAt.getTime(),
-        isInternal: m.isInternal
+        isInternal: m.isInternal,
+        senderInfo: m.admin ? {
+          username: m.admin.username,
+          id: m.admin.id
+        } : undefined
       }))
     }
     
@@ -189,13 +214,17 @@ export async function createTicketAction(initialMsg: string) {
 }
 
 export async function addMessageAction(ticketId: string, text: string, sender: 'user' | 'admin' | 'bot', isInternal: boolean = false) {
+  const session = await getServerSession(authOptions);
+  const adminId = (sender === 'admin' || sender === 'bot') ? session?.user?.id : null;
+
   try {
     await prisma.ticketMessage.create({
       data: {
         ticketId,
         text,
         sender,
-        isInternal
+        isInternal,
+        adminId
       }
     })
     
@@ -216,6 +245,20 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
       })
     }
     
+    // Log Admin Action
+    if (adminId) {
+      await createAdminLog({
+        adminId,
+        eventType: AdminLogType.SUPPORT_TICKET,
+        targetResource: `Ticket ${ticketId}`,
+        details: { 
+          action: isInternal ? 'INTERNAL_NOTE' : 'REPLY', 
+          ticketId, 
+          textSnippet: text.substring(0, 50) 
+        }
+      })
+    }
+
     revalidatePath(`/messages/${ticketId}`)
     revalidatePath('/messages')
     revalidatePath('/admin/support')
@@ -240,6 +283,7 @@ export async function updateSeverityAction(ticketId: string, severity: number) {
 }
 
 export async function resolveTicketAction(ticketId: string) {
+  const session = await getServerSession(authOptions)
   try {
     const ticket = await prisma.supportTicket.update({
       where: { id: ticketId },
@@ -257,6 +301,15 @@ export async function resolveTicketAction(ticketId: string) {
       })
     }
 
+    if (session?.user?.id) {
+      await createAdminLog({
+        adminId: session.user.id,
+        eventType: AdminLogType.SUPPORT_TICKET,
+        targetResource: `Ticket ${ticketId}`,
+        details: { action: 'RESOLVE', ticketId }
+      })
+    }
+
     revalidatePath('/messages')
     revalidatePath('/admin/support')
     
@@ -267,6 +320,7 @@ export async function resolveTicketAction(ticketId: string) {
 }
 
 export async function updateTicketStatusAction(ticketId: string, status: SupportStatus) {
+  const session = await getServerSession(authOptions)
   try {
     const ticket = await prisma.supportTicket.update({
       where: { id: ticketId },
@@ -284,6 +338,15 @@ export async function updateTicketStatusAction(ticketId: string, status: Support
       })
     }
 
+    if (session?.user?.id) {
+      await createAdminLog({
+        adminId: session.user.id,
+        eventType: AdminLogType.SUPPORT_TICKET,
+        targetResource: `Ticket ${ticketId}`,
+        details: { action: 'UPDATE_STATUS', status, ticketId }
+      })
+    }
+
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
@@ -292,11 +355,22 @@ export async function updateTicketStatusAction(ticketId: string, status: Support
 }
 
 export async function updateTicketPriorityAction(ticketId: string, priority: SupportPriority) {
+  const session = await getServerSession(authOptions)
   try {
     await prisma.supportTicket.update({
       where: { id: ticketId },
       data: { priority }
     })
+
+    if (session?.user?.id) {
+      await createAdminLog({
+        adminId: session.user.id,
+        eventType: AdminLogType.SUPPORT_TICKET,
+        targetResource: `Ticket ${ticketId}`,
+        details: { action: 'UPDATE_PRIORITY', priority, ticketId }
+      })
+    }
+
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
@@ -305,11 +379,22 @@ export async function updateTicketPriorityAction(ticketId: string, priority: Sup
 }
 
 export async function updateTicketAssigneeAction(ticketId: string, assigneeId: string | null) {
+  const session = await getServerSession(authOptions)
   try {
     await prisma.supportTicket.update({
       where: { id: ticketId },
       data: { assigneeId }
     })
+
+    if (session?.user?.id) {
+      await createAdminLog({
+        adminId: session.user.id,
+        eventType: AdminLogType.SUPPORT_TICKET,
+        targetResource: `Ticket ${ticketId}`,
+        details: { action: 'UPDATE_ASSIGNEE', assigneeId, ticketId }
+      })
+    }
+
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
@@ -318,11 +403,22 @@ export async function updateTicketAssigneeAction(ticketId: string, assigneeId: s
 }
 
 export async function updateInternalNotesAction(ticketId: string, internalNotes: string) {
+  const session = await getServerSession(authOptions)
   try {
     await prisma.supportTicket.update({
       where: { id: ticketId },
       data: { internalNotes }
     })
+
+    if (session?.user?.id) {
+      await createAdminLog({
+        adminId: session.user.id,
+        eventType: AdminLogType.SUPPORT_TICKET,
+        targetResource: `Ticket ${ticketId}`,
+        details: { action: 'UPDATE_INTERNAL_NOTES', ticketId }
+      })
+    }
+
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
@@ -337,7 +433,7 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
   try {
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
-      select: { userId: true, assigneeId: true }
+      select: { id: true, userId: true, assigneeId: true }
     })
 
     if (!ticket || !ticket.userId) return { success: false, error: "User not found for this ticket" }
@@ -382,6 +478,15 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
         ticketId: ticket.id
       }
     })
+
+    if (session?.user?.id) {
+      await createAdminLog({
+        adminId: session.user.id,
+        eventType: AdminLogType.SUPPORT_TICKET,
+        targetResource: `Ticket ${ticketId}`,
+        details: { action: 'SEND_DM', ticketId, textSnippet: text.substring(0, 50) }
+      })
+    }
 
     revalidatePath('/messages')
     revalidatePath('/admin/support')

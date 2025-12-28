@@ -159,6 +159,7 @@ model User {
   blocksInitiated Block[] @relation("BlocksInitiated")
   blocksReceived  Block[] @relation("BlocksReceived")
   adminLogs       AdminLog[] @relation("AdminActions")
+  ticketMessages  TicketMessage[] @relation("AdminMessages")
 }
 
 model Channel {
@@ -414,9 +415,11 @@ model TicketMessage {
   ticketId        String
   ticket          SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   adminId         String?
+  admin           User?         @relation("AdminMessages", fields: [adminId], references: [id])
   isInternal      Boolean       @default(false)
 
   @@index([ticketId])
+  @@index([adminId])
 }
 
 model Notification {
@@ -491,6 +494,7 @@ enum AdminLogType {
   REPORT_RESOLVE
   CONFIG_CHANGE
   ADMIN_ACTION
+  SUPPORT_TICKET
 }
 
 model AdminLog {
