@@ -81,7 +81,7 @@ export default async function AdminUsersPage({
                 {/* Identity */}
                 <td className="p-4">
                   <div className="flex flex-col">
-                    <span className="font-medium text-slate-900 dark:text-white">@{user.username || "Anon"}</span>
+                    <span className="font-medium text-[var(--text-primary)]">@{user.username || "Anon"}</span>
                     <span className="text-xs text-[var(--text-muted)] font-mono">{user.email}</span>
                   </div>
                 </td>
@@ -130,7 +130,7 @@ export default async function AdminUsersPage({
                 <td className="p-4 text-right">
                   <Link 
                     href={`/admin/users/${user.id}`}
-                    className="text-sm font-medium text-[var(--accent-primary)] hover:text-slate-900 dark:hover:text-white transition-colors"
+                    className="text-sm font-medium text-[var(--accent-primary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     Manage
                   </Link>

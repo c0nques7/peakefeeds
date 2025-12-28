@@ -47,3 +47,40 @@ export async function searchChannels(query: string): Promise<SearchResult[]> {
 
     return results;
 }
+
+export async function searchUsers(query: string) {
+    if (!query || query.length < 2) {
+        return [];
+    }
+
+    const results = await prisma.user.findMany({
+        where: {
+            OR: [
+                {
+                    username: {
+                        contains: query,
+                        mode: 'insensitive',
+                    },
+                },
+                {
+                    name: {
+                        contains: query,
+                        mode: 'insensitive',
+                    },
+                },
+            ],
+        },
+        select: {
+            id: true,
+            username: true,
+            name: true,
+            image: true,
+        },
+        take: 5,
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+
+    return results;
+}

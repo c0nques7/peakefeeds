@@ -68,7 +68,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
                   <tr key={log.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col text-xs">
-                        <span className="text-slate-900 dark:text-white font-medium">{new Date(log.createdAt).toLocaleString()}</span>
+                        <span className="text-[var(--text-primary)] font-medium">{new Date(log.createdAt).toLocaleString()}</span>
                         <span className="text-[var(--text-muted)]">{formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}</span>
                       </div>
                     </td>
@@ -77,7 +77,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
                         <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                           <User size={12} />
                         </div>
-                        <span className="text-sm text-slate-900 dark:text-white">@{log.admin.username}</span>
+                        <span className="text-sm text-[var(--text-primary)]">@{log.admin.username}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -115,7 +115,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
               className={`px-4 py-2 rounded-lg border transition-all text-xs font-bold ${
                 currentPage === i + 1
                   ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
-                  : "bg-[var(--glass-panel)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-slate-900 dark:hover:text-white"
+                  : "bg-[var(--glass-panel)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-[var(--text-primary)]"
               }`}
             >
               {i + 1}

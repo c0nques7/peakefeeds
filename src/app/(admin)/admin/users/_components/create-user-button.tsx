@@ -27,7 +27,7 @@ export function CreateUserButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-violet-600 text-white rounded-lg font-bold text-sm transition-colors shadow-lg shadow-violet-500/20"
+        className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-violet-600 text-[var(--text-primary)] rounded-lg font-bold text-sm transition-colors shadow-lg shadow-violet-500/20"
       >
         <Plus size={18} />
         Create User
@@ -38,11 +38,11 @@ export function CreateUserButton() {
           <div className={`${styles.glassPanel} w-full max-w-md relative animate-in zoom-in-95 duration-200`}>
             
             <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <UserPlus className="text-[var(--accent-primary)]" />
                 New User
               </h3>
-              <button onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <button onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -56,22 +56,22 @@ export function CreateUserButton() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Email</label>
-                <input name="email" type="email" required className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-white focus:border-[var(--accent-primary)] outline-none" placeholder="user@example.com" />
+                <input name="email" type="email" required className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none" placeholder="user@example.com" />
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Username</label>
-                <input name="username" type="text" required className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-white focus:border-[var(--accent-primary)] outline-none" placeholder="username" />
+                <input name="username" type="text" required className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none" placeholder="username" />
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Temporary Password</label>
-                <input name="password" type="password" required className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-white focus:border-[var(--accent-primary)] outline-none" placeholder="••••••••" />
+                <input name="password" type="password" required className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none" placeholder="••••••••" />
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Role</label>
-                <select name="role" className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-white focus:border-[var(--accent-primary)] outline-none cursor-pointer">
+                <select name="role" className="w-full px-4 py-2 rounded bg-[var(--bg-app)] border border-[var(--glass-border)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none cursor-pointer">
                   {Object.values(UserRole).map(role => (
                     <option key={role} value={role}>{role}</option>
                   ))}
@@ -88,10 +88,10 @@ export function CreateUserButton() {
                       defaultChecked 
                       className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-500 bg-slate-900 transition-all checked:border-[var(--accent-primary)] checked:bg-[var(--accent-primary)]"
                     />
-                    <Ticket size={12} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100" />
+                    <Ticket size={12} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--text-primary)] opacity-0 peer-checked:opacity-100" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-white">Generate Invite Codes</span>
+                    <span className="text-sm font-bold text-[var(--text-primary)]">Generate Invite Codes</span>
                     <span className="text-xs text-[var(--text-muted)]">User will receive 3 invites to share.</span>
                   </div>
                 </label>
@@ -101,14 +101,14 @@ export function CreateUserButton() {
                 <button 
                   type="button" 
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 py-2 rounded border border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)] hover:text-white transition-colors"
+                  className="flex-1 py-2 rounded border border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isPending}
-                  className="flex-1 py-2 rounded bg-[var(--accent-primary)] text-white font-bold hover:bg-violet-600 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2 rounded bg-[var(--accent-primary)] text-[var(--text-primary)] font-bold hover:bg-violet-600 transition-colors flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="animate-spin" size={16} />}
                   Create

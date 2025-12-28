@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import useSWR from 'swr'
-import { getConversations, getMessages, sendMessage } from '@/actions/messaging'
-import { Send, Search, ArrowLeft, Loader2, User as UserIcon, Flag, ShieldAlert } from 'lucide-react'
+import { getConversations, getMessages, sendMessage, deleteMessage } from '@/actions/messaging'
+import { Send, Search, ArrowLeft, Loader2, User as UserIcon, Flag, ShieldAlert, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import clsx from 'clsx'
 import { useSession } from 'next-auth/react'
 import ReportModal from '../moderation/ReportModal'
 import { ReportTargetType } from '@prisma/client'
+import { toast } from 'sonner'
 
 export default function MessagingUI() {
   const { data: session } = useSession()
@@ -63,6 +64,19 @@ export default function MessagingUI() {
     await sendMessage(selectedConvoId, tempText)
     mutateChat() // Refresh messages
     mutateInbox() // Refresh inbox (to move thread to top)
+  }
+
+  const handleDelete = async (msgId: string, type?: any) => {
+    if (!confirm("Are you sure you want to delete this message?")) return;
+    
+    const res = await deleteMessage(msgId, type || 'DIRECT_MESSAGE');
+    if (res.success) {
+      toast.success("Message deleted");
+      mutateChat();
+      mutateInbox();
+    } else {
+      toast.error(res.error || "Failed to delete message");
+    }
   }
 
   const handleSelectConversation = (id: string) => {
@@ -138,7 +152,7 @@ export default function MessagingUI() {
 
       {/* --- RIGHT PANE: CHAT WINDOW --- */}
       <div className={clsx(
-        "w-full md:w-2/3 flex flex-col bg-black/20",
+        "w-full md:w-2/3 flex flex-col bg-[var(--bg-app)]/30 dark:bg-black/20",
         mobileView === 'LIST' ? "hidden md:flex" : "flex"
       )}>
          {selectedConvoId ? (
@@ -206,6 +220,15 @@ export default function MessagingUI() {
                                             <Flag size={14} />
                                         </button>
                                     )}
+                                    {isMe && (
+                                        <button 
+                                            onClick={() => handleDelete(msg.id, msg.type)}
+                                            className="opacity-0 group-hover:opacity-100 p-2 text-[var(--text-muted)] hover:text-red-400 transition-all"
+                                            title="Delete Message"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
                                     <div className={clsx(
                                         "p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
                                         isMe 
@@ -213,7 +236,7 @@ export default function MessagingUI() {
                                           : isStaff
                                           ? "bg-gradient-to-br from-indigo-900/80 to-purple-900/80 border border-indigo-500/30 text-white rounded-tl-sm shadow-indigo-500/10"
                                           : isBot
-                                          ? "bg-zinc-800/80 border border-white/5 text-gray-300 italic rounded-tl-sm"
+                                          ? "bg-[var(--table-header-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] italic rounded-tl-sm"
                                           : "bg-[var(--glass-card)] border border-[var(--glass-border)] text-[var(--text-primary)] rounded-tl-sm"
                                     )}>
                                         {msg.content}

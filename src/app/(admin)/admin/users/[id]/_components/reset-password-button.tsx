@@ -19,7 +19,7 @@ export function ResetPasswordButton({ userId }: { userId: string }) {
   };
 
   return (
-    <button onClick={handleReset} disabled={isPending || sent} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all text-sm font-medium ${sent ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-[var(--glass-panel)] border-[var(--glass-border)] text-[var(--text-muted)] hover:text-white hover:bg-[var(--glass-card-hover)]"}`}>
+    <button onClick={handleReset} disabled={isPending || sent} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all text-sm font-medium ${sent ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-[var(--glass-panel)] border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)]"}`}>
       <div className="flex items-center gap-2">
         <KeyRound size={16} /> <span>{sent ? "Reset Link Generated" : "Send Password Reset"}</span>
       </div>

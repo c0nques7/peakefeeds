@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 // 🟢 Added FileText, ScrollText, Hash to imports
 import { 
@@ -12,8 +12,13 @@ import styles from "@/app/(admin)/admin/admin.module.css";
 
 export function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { setTheme, theme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close sidebar automatically when a link is clicked (Better UX)
   const handleLinkClick = () => setIsOpen(false);
@@ -72,13 +77,15 @@ export function AdminSidebar() {
         </nav>
 
         <div className="p-4 border-t border-[var(--glass-border)] space-y-2">
-          <button 
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium w-full text-left"
-          >
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-          </button>
+          {mounted && (
+            <button 
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium w-full text-left"
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+            </button>
+          )}
 
           <Link href="/home" className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium">
             <LogOut size={18} />

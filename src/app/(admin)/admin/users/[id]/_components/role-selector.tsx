@@ -36,10 +36,10 @@ export function UserRoleSelector({
         disabled={isPending}
         value={role}
         onChange={(e) => handleChange(e.target.value as UserRole)}
-        className="w-full px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white appearance-none cursor-pointer focus:outline-none focus:border-[var(--accent-primary)] hover:bg-[var(--glass-card-hover)] transition-all"
+        className="w-full px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] appearance-none cursor-pointer focus:outline-none focus:border-[var(--accent-primary)] hover:bg-[var(--glass-card-hover)] transition-all"
       >
         {Object.values(UserRole).map((r) => (
-          <option key={r} value={r} className="bg-slate-900 text-white">
+          <option key={r} value={r}>
             {r}
           </option>
         ))}

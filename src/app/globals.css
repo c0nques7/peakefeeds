@@ -26,6 +26,24 @@
   
   --sidebar-bg: rgba(255, 255, 255, 0.95);
   --table-header-bg: rgba(0, 0, 0, 0.05);
+
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-success-bg: rgba(16, 185, 129, 0.1);
+  --status-warning: #f59e0b;
+  --status-warning-bg: rgba(245, 158, 11, 0.1);
+  --status-error: #ef4444;
+  --status-error-bg: rgba(239, 68, 68, 0.1);
+
+  --status-info: #3b82f6;
+  --status-info-bg: rgba(59, 130, 246, 0.1);
+  --status-accent: #d946ef;
+  --status-accent-bg: rgba(217, 70, 239, 0.1);
+
+  /* Button Primaries */
+  --btn-primary: var(--accent-primary);
+  --btn-primary-hover: #6d28d9;
+  --btn-primary-text: #ffffff;
 }
 
 /* 🌙 DARK MODE */
@@ -51,6 +69,24 @@
   
   --sidebar-bg: rgba(10, 10, 15, 0.95);
   --table-header-bg: rgba(255, 255, 255, 0.03);
+
+  /* Status Colors (Dark) */
+  --status-success: #34d399;
+  --status-success-bg: rgba(16, 185, 129, 0.15);
+  --status-warning: #fbbf24;
+  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  --status-error: #f87171;
+  --status-error-bg: rgba(239, 68, 68, 0.15);
+
+  --status-info: #60a5fa;
+  --status-info-bg: rgba(59, 130, 246, 0.15);
+  --status-accent: #f5d0fe;
+  --status-accent-bg: rgba(217, 70, 239, 0.15);
+
+  /* Button Primaries (Dark) */
+  --btn-primary: var(--accent-primary);
+  --btn-primary-hover: #c084fc;
+  --btn-primary-text: #ffffff;
 }
 
 /* --- 🧱 GLOBAL LAYOUT --- */

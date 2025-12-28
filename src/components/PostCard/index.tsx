@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { 
   MessageCircle, Heart, HeartCrack, Share2, MoreHorizontal, 
@@ -74,11 +75,25 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostCardProps) {
+  const searchParams = useSearchParams()
+  const highlightId = searchParams.get('highlight')
+  const isHighlighted = highlightId === post.id
+
   const [reaction, setReactionState] = useState(initialReaction)
   const [likesCount, setLikesCount] = useState(post._count?.likes || post.likesCount || 0)
   const [dislikesCount, setDislikesCount] = useState(post._count?.dislikes || post.dislikesCount || 0)
   const [showMenu, setShowMenu] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+
+  // Scroll into view if highlighted
+  useEffect(() => {
+    if (isHighlighted) {
+      const element = document.getElementById(`post-${post.id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [isHighlighted, post.id]);
   
   // Comment State
   const [showComments, setShowComments] = useState(false) 
@@ -296,7 +311,9 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
         styles.cardContainer, 
         isDemo ? "w-full h-full" : "w-full max-w-[550px] mx-auto",
         isDeleting && "opacity-50 pointer-events-none",
-        "target:ring-2 target:ring-[var(--accent-primary)] target:ring-offset-4 target:ring-offset-[var(--bg-app)] scroll-mt-24 transition-all duration-500"
+        isHighlighted && styles.highlighted,
+        showComments && styles.expanded,
+        "scroll-mt-32 transition-all duration-500"
     )}>
       <div className={clsx(styles.cardInner, isFlipped && styles.flipped)}>
         

@@ -25,7 +25,7 @@ export function EmailTriggers({ userId }: { userId: string }) {
       <button
         onClick={() => handleSend("WELCOME", "Waitlist Welcome")}
         disabled={isPending}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-white transition-all border border-[var(--glass-border)]"
+        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all border border-[var(--glass-border)]"
       >
         <span className="flex items-center gap-2">
           <Mail size={16} className="text-blue-400" />
@@ -37,7 +37,7 @@ export function EmailTriggers({ userId }: { userId: string }) {
       <button
         onClick={() => handleSend("ACTIVATION", "Activation (Invite)")}
         disabled={isPending}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-white transition-all border border-[var(--glass-border)]"
+        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all border border-[var(--glass-border)]"
       >
         <span className="flex items-center gap-2">
           <Mail size={16} className="text-purple-400" />
@@ -49,7 +49,7 @@ export function EmailTriggers({ userId }: { userId: string }) {
       <button
         onClick={() => handleSend("ADMIN_WELCOME", "Admin Credentials")}
         disabled={isPending}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-white transition-all border border-[var(--glass-border)]"
+        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all border border-[var(--glass-border)]"
       >
         <span className="flex items-center gap-2">
           <Mail size={16} className="text-emerald-400" />
