@@ -50,7 +50,7 @@ export default function LogFilters() {
         <input
           type="text"
           placeholder="Search logs (Admin, Target, Details)..."
-          className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+          className="w-full bg-white dark:bg-black/20 border border-slate-300 dark:border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -61,7 +61,7 @@ export default function LogFilters() {
       <div className="relative min-w-[200px]">
         <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
         <select
-          className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white appearance-none focus:outline-none focus:border-[var(--accent-primary)] transition-colors cursor-pointer"
+          className="w-full bg-white dark:bg-black/20 border border-slate-300 dark:border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white appearance-none focus:outline-none focus:border-[var(--accent-primary)] transition-colors cursor-pointer"
           value={type}
           onChange={(e) => handleTypeChange(e.target.value)}
         >
@@ -85,7 +85,7 @@ export default function LogFilters() {
         {(search || type) && (
           <button
             onClick={clearFilters}
-            className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-[var(--text-muted)] hover:text-white rounded-lg text-sm transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white rounded-lg text-sm transition-colors flex items-center gap-2"
           >
             <X size={14} /> Clear
           </button>

@@ -131,16 +131,16 @@ export function ModerationCard({ report }: { report: ReportData }) {
   return (
     <div className={`${styles.glassPanel} flex flex-col h-full`}>
       {/* HEADER: The Accusation */}
-      <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-start bg-red-500/5">
+      <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-start bg-red-50 dark:bg-red-500/5">
         <div>
-          <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
+          <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
             Reported for {report.reason.replace("_", " ")}
           </span>
           <p className="text-xs text-[var(--text-muted)] mt-1">
             by @{report.reporter.username || "Anon"} • {new Date(report.createdAt).toLocaleDateString()}
           </p>
           {report.details && (
-             <p className="mt-2 text-sm text-white italic border-l-2 border-red-500/30 pl-2">"{report.details}"</p>
+             <p className="mt-2 text-sm text-slate-700 dark:text-white italic border-l-2 border-red-500/30 pl-2">"{report.details}"</p>
           )}
         </div>
         <ShieldAlert className="text-red-400/50" size={20} />
@@ -149,7 +149,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
       {/* BODY: The Evidence (Reported Content) */}
       <div className="p-6 flex-1">
         {report.post ? (
-          <div className="bg-[var(--bg-app)] p-4 rounded-lg border border-[var(--glass-border)] h-full relative group/evidence">
+          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full relative group/evidence">
              <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-[var(--accent-primary)]">Post: @{report.post.author.username}</span>
@@ -162,13 +162,13 @@ export function ModerationCard({ report }: { report: ReportData }) {
                     <ExternalLink size={14} />
                   </Link>
                 </div>
-                <span className="text-xs text-orange-400 font-mono">
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                     {report.post.author.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-white mb-4 whitespace-pre-wrap">{report.post.content}</p>
+             <p className="text-slate-900 dark:text-white mb-4 whitespace-pre-wrap">{report.post.content}</p>
              {report.post.mediaUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-[var(--glass-border)] bg-black/20 relative">
+                <div className="mt-2 rounded-lg overflow-hidden border border-[var(--glass-border)] bg-slate-100 dark:bg-black/20 relative">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
                    <img 
                       src={report.post.mediaUrl} 
@@ -180,27 +180,27 @@ export function ModerationCard({ report }: { report: ReportData }) {
              )}
           </div>
         ) : report.message ? (
-          <div className="bg-[var(--bg-app)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
+          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
              <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
                 <span className="font-bold text-[var(--accent-primary)]">Message: @{report.message.sender.username}</span>
-                <span className="text-xs text-orange-400 font-mono">
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                     {report.message.sender.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-white mb-4 whitespace-pre-wrap">{report.message.content}</p>
+             <p className="text-slate-900 dark:text-white mb-4 whitespace-pre-wrap">{report.message.content}</p>
           </div>
         ) : report.comment ? (
-          <div className="bg-[var(--bg-app)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
+          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
              <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
                 <span className="font-bold text-[var(--accent-primary)]">Comment: @{report.comment.author.username}</span>
-                <span className="text-xs text-orange-400 font-mono">
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                     {report.comment.author.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-white mb-4 whitespace-pre-wrap">{report.comment.content}</p>
+             <p className="text-slate-900 dark:text-white mb-4 whitespace-pre-wrap">{report.comment.content}</p>
           </div>
         ) : report.channel ? (
-          <div className="bg-[var(--bg-app)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
+          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
              <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-[var(--accent-primary)]">Channel: {report.channel.name}</span>
@@ -212,22 +212,22 @@ export function ModerationCard({ report }: { report: ReportData }) {
                     <ExternalLink size={14} />
                   </Link>
                 </div>
-                <span className="text-xs text-orange-400 font-mono">
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                     Creator: @{report.channel.creator.username} ({report.channel.creator.strikeCount} strikes)
                 </span>
              </div>
-             <p className="text-white italic">Report filed against the entire channel.</p>
+             <p className="text-slate-900 dark:text-white italic">Report filed against the entire channel.</p>
           </div>
         ) : report.adId ? (
-          <div className="bg-[var(--bg-app)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
+          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
              <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
                 <span className="font-bold text-[var(--accent-primary)]">Advertisement</span>
              </div>
-             <p className="text-white">Ad ID: <span className="font-mono text-xs">{report.adId}</span></p>
+             <p className="text-slate-900 dark:text-white">Ad ID: <span className="font-mono text-xs">{report.adId}</span></p>
              <p className="text-[var(--text-muted)] text-sm mt-2 italic">Reported from ad provider.</p>
           </div>
         ) : report.reportedProfile ? (
-          <div className="bg-[var(--bg-app)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
+          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
              <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-[var(--accent-primary)]">Profile: @{report.reportedProfile.username}</span>
@@ -239,14 +239,14 @@ export function ModerationCard({ report }: { report: ReportData }) {
                     <ExternalLink size={14} />
                   </Link>
                 </div>
-                <span className="text-xs text-orange-400 font-mono">
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                     {report.reportedProfile.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-white italic">Direct profile report.</p>
+             <p className="text-slate-900 dark:text-white italic">Direct profile report.</p>
           </div>
         ) : (
-          <div className="text-[var(--text-muted)] italic flex items-center justify-center h-full bg-[var(--bg-app)] rounded-lg">
+          <div className="text-[var(--text-muted)] italic flex items-center justify-center h-full bg-[var(--glass-card)] rounded-lg">
             Content unavailable or deleted.
           </div>
         )}
@@ -260,13 +260,13 @@ export function ModerationCard({ report }: { report: ReportData }) {
              <div className="grid grid-cols-2 gap-4">
                 <button 
                   onClick={handleDismiss}
-                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-[var(--text-muted)] hover:text-white transition-colors border border-[var(--glass-border)]"
+                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white transition-colors border border-[var(--glass-border)]"
                 >
                   <Check size={16} /> Dismiss
                 </button>
                 <button 
                   onClick={() => setShowPenaltyOptions(true)}
-                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
+                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 transition-colors"
                 >
                   <AlertTriangle size={16} /> Punish
                 </button>
@@ -301,7 +301,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
             </div>
             <button 
               onClick={() => setShowPenaltyOptions(false)}
-              className="w-full text-center text-xs text-[var(--text-muted)] hover:text-white mt-2"
+              className="w-full text-center text-xs text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white mt-2"
             >
               Cancel
             </button>

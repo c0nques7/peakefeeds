@@ -61,7 +61,7 @@ export function PostActions({ post }: PostActionsProps) {
       <Link 
         href={`/channels/${post.channel.slug}#post-${post.id}`} 
         target="_blank"
-        className="p-2 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-white/5 transition-colors"
+        className="p-2 rounded-lg text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
         title="View Live in Channel"
       >
         <ExternalLink size={16} />
@@ -71,7 +71,7 @@ export function PostActions({ post }: PostActionsProps) {
       <button
         onClick={handleToggleLock}
         disabled={isLocking}
-        className={`p-2 rounded-lg transition-colors ${post.isLocked ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'}`}
+        className={`p-2 rounded-lg transition-colors ${post.isLocked ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20' : 'text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'}`}
         title={post.isLocked ? "Unlock Post" : "Lock for Review"}
       >
         {isLocking ? <Loader2 size={16} className="animate-spin" /> : post.isLocked ? <Unlock size={16} /> : <Lock size={16} />}
@@ -82,7 +82,7 @@ export function PostActions({ post }: PostActionsProps) {
         <button
           onClick={() => setShowDeleteModal(true)}
           disabled={isPending}
-          className="p-2 rounded-lg text-red-400 hover:text-red-200 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 hover:bg-red-500/20 transition-colors disabled:opacity-50"
           title="Delete Post"
         >
           {isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
@@ -90,7 +90,7 @@ export function PostActions({ post }: PostActionsProps) {
       )}
 
       {post.isVerified && (
-        <div className="p-2 text-zinc-600" title="Verified content cannot be deleted">
+        <div className="p-2 text-zinc-400 dark:text-zinc-600" title="Verified content cannot be deleted">
           <Trash2 size={16} className="opacity-20" />
         </div>
       )}
