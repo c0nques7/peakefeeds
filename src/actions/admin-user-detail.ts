@@ -228,3 +228,144 @@ export async function triggerManualEmail(userId: string, type: "WELCOME" | "ACTI
     return { error: "Failed to send email." };
   }
 }
+
+/**
+ * 6. DISCONNECT WALLET
+ * Removes the wallet address from a user's profile for troubleshooting.
+ */
+export async function disconnectWallet(userId: string) {
+  const session = await requireStaff();
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { walletAddress: null }
+  });
+
+  await createAdminLog({
+    adminId: session.user.id,
+    eventType: AdminLogType.USER_UPDATE,
+    targetResource: `User:${userId}`,
+    details: { action: "WALLET_DISCONNECT" }
+  });
+
+  revalidatePath(`/admin/users/${userId}`);
+  return { success: true };
+}
+
+/**
+ * 7. UPDATE USER DETAILS
+ * Modifies basic profile information: name, username, email.
+ */
+export async function updateUserDetails(userId: string, data: { name?: string | null, username?: string | null, email?: string | null }) {
+  const session = await requireStaff();
+
+  try {
+    // Check if username or email is already taken by another user
+    if (data.username) {
+      const existingUsername = await prisma.user.findFirst({
+        where: { 
+          username: data.username,
+          NOT: { id: userId }
+        }
+      });
+      if (existingUsername) return { error: "Username is already taken." };
+    }
+
+    if (data.email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: { 
+          email: data.email,
+          NOT: { id: userId }
+        }
+      });
+      if (existingEmail) return { error: "Email is already taken." };
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: data.name,
+        username: data.username,
+        email: data.email,
+      }
+    });
+
+    await createAdminLog({
+      adminId: session.user.id,
+      eventType: AdminLogType.USER_UPDATE,
+      targetResource: `User:${userId}`,
+      details: { action: "PROFILE_UPDATE", updatedFields: Object.keys(data) }
+    });
+
+    revalidatePath(`/admin/users/${userId}`);
+    revalidatePath("/admin/users");
+    
+    return { success: true, user: updatedUser };
+  } catch (err) {
+    console.error("Update User Error:", err);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+/**
+ * 8. FETCH USER ACTIVITY
+ * Fetches recent actions (posts, comments, likes) to build an activity timeline.
+ */
+export async function getUserActivity(userId: string) {
+  await requireStaff();
+
+  const [posts, comments, reactions] = await Promise.all([
+    prisma.post.findMany({
+      where: { authorId: userId },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      include: { channel: { select: { slug: true } } }
+    }),
+    prisma.comment.findMany({
+      where: { authorId: userId },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      include: { post: { include: { channel: { select: { slug: true } } } } }
+    }),
+    prisma.reaction.findMany({
+      where: { userId: userId },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      include: { post: { include: { channel: { select: { slug: true } } } } }
+    })
+  ]);
+
+  const activity = [
+    ...posts.map(p => ({ 
+      id: p.id, type: "POST", content: p.content, date: p.createdAt, 
+      metadata: { postType: p.type, channelSlug: p.channel.slug } 
+    })),
+    ...comments.map(c => ({ 
+      id: c.id, type: "COMMENT", content: c.content, date: c.createdAt, 
+      metadata: { postId: c.postId, channelSlug: c.post.channel.slug } 
+    })),
+    ...reactions.map(r => ({ 
+      id: r.id, type: "REACTION", content: r.type, date: r.createdAt, 
+      metadata: { postId: r.postId, postTitle: r.post.title || r.post.content.substring(0, 50), channelSlug: r.post.channel.slug } 
+    }))
+  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 15);
+
+  return activity;
+}
+
+/**
+ * 9. FETCH COMMENT DETAILS
+ * Fetches a specific comment and its parent post info for moderation.
+ */
+export async function getCommentDetails(commentId: string) {
+  await requireStaff();
+
+  return await prisma.comment.findUnique({
+    where: { id: commentId },
+    include: {
+      post: {
+        select: { id: true, title: true, content: true }
+      }
+    }
+  });
+}

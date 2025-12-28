@@ -123,10 +123,10 @@
   border: 1px solid transparent;
 }
 
-.badgeGreen { background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2); }
-.badgeRed   { background: rgba(239, 68, 68, 0.1);  color: #f87171; border-color: rgba(239, 68, 68, 0.2); }
+.badgeGreen { background: var(--status-success-bg); color: var(--status-success); border-color: rgba(16, 185, 129, 0.2); }
+.badgeRed   { background: var(--status-error-bg);   color: var(--status-error);   border-color: rgba(239, 68, 68, 0.2); }
 .badgeBlue  { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.2); }
-.badgeGold  { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-color: rgba(245, 158, 11, 0.2); }
+.badgeGold  { background: var(--status-warning-bg); color: var(--status-warning); border-color: rgba(245, 158, 11, 0.2); }
 
 .orbAdmin {
   position: absolute;

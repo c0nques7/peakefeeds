@@ -3,23 +3,26 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronRight, PlusCircle, Loader2 } from 'lucide-react';
-import { searchChannels } from '@/actions/search'; 
+import { Search, ChevronRight, PlusCircle, Loader2, User as UserIcon } from 'lucide-react';
+import { searchChannels, searchUsers } from '@/actions/search'; 
 import clsx from 'clsx'; 
 import styles from './SearchBar.module.css'; 
 
 interface SearchResult {
     id: string;
-    name: string;
-    slug: string;
-    _count?: { subscribers: number };
+    name?: string;
+    slug?: string;
+    username?: string;
+    image?: string | null;
+    type: 'channel' | 'user';
 }
 
 export function SearchBar() {
     const router = useRouter();
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
-    const [results, setResults] = useState<SearchResult[]>([]);
+    const [channelResults, setChannelResults] = useState<any[]>([]);
+    const [userResults, setUserResults] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     
     // Tracks if search logic has run
@@ -42,7 +45,8 @@ export function SearchBar() {
     useEffect(() => {
         const fetchResults = async () => {
             if (debouncedQuery.length < 2) {
-                setResults([]);
+                setChannelResults([]);
+                setUserResults([]);
                 setIsLoading(false);
                 setHasSearched(false);
                 setSelectedIndex(-1);
@@ -53,12 +57,17 @@ export function SearchBar() {
             setHasSearched(true);
             
             try {
-                const channelResults = await searchChannels(debouncedQuery);
-                setResults(channelResults);
+                const [channels, users] = await Promise.all([
+                    searchChannels(debouncedQuery),
+                    searchUsers(debouncedQuery)
+                ]);
+                setChannelResults(channels);
+                setUserResults(users);
                 setSelectedIndex(-1); // Reset selection when new results arrive
             } catch (error) {
                 console.error("Search failed", error);
-                setResults([]);
+                setChannelResults([]);
+                setUserResults([]);
             } finally {
                 setIsLoading(false);
             }
@@ -71,7 +80,8 @@ export function SearchBar() {
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-                setResults([]); 
+                setChannelResults([]); 
+                setUserResults([]);
                 setHasSearched(false);
                 setSelectedIndex(-1);
             }
@@ -85,8 +95,10 @@ export function SearchBar() {
     // Check if an EXACT match exists (case insensitive) to prevent duplicate creation prompts
     const exactMatchExists = useMemo(() => {
         const lowerQ = query.toLowerCase();
-        return results.some(r => r.name.toLowerCase() === lowerQ || r.slug.toLowerCase() === lowerQ);
-    }, [results, query]);
+        const channelMatch = channelResults.some(r => r.name?.toLowerCase() === lowerQ || r.slug?.toLowerCase() === lowerQ);
+        const userMatch = userResults.some(r => r.username?.toLowerCase() === lowerQ);
+        return channelMatch || userMatch;
+    }, [channelResults, userResults, query]);
 
     // Only show "Create" if we have searched, typed enough, AND no exact match exists
     const showCreateOption = hasSearched && query.length >= 2 && !exactMatchExists;
@@ -94,11 +106,23 @@ export function SearchBar() {
     // Create a single "Virtual List" for the keyboard to traverse
     // This combines [All Results] + [Create Option (if visible)]
     const navigationItems = useMemo(() => {
-        const items = results.map(r => ({ 
-            type: 'RESULT', 
-            data: r, 
-            href: `/channels/${r.slug}` 
-        }));
+        const items: any[] = [];
+        
+        channelResults.forEach(r => {
+            items.push({ 
+                type: 'CHANNEL', 
+                data: r, 
+                href: `/channels/${r.slug}` 
+            });
+        });
+
+        userResults.forEach(r => {
+            items.push({
+                type: 'USER',
+                data: r,
+                href: `/profile/${r.username}`
+            });
+        });
         
         if (showCreateOption) {
             items.push({ 
@@ -108,12 +132,12 @@ export function SearchBar() {
             });
         }
         return items;
-    }, [results, showCreateOption, query]);
+    }, [channelResults, userResults, showCreateOption, query]);
 
     // --- 5. Keyboard Handler ---
     const handleKeyDown = (e: React.KeyboardEvent) => {
         // If dropdown isn't visible, ignore
-        if (!hasSearched || navigationItems.length === 0) return;
+        if (!hasSearched || (channelResults.length === 0 && userResults.length === 0 && !showCreateOption)) return;
 
         if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -135,7 +159,8 @@ export function SearchBar() {
         }
         else if (e.key === 'Escape') {
             setHasSearched(false);
-            setResults([]);
+            setChannelResults([]);
+            setUserResults([]);
             setSelectedIndex(-1);
             (document.activeElement as HTMLElement)?.blur();
         }
@@ -143,7 +168,8 @@ export function SearchBar() {
 
     const handleSelection = () => {
         setQuery('');
-        setResults([]);
+        setChannelResults([]);
+        setUserResults([]);
         setHasSearched(false);
         setSelectedIndex(-1);
     };
@@ -156,7 +182,7 @@ export function SearchBar() {
                 <Search size={20} className={styles.searchIcon} />
                 <input
                     type="text"
-                    placeholder="Search channels, topics, or hashes..."
+                    placeholder="Search people, channels, topics..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown} 
@@ -170,13 +196,47 @@ export function SearchBar() {
             {(hasSearched && query.length >= 2) && (
                 <div className={styles.resultsDropdown}>
                     
-                    {/* A. Existing Channels */}
-                    {results.length > 0 && (
+                    {/* A. User Results */}
+                    {userResults.length > 0 && (
                         <div className={styles.group}>
-                            <h4 className={styles.groupTitle}>Channels Found</h4>
-                            {results.map((channel, index) => {
-                                // Calculate global index for this item
+                            <h4 className={styles.groupTitle}>People</h4>
+                            {userResults.map((user, index) => {
+                                // Global index for this user is just their position in userResults
                                 const isSelected = index === selectedIndex;
+                                
+                                return (
+                                    <Link 
+                                        key={user.id} 
+                                        href={`/profile/${user.username}`}
+                                        onClick={handleSelection}
+                                        className={clsx(styles.resultItem, {
+                                            [styles.active]: isSelected 
+                                        })}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-[var(--glass-border)] overflow-hidden flex items-center justify-center">
+                                                {user.image ? <img src={user.image} className="w-full h-full object-cover" alt="" /> : <UserIcon size={14} className="text-[var(--text-muted)]" />}
+                                            </div>
+                                            <div className="flex flex-col text-left">
+                                                <span className={styles.channelName}>@{user.username}</span>
+                                                {user.name && <span className={styles.channelSlug}>{user.name}</span>}
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* B. Existing Channels */}
+                    {channelResults.length > 0 && (
+                        <div className={styles.group}>
+                            <h4 className={styles.groupTitle}>Channels</h4>
+                            {channelResults.map((channel, index) => {
+                                // Global index: previous groups count (users) + current index
+                                const globalIndex = userResults.length + index;
+                                const isSelected = globalIndex === selectedIndex;
                                 
                                 return (
                                     <Link 
@@ -189,7 +249,7 @@ export function SearchBar() {
                                     >
                                         <div className="flex flex-col text-left">
                                             <span className={styles.channelName}>{channel.name}</span>
-                                            <span className={styles.channelSlug}>#{channel.slug}</span>
+                                            <span className={styles.channelSlug}>/c/{channel.slug}</span>
                                         </div>
                                         <ChevronRight size={16} className="text-[var(--text-muted)]" />
                                     </Link>
@@ -198,22 +258,22 @@ export function SearchBar() {
                         </div>
                     )}
 
-                    {/* B. Create New Option */}
+                    {/* C. Create New Option */}
                     {showCreateOption && (
                         <div className={styles.createOption}>
                              <Link 
                                 href={`/channels/create?name=${encodeURIComponent(query)}`}
                                 onClick={handleSelection}
-                                // The index of this item is always after the last result
+                                // The index of this item is after users and channels
                                 className={clsx(styles.createLink, {
-                                    [styles.active]: selectedIndex === results.length
+                                    [styles.active]: selectedIndex === (userResults.length + channelResults.length)
                                 })}
                              >
                                 <div className="flex items-center gap-3">
                                     <PlusCircle size={20} className="text-[var(--accent-primary)]" />
                                     <div className="flex flex-col text-left">
                                         <span className="font-semibold text-[var(--text-primary)]">
-                                            Create "{query}"
+                                            Create channel "{query}"
                                         </span>
                                         <span className="text-xs text-[var(--text-muted)]">
                                             Launch a new truth channel

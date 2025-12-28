@@ -318,7 +318,47 @@ export async function sendMessage(id: string, content: string) {
   }
 }
 
-// 4. START CONVERSATION (Unchanged)
+// 4. DELETE MESSAGE
+export async function deleteMessage(messageId: string, type: 'DM' | 'TICKET_MESSAGE' | 'DIRECT_MESSAGE' = 'DIRECT_MESSAGE') {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return { error: "Unauthorized" }
+
+  try {
+    if (type === 'TICKET_MESSAGE') {
+      const msg = await prisma.ticketMessage.findUnique({
+        where: { id: messageId },
+        include: { ticket: true }
+      })
+
+      if (!msg) return { error: "Message not found" }
+      
+      // Only user can delete their own ticket messages (sender === 'user')
+      if (msg.sender !== 'user' || msg.ticket.userId !== session.user.id) {
+        return { error: "Unauthorized to delete this message" }
+      }
+
+      await prisma.ticketMessage.delete({ where: { id: messageId } })
+    } else {
+      // Handles both DM in conversation and DirectMessage in ticket
+      const msg = await prisma.directMessage.findUnique({
+        where: { id: messageId }
+      })
+
+      if (!msg) return { error: "Message not found" }
+      if (msg.senderId !== session.user.id) return { error: "Unauthorized" }
+
+      await prisma.directMessage.delete({ where: { id: messageId } })
+    }
+
+    revalidatePath('/messages')
+    return { success: true }
+  } catch (error) {
+    console.error("Delete error:", error)
+    return { error: "Failed to delete message" }
+  }
+}
+
+// 5. START CONVERSATION (Unchanged)
 export async function startConversation(recipientId: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { error: "Unauthorized" }

@@ -17,33 +17,43 @@ export async function getAdminPosts({
   await requireStaff();
   const skip = (page - 1) * ITEMS_PER_PAGE;
 
-  // Build the filter
-  const where: any = {};
-  
+  // Build the filter for posts
+  const postWhere: any = {};
   if (query) {
-    where.OR = [
+    postWhere.OR = [
+      { id: query },
       { content: { contains: query, mode: "insensitive" } },
       { author: { username: { contains: query, mode: "insensitive" } } },
     ];
   }
 
-  // Build the sorter
-  let orderBy: any = { createdAt: "desc" };
+  // Build the filter for comments
+  const commentWhere: any = {};
+  if (query) {
+    commentWhere.OR = [
+      { id: query },
+      { content: { contains: query, mode: "insensitive" } },
+      { author: { username: { contains: query, mode: "insensitive" } } },
+    ];
+  }
+
+  // Build the sorter for posts
+  let postOrderBy: any = { createdAt: "desc" };
   if (sort === "reported") {
-    orderBy = { reports: { _count: "desc" } };
+    postOrderBy = { reports: { _count: "desc" } };
   } else if (sort === "oldest") {
-    orderBy = { createdAt: "asc" };
+    postOrderBy = { createdAt: "asc" };
   } else if (sort === "popular") {
-    orderBy = { likes: { _count: "desc" } };
+    postOrderBy = { likesCount: "desc" };
   }
 
   try {
-    const [posts, totalCount] = await Promise.all([
+    const [posts, comments, postCount, commentCount] = await Promise.all([
       prisma.post.findMany({
-        where,
+        where: postWhere,
         take: ITEMS_PER_PAGE,
         skip,
-        orderBy,
+        orderBy: postOrderBy,
         include: {
           author: {
             select: { id: true, username: true, email: true, image: true },
@@ -56,14 +66,32 @@ export async function getAdminPosts({
           },
         },
       }),
-      prisma.post.count({ where }),
+      query ? prisma.comment.findMany({
+        where: commentWhere,
+        take: 5, // Just a few comments if searching
+        include: {
+          author: { select: { id: true, username: true } },
+          post: { select: { id: true, content: true } }
+        }
+      }) : Promise.resolve([]),
+      prisma.post.count({ where: postWhere }),
+      query ? prisma.comment.count({ where: commentWhere }) : Promise.resolve(0),
     ]);
 
-    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(postCount / ITEMS_PER_PAGE);
 
-    return { posts, totalPages };
+    return { 
+      posts, 
+      comments: comments.map(c => ({
+        ...c,
+        type: 'COMMENT' as const
+      })),
+      totalPages,
+      totalPosts: postCount,
+      totalComments: commentCount
+    };
   } catch (error) {
     console.error("Error fetching admin posts:", error);
-    return { posts: [], totalPages: 0 };
+    return { posts: [], comments: [], totalPages: 0 };
   }
 }

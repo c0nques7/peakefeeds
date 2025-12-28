@@ -11,6 +11,25 @@
     isolation: isolate; 
 }
 
+.expanded {
+    min-height: 750px;
+}
+
+.expanded .cardFront {
+    min-height: 750px;
+}
+
+.highlighted {
+    z-index: 20;
+}
+
+.highlighted .cardFront {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2), var(--shadow-card);
+    transform: scale(1.02);
+    transition: all 0.5s ease;
+}
+
 /* --- 3D WRAPPER --- */
 .cardInner {
     position: relative;
@@ -414,8 +433,8 @@
     opacity: 0;
     
     background: var(--bg-app);
-    /* Top corners rounded for the drawer look */
-    border-radius: 20px 20px 0 0; 
+    /* ⚡️ Rounded all around to match the cards */
+    border-radius: 20px; 
     
     /* Ensure content inside doesn't overflow while animating */
     overflow: hidden; 
@@ -424,7 +443,6 @@
     display: flex;
     flex-direction: column;
     border: 1px solid var(--glass-border);
-    border-bottom: none; /* Merges with card bottom */
     
     /* ⚡️ Animate Height instead of Transform */
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);

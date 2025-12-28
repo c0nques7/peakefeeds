@@ -8,7 +8,7 @@ export default function SupportPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 flex items-center gap-3">
             <MessageSquare className="text-pink-500" size={32} />
             Support Queue
           </h1>
