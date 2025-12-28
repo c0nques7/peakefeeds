@@ -3,15 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 // 🟢 Added FileText, ScrollText, Hash to imports
 import { 
-  ShieldAlert, Users, LayoutDashboard, LogOut, Activity, Ticket, Menu, X, FileText, ScrollText, Hash, MessageSquare 
+  ShieldAlert, Users, LayoutDashboard, LogOut, Activity, Ticket, Menu, X, FileText, ScrollText, Hash, MessageSquare, Sun, Moon 
 } from "lucide-react";
 import styles from "@/app/(admin)/admin/admin.module.css";
 
 export function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { setTheme, theme } = useTheme();
 
   // Close sidebar automatically when a link is clicked (Better UX)
   const handleLinkClick = () => setIsOpen(false);
@@ -22,11 +24,11 @@ export function AdminSidebar() {
       <header className={styles.mobileHeader}>
         <div className="flex items-center gap-2">
            <ShieldAlert className="text-[var(--accent-primary)]" size={24} />
-           <span className="font-bold text-white tracking-wider">PEAKE<span className="text-[var(--accent-primary)]">ADMIN</span></span>
+           <span className="font-bold text-[var(--text-primary)] tracking-wider">PEAKE<span className="text-[var(--accent-primary)]">ADMIN</span></span>
         </div>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-white hover:bg-white/10 rounded-lg"
+          className="p-2 text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/10 rounded-lg"
           aria-label="Toggle Menu"
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -46,7 +48,7 @@ export function AdminSidebar() {
         <div className="p-6 border-b border-[var(--glass-border)] hidden md:block">
           <h1 className="text-xl font-bold tracking-wider flex items-center gap-2">
             <ShieldAlert className="text-[var(--accent-primary)]" />
-            <span className="text-white">PEAKE<span className="text-[var(--accent-primary)]">ADMIN</span></span>
+            <span className="text-[var(--text-primary)]">PEAKE<span className="text-[var(--accent-primary)]">ADMIN</span></span>
           </h1>
         </div>
 
@@ -69,8 +71,16 @@ export function AdminSidebar() {
           <NavLink href="/admin/support" icon={<MessageSquare size={18} />} label="Support Queue" active={pathname.startsWith("/admin/support")} onClick={handleLinkClick} />
         </nav>
 
-        <div className="p-4 border-t border-[var(--glass-border)]">
-          <Link href="/home" className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+        <div className="p-4 border-t border-[var(--glass-border)] space-y-2">
+          <button 
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium w-full text-left"
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+          </button>
+
+          <Link href="/home" className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium">
             <LogOut size={18} />
             <span>Exit to App</span>
           </Link>
@@ -89,7 +99,7 @@ function NavLink({ href, icon, label, active, onClick }: any) {
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
         active 
         ? "bg-[var(--accent-primary)] text-white shadow-lg shadow-indigo-500/20" 
-        : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
+        : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5"
       }`}
     >
       {icon}

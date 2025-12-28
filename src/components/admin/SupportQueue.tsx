@@ -182,13 +182,13 @@ export default function SupportQueue() {
     <div className={clsx(styles.glassPanel, "h-[calc(100vh-200px)] flex flex-col overflow-hidden")}>
       
       {/* Search & Filters Bar */}
-      <div className="p-4 border-b border-[var(--glass-border)] bg-white/5 flex flex-wrap gap-4 items-center">
+      <div className="p-4 border-b border-[var(--glass-border)] bg-black/5 dark:bg-white/5 flex flex-wrap gap-4 items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
           <input 
             type="text" 
             placeholder="Search tickets..."
-            className="w-full bg-black/30 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-pink-500 transition-colors"
+            className="w-full bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-pink-500 transition-colors"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -197,7 +197,7 @@ export default function SupportQueue() {
         <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1 md:pb-0">
           <Filter size={16} className="text-[var(--text-muted)] flex-shrink-0" />
           <select 
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+            className="bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
@@ -209,7 +209,7 @@ export default function SupportQueue() {
           </select>
 
           <select 
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+            className="bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none"
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
           >
@@ -226,7 +226,7 @@ export default function SupportQueue() {
         
         {/* Ticket List (Leftmost) */}
         <div className={clsx(
-          "border-r border-[var(--glass-border)] overflow-y-auto bg-black/20 w-full lg:w-1/4 transition-all",
+          "border-r border-[var(--glass-border)] overflow-y-auto bg-slate-50 dark:bg-black/20 w-full lg:w-1/4 transition-all",
           selectedTicketId ? "hidden lg:block" : "block"
         )}>
           {filteredTickets.length === 0 ? (
@@ -239,17 +239,17 @@ export default function SupportQueue() {
                 key={ticket.id}
                 onClick={() => setSelectedTicketId(ticket.id)}
                 className={clsx(
-                  "p-4 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/5 relative",
-                  selectedTicketId === ticket.id ? "bg-white/10" : "opacity-70"
+                  "p-4 border-b border-slate-200 dark:border-white/5 cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5 relative",
+                  selectedTicketId === ticket.id ? "bg-black/10 dark:bg-white/10" : "opacity-90 dark:opacity-70"
                 )}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-mono text-[10px] text-white/40">#{ticket.id.slice(-8)}</span>
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-white/40">#{ticket.id.slice(-8)}</span>
                   <span className={clsx("text-[10px] px-1.5 py-0.5 rounded border font-bold uppercase", getPriorityColor(ticket.priority))}>
                     {ticket.priority}
                   </span>
                 </div>
-                <p className="text-sm text-white font-medium line-clamp-1 mb-1">
+                <p className="text-sm text-slate-900 dark:text-white font-medium line-clamp-1 mb-1">
                   {ticket.messages[ticket.messages.length - 1]?.text}
                 </p>
                 <div className="flex justify-between items-center mt-2">
@@ -271,7 +271,7 @@ export default function SupportQueue() {
 
         {/* Workspace (Active Ticket View) */}
         <div className={clsx(
-          "bg-black/40 relative w-full lg:flex-1 flex overflow-hidden",
+          "bg-slate-100 dark:bg-black/40 relative w-full lg:flex-1 flex overflow-hidden",
           selectedTicketId ? "flex" : "hidden lg:flex"
         )}>
           {currentTicket ? (
@@ -279,16 +279,16 @@ export default function SupportQueue() {
               {/* Main Workspace Feed (Messaging) */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-white/5 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white/5">
+                <div className="p-4 border-b border-[var(--glass-border)] flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white dark:bg-white/5">
                   <div className="flex gap-4 items-center">
-                    <button onClick={() => setSelectedTicketId(null)} className="lg:hidden p-1 text-white/40 hover:text-white mr-2"><ArrowLeft size={20}/></button>
+                    <button onClick={() => setSelectedTicketId(null)} className="lg:hidden p-1 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white mr-2"><ArrowLeft size={20}/></button>
                     <div className="flex gap-2 items-center">
                       <div>
                         <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Status</label>
                         <select 
                           value={currentTicket.status}
                           onChange={(e) => handleUpdateStatus(e.target.value as SupportStatus)}
-                          className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                          className="bg-slate-200 dark:bg-black/50 border border-slate-300 dark:border-white/10 rounded px-2 py-1 text-xs text-slate-900 dark:text-white"
                         >
                           <option value="OPEN">Open</option>
                           <option value="IN_PROGRESS">In Progress</option>
@@ -301,7 +301,7 @@ export default function SupportQueue() {
                         <select 
                           value={currentTicket.priority}
                           onChange={(e) => handleUpdatePriority(e.target.value as SupportPriority)}
-                          className={clsx("bg-black/50 border border-white/10 rounded px-2 py-1 text-xs font-bold", getPriorityColor(currentTicket.priority))}
+                          className={clsx("bg-slate-200 dark:bg-black/50 border border-slate-300 dark:border-white/10 rounded px-2 py-1 text-xs font-bold", getPriorityColor(currentTicket.priority))}
                         >
                           <option value="LOW">Low</option>
                           <option value="MEDIUM">Medium</option>
@@ -314,7 +314,7 @@ export default function SupportQueue() {
                         <select 
                           value={currentTicket.assigneeId || ''}
                           onChange={(e) => handleAssign(e.target.value || null)}
-                          className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white max-w-[100px]"
+                          className="bg-slate-200 dark:bg-black/50 border border-slate-300 dark:border-white/10 rounded px-2 py-1 text-xs text-slate-900 dark:text-white max-w-[100px]"
                         >
                           <option value="">Unassigned</option>
                           {staff.map(s => (
@@ -368,16 +368,16 @@ export default function SupportQueue() {
                           // Admin DM Style
                           isAdminDM ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm" :
                           // User-Facing Note Style
-                          isUserFacingNote ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-100 rounded-xl rounded-tr-sm" :
+                          isUserFacingNote ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-100 rounded-xl rounded-tr-sm" :
                           // Bot Style
-                          isBot ? "bg-gray-800/50 text-gray-300 border border-white/5 italic rounded-2xl rounded-tl-sm" :
+                          isBot ? "bg-gray-200 dark:bg-gray-800/50 text-slate-700 dark:text-gray-300 border border-slate-300 dark:border-white/5 italic rounded-2xl rounded-tl-sm" :
                           // User Style
-                          "bg-[#1a1a1a] text-gray-200 border border-white/10 rounded-2xl rounded-tl-sm"
+                          "bg-white dark:bg-[#1a1a1a] text-slate-800 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-sm shadow-sm"
                         )}>
                            {msg.text}
                         </div>
                         
-                        <span className="text-[10px] text-white/20 mt-1 uppercase font-mono px-1">
+                        <span className="text-[10px] text-slate-400 dark:text-white/20 mt-1 uppercase font-mono px-1">
                           {msg.sender} • {formatDistanceToNow(msg.timestamp, { addSuffix: true })}
                         </span>
                       </div>
@@ -386,15 +386,15 @@ export default function SupportQueue() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 bg-black/40 border-t border-white/10">
+                <div className="p-4 bg-white dark:bg-black/40 border-t border-[var(--glass-border)]">
                   <div className="flex items-center gap-4 mb-3">
                     <button 
                       onClick={() => { setIsDM(false); setIsInternalNote(true); }}
                       className={clsx(
                         "text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all border flex items-center gap-2", 
                         !isDM && isInternalNote 
-                          ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.1)]" 
-                          : "border-transparent text-white/40 hover:text-white/60 hover:bg-white/5"
+                          ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.1)]" 
+                          : "border-transparent text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white/60 hover:bg-black/5 dark:hover:bg-white/5"
                       )}
                     >
                       <Lock size={12} /> Internal Note
@@ -404,8 +404,8 @@ export default function SupportQueue() {
                       className={clsx(
                         "text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all border flex items-center gap-2", 
                         !isDM && !isInternalNote 
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]" 
-                          : "border-transparent text-white/40 hover:text-white/60 hover:bg-white/5"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]" 
+                          : "border-transparent text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white/60 hover:bg-black/5 dark:hover:bg-white/5"
                       )}
                     >
                       <Eye size={12} /> Public Note
@@ -417,10 +417,10 @@ export default function SupportQueue() {
                       className={clsx(
                         "text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all border flex items-center gap-2", 
                         !isAssigned 
-                          ? "opacity-30 cursor-not-allowed border-transparent text-white"
+                          ? "opacity-30 cursor-not-allowed border-transparent text-slate-400 dark:text-white"
                           : isDM 
-                             ? "bg-blue-500/10 text-blue-400 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.1)]" 
-                             : "border-transparent text-white/40 hover:text-white/60 hover:bg-white/5"
+                             ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.1)]" 
+                             : "border-transparent text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white/60 hover:bg-black/5 dark:hover:bg-white/5"
                       )}
                     >
                       {isAssigned ? <Send size={12} /> : <AlertCircle size={12} />} 
@@ -430,7 +430,7 @@ export default function SupportQueue() {
                   <div className="flex gap-2">
                     <input 
                       className={clsx(
-                        "flex-1 bg-black/50 border rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all placeholder:text-white/20",
+                        "flex-1 bg-slate-100 dark:bg-black/50 border rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-white/20",
                         isDM 
                           ? "border-blue-500/30 focus:border-blue-500" 
                           : isInternalNote
@@ -462,42 +462,42 @@ export default function SupportQueue() {
               </div>
 
               {/* Workspace Inner Sidebar (Internal Notes & User Details) */}
-              <div className="w-72 border-l border-[var(--glass-border)] bg-black/30 flex flex-col overflow-hidden shrink-0">
-                <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                   <h4 className="text-xs font-bold text-white/60 uppercase tracking-widest">Ticket Context</h4>
+              <div className="w-72 border-l border-[var(--glass-border)] bg-slate-50 dark:bg-black/30 flex flex-col overflow-hidden shrink-0">
+                <div className="p-4 border-b border-[var(--glass-border)] flex items-center justify-between">
+                   <h4 className="text-xs font-bold text-slate-500 dark:text-white/60 uppercase tracking-widest">Ticket Context</h4>
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
                    {/* 1. USER DETAILS */}
                    <div>
-                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/40 mb-3">
+                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-400 dark:text-white/40 mb-3">
                         <UserPlus size={12} /> User Profile
                       </label>
-                      <div className="p-3 bg-white/5 rounded-lg border border-white/5 space-y-3">
+                      <div className="p-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5 space-y-3">
                         {currentTicket.user ? (
                           <>
                             <div>
-                              <p className="text-xs font-bold text-white">{currentTicket.user.name || 'Unnamed User'}</p>
-                              <p className="text-[10px] text-white/40">@{currentTicket.user.username}</p>
+                              <p className="text-xs font-bold text-slate-900 dark:text-white">{currentTicket.user.name || 'Unnamed User'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-white/40">@{currentTicket.user.username}</p>
                             </div>
                             
                             {currentTicket.user.email && (
                               <div>
-                                <p className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Email</p>
-                                <p className="text-[10px] text-white/70 font-mono break-all">{currentTicket.user.email}</p>
+                                <p className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-white/30 mb-0.5">Email</p>
+                                <p className="text-[10px] text-slate-600 dark:text-white/70 font-mono break-all">{currentTicket.user.email}</p>
                               </div>
                             )}
 
                             {currentTicket.user.walletAddress && (
                               <div>
-                                <p className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Wallet</p>
-                                <p className="text-[10px] text-emerald-400/80 font-mono break-all">{currentTicket.user.walletAddress}</p>
+                                <p className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-white/30 mb-0.5">Wallet</p>
+                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400/80 font-mono break-all">{currentTicket.user.walletAddress}</p>
                               </div>
                             )}
 
                             <div>
-                               <p className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Joined</p>
-                               <p className="text-[10px] text-white/50">
+                               <p className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-white/30 mb-0.5">Joined</p>
+                               <p className="text-[10px] text-slate-500 dark:text-white/50">
                                  {new Date(currentTicket.user.createdAt).toLocaleDateString()} 
                                  <span className="opacity-50 ml-1">({formatDistanceToNow(new Date(currentTicket.user.createdAt), { addSuffix: true })})</span>
                                </p>
@@ -505,16 +505,16 @@ export default function SupportQueue() {
                           </>
                         ) : (
                           <div>
-                            <p className="text-xs font-bold text-white mb-1">Guest User</p>
-                            <p className="text-[10px] text-white/40">No registered account associated with this ticket.</p>
+                            <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">Guest User</p>
+                            <p className="text-[10px] text-slate-500 dark:text-white/40">No registered account associated with this ticket.</p>
                           </div>
                         )}
                       </div>
                    </div>
 
                    {/* 2. STAFF DISCUSSION LOG */}
-                   <div className="pt-4 border-t border-white/5">
-                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/40 mb-3">
+                   <div className="pt-4 border-t border-[var(--glass-border)]">
+                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-400 dark:text-white/40 mb-3">
                         <MoreVertical size={12} /> Staff Discussion Log
                       </label>
                       <div className="space-y-3 mt-3">
@@ -522,9 +522,9 @@ export default function SupportQueue() {
                             <p className="text-[10px] text-[var(--text-muted)] italic">No staff notes yet.</p>
                          ) : (
                             internalNoteFeed.map((note, idx) => (
-                               <div key={idx} className="p-3 bg-white/5 border border-white/5 rounded-lg text-xs">
-                                  <p className="text-gray-300 leading-relaxed">{note.text}</p>
-                                  <div className="mt-2 flex justify-between items-center text-[9px] text-white/20 font-mono">
+                               <div key={idx} className="p-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg text-xs">
+                                  <p className="text-slate-700 dark:text-gray-300 leading-relaxed">{note.text}</p>
+                                  <div className="mt-2 flex justify-between items-center text-[9px] text-slate-400 dark:text-white/20 font-mono">
                                      <span>{note.senderInfo?.username ? `@${note.senderInfo.username}` : 'Staff Note'}</span>
                                      <span>{formatDistanceToNow(note.timestamp, { addSuffix: true })}</span>
                                   </div>
