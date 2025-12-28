@@ -11,7 +11,7 @@ export default async function AdminChannelsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-3">
             <Hash className="text-[var(--accent-primary)]" />
             Channel Management
           </h1>

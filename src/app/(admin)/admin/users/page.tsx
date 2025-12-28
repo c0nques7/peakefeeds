@@ -24,7 +24,7 @@ export default async function AdminUsersPage({
       {/* HEADER & FILTERS */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-white">User Registry</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">User Registry</h1>
           <p className="text-[var(--text-muted)]">Manage roles, permissions, and bans.</p>
         </div>
 
@@ -44,14 +44,14 @@ export default async function AdminUsersPage({
                   name="q"
                   defaultValue={query}
                   placeholder="Search users..."
-                  className="pl-10 pr-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent-primary)] w-full md:w-64 transition-all"
+                  className="pl-10 pr-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] w-full md:w-64 transition-all"
                 />
               </div>
               
               <select 
                 name="role" 
                 defaultValue={role}
-                className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer w-full md:w-auto"
+                className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer w-full md:w-auto"
               >
                 <option value="ALL">All Roles</option>
                 {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
@@ -81,7 +81,7 @@ export default async function AdminUsersPage({
                 {/* Identity */}
                 <td className="p-4">
                   <div className="flex flex-col">
-                    <span className="font-medium text-white">@{user.username || "Anon"}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">@{user.username || "Anon"}</span>
                     <span className="text-xs text-[var(--text-muted)] font-mono">{user.email}</span>
                   </div>
                 </td>
@@ -93,7 +93,7 @@ export default async function AdminUsersPage({
                     ${user.role === 'ADMIN' ? styles.badgeRed : 
                       user.role === 'MODERATOR' ? styles.badgeGold : 
                       user.role === 'BUSINESS' ? styles.badgeBlue : 
-                      'bg-slate-800 text-slate-300 border-slate-700'}
+                      'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'}
                   `}>
                     {user.role}
                   </span>
@@ -130,7 +130,7 @@ export default async function AdminUsersPage({
                 <td className="p-4 text-right">
                   <Link 
                     href={`/admin/users/${user.id}`}
-                    className="text-sm font-medium text-[var(--accent-primary)] hover:text-white transition-colors"
+                    className="text-sm font-medium text-[var(--accent-primary)] hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     Manage
                   </Link>

@@ -11,7 +11,7 @@ export default async function ModerationPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-white">Moderation Queue</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Moderation Queue</h1>
           <p className="text-[var(--text-muted)]">Review user reports and maintain protocol safety.</p>
         </div>
         <div className="text-sm text-[var(--text-muted)] font-mono bg-[var(--glass-panel)] px-3 py-1 rounded-full border border-[var(--glass-border)]">
@@ -23,7 +23,7 @@ export default async function ModerationPage() {
         // Empty State
         <div className="flex flex-col items-center justify-center h-64 border border-dashed border-[var(--glass-border)] rounded-2xl bg-[var(--glass-panel)]">
           <CheckCircle2 size={48} className="text-emerald-500/50 mb-4" />
-          <h3 className="text-lg font-medium text-white">All Clear</h3>
+          <h3 className="text-lg font-medium text-[var(--text-primary)]">All Clear</h3>
           <p className="text-[var(--text-muted)]">No pending reports at this time.</p>
         </div>
       ) : (

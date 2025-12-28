@@ -48,7 +48,7 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
       {/* TOOLBAR */}
       <div className="flex justify-between items-center bg-[var(--glass-panel)] p-4 rounded-xl border border-[var(--glass-border)]">
         <div className="text-sm text-[var(--text-muted)]">
-          <span className="font-bold text-white">{selected.length}</span> users selected
+          <span className="font-bold text-slate-900 dark:text-white">{selected.length}</span> users selected
         </div>
         <button
           onClick={handleActivate}
@@ -56,7 +56,7 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
           className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${
             selected.length > 0 
               ? "bg-[var(--accent-primary)] text-white hover:opacity-90 shadow-[0_0_15px_rgba(124,58,237,0.5)]" 
-              : "bg-slate-800 text-slate-500 cursor-not-allowed"
+              : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
           }`}
         >
           {isPending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
@@ -71,7 +71,7 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
             <thead>
               <tr>
                 <th className={`p-4 ${styles.tableHeader} w-12 text-center`}>
-                  <button onClick={toggleAll} className="hover:text-white transition-colors">
+                  <button onClick={toggleAll} className="hover:text-slate-900 dark:hover:text-white transition-colors">
                     {selected.length === initialData.length && initialData.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
                   </button>
                 </th>
@@ -86,18 +86,18 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
                   <td className="p-4 text-center">
                     <button 
                       onClick={() => toggleSelect(user.id)} 
-                      className={`${selected.includes(user.id) ? "text-[var(--accent-primary)]" : "text-[var(--text-muted)]"} hover:text-white transition-colors`}
+                      className={`${selected.includes(user.id) ? "text-[var(--accent-primary)]" : "text-[var(--text-muted)]"} hover:text-slate-900 dark:hover:text-white transition-colors`}
                     >
                       {selected.includes(user.id) ? <CheckSquare size={18} /> : <Square size={18} />}
                     </button>
                   </td>
-                  <td className="p-4 text-white font-mono text-sm">{user.email}</td>
+                  <td className="p-4 text-slate-900 dark:text-white font-mono text-sm">{user.email}</td>
                   <td className="p-4 text-[var(--text-muted)] text-sm">
                     {new Date(user.joinedAt).toLocaleDateString()} <span className="text-xs opacity-50">({new Date(user.joinedAt).toLocaleTimeString()})</span>
                   </td>
                   <td className="p-4">
                     {user.source ? (
-                      <span className="px-2 py-1 rounded-md bg-slate-800 text-xs text-slate-300 border border-slate-700">
+                      <span className="px-2 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
                         {user.source}
                       </span>
                     ) : (

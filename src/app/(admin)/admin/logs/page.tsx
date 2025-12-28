@@ -30,7 +30,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-3">
             <Terminal className="text-[var(--accent-primary)]" />
             Admin Logging
           </h1>
@@ -48,7 +48,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[var(--glass-border)] bg-white/5">
+              <tr className="border-b border-[var(--glass-border)] bg-black/5 dark:bg-white/5">
                 <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Timestamp</th>
                 <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Admin</th>
                 <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Event Type</th>
@@ -65,19 +65,19 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
                 </tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={log.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col text-xs">
-                        <span className="text-white font-medium">{new Date(log.createdAt).toLocaleString()}</span>
+                        <span className="text-slate-900 dark:text-white font-medium">{new Date(log.createdAt).toLocaleString()}</span>
                         <span className="text-[var(--text-muted)]">{formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                           <User size={12} />
                         </div>
-                        <span className="text-sm text-white">@{log.admin.username}</span>
+                        <span className="text-sm text-slate-900 dark:text-white">@{log.admin.username}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -86,7 +86,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-xs font-mono text-[var(--text-muted)] bg-white/5 px-2 py-1 rounded">
+                      <span className="text-xs font-mono text-[var(--text-muted)] bg-black/5 dark:bg-white/5 px-2 py-1 rounded">
                         {log.targetResource || 'N/A'}
                       </span>
                     </td>
@@ -115,7 +115,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
               className={`px-4 py-2 rounded-lg border transition-all text-xs font-bold ${
                 currentPage === i + 1
                   ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
-                  : "bg-[var(--glass-panel)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
+                  : "bg-[var(--glass-panel)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               {i + 1}
@@ -129,15 +129,15 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
 
 function getLogTypeStyles(type: AdminLogType) {
   switch (type) {
-    case 'AUTH_LOGIN': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    case 'AUTH_LOGOUT': return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
-    case 'USER_UPDATE': return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-    case 'USER_DELETE': return 'text-red-400 bg-red-500/10 border-red-500/20';
-    case 'CONTENT_LOCK': return 'text-orange-400 bg-orange-500/10 border-orange-500/20';
-    case 'CONTENT_UNLOCK': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    case 'REPORT_RESOLVE': return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
-    case 'CONFIG_CHANGE': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-    case 'SUPPORT_TICKET': return 'text-pink-400 bg-pink-500/10 border-pink-500/20';
-    default: return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
+    case 'AUTH_LOGIN': return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+    case 'AUTH_LOGOUT': return 'text-slate-500 dark:text-zinc-400 bg-slate-500/10 dark:bg-zinc-500/10 border-slate-500/20 dark:border-zinc-500/20';
+    case 'USER_UPDATE': return 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20';
+    case 'USER_DELETE': return 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20';
+    case 'CONTENT_LOCK': return 'text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/20';
+    case 'CONTENT_UNLOCK': return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+    case 'REPORT_RESOLVE': return 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20';
+    case 'CONFIG_CHANGE': return 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20';
+    case 'SUPPORT_TICKET': return 'text-pink-600 dark:text-pink-400 bg-pink-500/10 border-pink-500/20';
+    default: return 'text-slate-500 dark:text-zinc-400 bg-slate-500/10 dark:bg-zinc-500/10 border-slate-500/20 dark:border-zinc-500/20';
   }
 }
