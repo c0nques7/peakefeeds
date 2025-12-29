@@ -42,7 +42,6 @@ export async function uploadFile(
       uploadAuthToken: uploadUrlData.authorizationToken,
       fileName: fileName,
       data: data,
-      contentType: contentType,
     });
     
     return response.data;
