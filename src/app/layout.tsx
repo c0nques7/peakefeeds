@@ -7,6 +7,8 @@ import { Web3Provider } from "@/components/providers/Web3Provider";
 import { Providers } from "@/components/Providers"; 
 import ClientLayout from '@/components/layout/ClientLayout' 
 import { SupportProvider } from '@/context/SupportContext'
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -40,9 +42,9 @@ export default async function RootLayout({
           <Web3Provider cookies={cookies}>
             <Providers>
               <SupportProvider>
-                <ClientLayout>
-                  {children}
                 </ClientLayout>
+                <SpeedInsights />
+                <Analytics />
               </SupportProvider>
             </Providers>
           </Web3Provider>
