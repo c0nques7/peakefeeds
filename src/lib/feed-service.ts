@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, Prisma } from '@prisma/client';
+import { getBucketAuthToken } from '@/lib/b2'; // 🟢 Added Import
 
 // 1. Define FeedPost Type
 export type FeedPost = {
@@ -87,42 +88,28 @@ const feedSelect = {
 
 export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]> {
 
+  // Fetch Token
+  let bucketAuthToken = '';
+  try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
+
   const [posts, user] = await Promise.all([
-
     prisma.post.findMany({
-
       take: 20,
-
       orderBy: { createdAt: 'desc' },
-
       select: {
-
         ...feedSelect,
-
         likes: currentUserId 
-
           ? { where: { userId: currentUserId }, select: { type: true } } 
-
           : undefined,
-
       }
-
     }),
-
     currentUserId ? prisma.user.findUnique({
-
       where: { id: currentUserId },
-
       select: { role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
-
     }) : null
-
   ]);
 
-
-
-  return transformPosts(posts, user);
-
+  return transformPosts(posts, user, bucketAuthToken);
 }
 
 
@@ -131,99 +118,72 @@ export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]>
 
 export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
 
+  // Fetch Token
+  let bucketAuthToken = '';
+  try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
+
   const [posts, user] = await Promise.all([
-
     prisma.post.findMany({
-
       where: {
-
         channel: { subscribers: { some: { userId: userId } } }
-
       },
-
       take: 20,
-
       orderBy: { createdAt: 'desc' },
-
       select: {
-
         ...feedSelect,
-
         likes: { where: { userId: userId }, select: { type: true } },
-
       }
-
     }),
-
     prisma.user.findUnique({
-
       where: { id: userId },
-
       select: { role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
-
     })
-
   ]);
 
-
-
-  return transformPosts(posts, user);
-
+  return transformPosts(posts, user, bucketAuthToken);
 }
 
 
 
 // --- HELPER: Transform & Serialize ---
 
-function transformPosts(posts: any[], user?: any): FeedPost[] {
+function transformPosts(posts: any[], user?: any, bucketAuthToken?: string): FeedPost[] {
 
   const isGlobalAdmin = user?.role === 'ADMIN';
-
-  
 
   return posts.map(post => {
 
     const userReaction = post.likes?.[0]?.type || null;
 
-    
-
     // Find subscription for this specific post's channel
-
     const sub = user?.subscriptions?.find((s: any) => s.channelId === post.channelId);
-
     const isCreator = post.channel.creatorId === user?.id;
 
-    
-
     const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
-
     const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
 
-
+    // 🟢 FIX: Handle Private B2 Bucket URLs
+    let finalMediaUrl = post.mediaUrl ?? null;
+    if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
+        if (finalMediaUrl.includes('s3.us-east-005')) {
+            finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
+        }
+        finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
+    }
 
     return {
-
       id: post.id,
-
       title: post.title,
-
       content: post.content,
-
       createdAt: post.createdAt.toISOString(), 
 
-
-
       isVerified: post.isVerified,
-
       isLocked: post.isLocked,
-
       contentHash: post.contentHash,
-
       signature: post.signature,
-
       embedUrl: post.embedUrl,
+      mediaUrl: finalMediaUrl, // 🟢 Updated
 
-      mediaUrl: post.mediaUrl,
 
       
 

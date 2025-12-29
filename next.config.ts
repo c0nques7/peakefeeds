@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
                 https://embed.reddit.com 
                 https://apnews.com 
                 https://www.eporner.com; 
-              media-src 'self' data: https://www.youtube.com https://youtu.be;
+              media-src 'self' data: blob: https://www.youtube.com https://youtu.be https://*.backblazeb2.com;
             `.replace(/\s{2,}/g, ' ').trim() 
           },
           {

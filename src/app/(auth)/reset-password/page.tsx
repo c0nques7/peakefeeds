@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)]">
         <div className="p-8 bg-[var(--glass-card)] rounded-2xl border border-[var(--glass-border)] text-center max-w-md">
           <AlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-          <h1 className="text-xl font-bold text-white mb-2">Invalid Link</h1>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Invalid Link</h1>
           <p className="text-[var(--text-muted)] mb-6">This password reset link is missing required information.</p>
           <Link href="/forgot-password" className="text-[var(--accent-primary)] hover:underline">Request a new one</Link>
         </div>
@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
           <div className="w-12 h-12 bg-[var(--glass-panel)] rounded-full flex items-center justify-center mx-auto mb-4 border border-[var(--glass-border)]">
              <KeyRound className="text-[var(--accent-primary)]" size={24} />
           </div>
-          <h1 className="text-2xl font-bold text-white">Set New Password</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Set New Password</h1>
           <p className="text-sm text-[var(--text-muted)] mt-2">for {email}</p>
         </div>
 
@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
               required 
               minLength={8}
               placeholder="••••••••"
-              className="w-full px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] transition-all"
+              className="w-full px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
             />
           </div>
 
@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
               required 
               minLength={8}
               placeholder="••••••••"
-              className="w-full px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] transition-all"
+              className="w-full px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
             />
           </div>
 

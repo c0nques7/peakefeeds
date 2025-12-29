@@ -25,7 +25,7 @@ import { AdminWelcomeEmail } from "@/components/emails/AdminWelcomeEmail";
 
 // Initialize Resend safely
 const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY) 
+  ? new Resend(process.env.RESEND_API_KEY.trim()) 
   : null;
 
 /**

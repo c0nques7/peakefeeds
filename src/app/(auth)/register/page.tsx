@@ -52,7 +52,7 @@ export default function RegisterPage() {
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Create Account</h1>
         <p className="text-[var(--text-muted)]">
           PeakeFeeds is currently in private beta.
         </p>
@@ -81,11 +81,11 @@ export default function RegisterPage() {
                     placeholder="ENTER-INVITE-CODE"
                     value={formData.inviteCode}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--glass-panel)] border border-[var(--glass-border)] text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] font-mono uppercase tracking-widest transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--glass-panel)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] font-mono uppercase tracking-widest transition-all"
                 />
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-2">
-                Don't have one? <Link href="/" className="hover:text-white underline">Join the Waitlist.</Link>
+                Don't have one? <Link href="/" className="hover:text-[var(--text-primary)] underline">Join the Waitlist.</Link>
             </p>
           </div>
 
@@ -100,7 +100,7 @@ export default function RegisterPage() {
                     setStep(2); 
                 }
             }}
-            className="w-full py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-white font-bold border border-[var(--glass-border)] transition-all"
+            className="w-full py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-[var(--text-primary)] font-bold border border-[var(--glass-border)] transition-all"
           >
             Continue
           </button>
@@ -123,7 +123,7 @@ export default function RegisterPage() {
                 required={step === 2}
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
+                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
               />
               <input
                 name="email"
@@ -132,7 +132,7 @@ export default function RegisterPage() {
                 required={step === 2}
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
+                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
               />
               <input
                 name="password"
@@ -141,7 +141,7 @@ export default function RegisterPage() {
                 required={step === 2}
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
+                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
               />
            </div>
 

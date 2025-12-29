@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
+import { getBucketAuthToken } from "@/lib/b2"; // 🟢 Added Import
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm"; 
 import { SubscribeButton } from "@/components/SubscribeButton";
@@ -25,7 +26,15 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const currentUserId = session?.user?.id || '';
   const isGlobalAdmin = session?.user?.role === 'ADMIN';
 
-  // 1. Fetch Channel Data
+  // 1. Fetch Channel Data & Auth Token
+  // We fetch the auth token once for the whole page render
+  let bucketAuthToken = '';
+  try {
+      bucketAuthToken = await getBucketAuthToken();
+  } catch (e) {
+      console.error("Failed to get B2 Auth Token", e);
+  }
+
   const channel = await prisma.channel.findUnique({
     where: { slug: slug },
     select: {
@@ -111,11 +120,22 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const formattedPosts = channel.posts.map((post) => {
       // @ts-ignore
       const userReaction = post.likes?.[0]?.type || null;
+
+      // 🟢 FIX: Handle Private B2 Bucket URLs
+      let finalMediaUrl = post.mediaUrl ?? null;
+      if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
+          // If it's using the S3 endpoint (s3.us-east-005), swap it to Native (f005)
+          if (finalMediaUrl.includes('s3.us-east-005')) {
+             finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
+          }
+          // Append the auth token
+          finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
+      }
       
       return {
           ...post,
           createdAt: post.createdAt.toISOString(),
-          mediaUrl: post.mediaUrl ?? null,
+          mediaUrl: finalMediaUrl,
           embedUrl: post.embedUrl ?? null,
           signature: post.signature ?? null,
           contentHash: post.contentHash ?? null,

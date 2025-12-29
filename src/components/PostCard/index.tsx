@@ -15,6 +15,7 @@ import { editPost } from '@/actions/edit-post'
 import { createComment } from '@/actions/create-comment' 
 import { CommentItem } from '@/components/comments/CommentItem' 
 import { PostEmbed } from './PostEmbed' 
+import { ClientTimestamp } from '@/components/ClientTimestamp' // 🟢 Import
 import clsx from 'clsx'
 import styles from './PostCard.module.css'
 import ReportModal from '../moderation/ReportModal'
@@ -340,7 +341,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                         {isDemo && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-md text-[var(--accent-primary)] bg-[var(--glass-card)] border border-[var(--glass-border)]">DEMO</span>}
                     </div>
                     <div className={styles.timestamp}>
-                       <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                       <ClientTimestamp date={post.createdAt} />
                        
                        {/* 🟢 2. LINK TO CHANNEL */}
                        {post.channel && (

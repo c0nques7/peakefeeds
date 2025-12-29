@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
           <div className="w-12 h-12 bg-[var(--glass-panel)] rounded-full flex items-center justify-center mx-auto mb-4 border border-[var(--glass-border)]">
             <Mail className="text-[var(--accent-primary)]" size={24} />
           </div>
-          <h1 className="text-2xl font-bold text-white">Reset your password</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Reset your password</h1>
           <p className="text-sm text-[var(--text-muted)] mt-2">Enter your account email and we'll send a reset link.</p>
         </div>
 
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@domain.com"
-              className="w-full mt-2 px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent-primary)] transition-all"
+              className="w-full mt-2 px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
             />
           </div>
 
