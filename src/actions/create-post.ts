@@ -169,8 +169,8 @@ interface PostData {
     salt?: string;
     signature?: string;
     verificationSource?: string;
-    mediaUrl?: string;
-    mediaType?: 'IMAGE' | 'VIDEO';
+    mediaUrl?: string | null;
+    mediaType?: 'IMAGE' | 'VIDEO' | null;
 }
 
 async function savePost(data: PostData): Promise<CreatePostState> {
