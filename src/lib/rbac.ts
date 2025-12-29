@@ -8,6 +8,7 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
   BUSINESS: 2,
   INFLUENCER: 2,
   FACT_CHECKER: 3,
+  EXPERT: 3,
   BOT: 1,
   GOVERNMENT: 3,
   MODERATOR: 4,

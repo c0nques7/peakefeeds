@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import styles from './userrolebadge.module.css';
 
 // Exact match to your Prisma Enum
-export type UserRole = 'STANDARD' | 'BUSINESS' | 'INFLUENCER' | 'MODERATOR' | 'ADMIN' | 'FACT_CHECKER' | 'BOT' | 'GOVERNMENT';
+export type UserRole = 'STANDARD' | 'BUSINESS' | 'INFLUENCER' | 'MODERATOR' | 'ADMIN' | 'FACT_CHECKER' | 'BOT' | 'GOVERNMENT' | 'EXPERT';
 
 interface RoleBadgeProps {
   role: UserRole | string;
@@ -47,6 +47,12 @@ export function UserRoleBadge({ role, className, showLabel = true }: RoleBadgePr
       label: 'Fact Check',
       colorHex: '#22d3ee', // Cyan 400
       tailwind: 'text-cyan-400 bg-cyan-400/10',
+    },
+    EXPERT: {
+      icon: BadgeCheck,
+      label: 'Expert',
+      colorHex: '#818cf8', // Indigo 400
+      tailwind: 'text-indigo-400 bg-indigo-400/10',
     },
     BOT: {
       icon: Bot,
