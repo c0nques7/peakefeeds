@@ -46,6 +46,8 @@ const nextConfig: NextConfig = {
                 https://embed.reddit.com 
                 https://apnews.com 
                 https://www.eporner.com; 
+              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://va.vercel-scripts.com;
+              connect-src 'self' https://vitals.vercel-insights.com https://*.backblazeb2.com https://www.youtube.com;
               media-src 'self' data: blob: https://www.youtube.com https://youtu.be https://*.backblazeb2.com;
             `.replace(/\s{2,}/g, ' ').trim() 
           },
