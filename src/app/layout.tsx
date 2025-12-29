@@ -42,6 +42,8 @@ export default async function RootLayout({
           <Web3Provider cookies={cookies}>
             <Providers>
               <SupportProvider>
+                <ClientLayout>
+                  {children}
                 </ClientLayout>
                 <SpeedInsights />
                 <Analytics />
