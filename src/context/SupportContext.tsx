@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, ReactNode } from 'react'
-import { SupportStatus, SupportPriority } from '@prisma/client'
+import { SupportStatus, SupportPriority} from '@prisma/client'
 import { 
   createTicketAction, 
   addMessageAction, 

@@ -28,8 +28,6 @@ import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 
-
-
 // Support Queue Management Interface
 export default function SupportQueue() {
   const { 

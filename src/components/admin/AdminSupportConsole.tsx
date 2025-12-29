@@ -7,7 +7,7 @@ import { getAllTicketsAction } from '@/actions/support' // 2. Import Admin Actio
 import { MessageSquare, Send, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import styles from '@/app/(admin)/admin/admin.module.css'
 import clsx from 'clsx'
-
+import { SupportStatus } from '@prisma/client'
 export default function AdminSupportConsole() {
   // 3. Removed 'tickets' from context. We only get actions now.
   const { addMessageToTicket, resolveTicket, setTicketSeverity } = useSupport()
