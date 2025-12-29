@@ -89,6 +89,16 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
         linkDescription: post.linkDescription ?? null,
         linkImage: post.linkImage ?? null,
         linkDomain: post.linkDomain ?? null,
+
+        // 🟢 SERIALIZE COMMENTS DATES
+        comments: post.comments.map(c => ({
+            ...c,
+            createdAt: c.createdAt.toISOString() 
+        })),
+
+        // 🟢 PASS MODERATION FLAGS
+        viewerCanDelete: post.viewerCanDelete,
+        viewerChannelRole: post.viewerChannelRole,
         
         author: { 
             id: profile.id, 

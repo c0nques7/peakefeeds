@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, UserRole } from '@prisma/client';
+import { getBucketAuthToken } from '@/lib/b2';
 
 // 1. UPDATED TYPE DEFINITION
 export type ProfileData = {
@@ -55,14 +56,19 @@ export type ProfileData = {
         comments: {
             id: string;
             content: string;
+            createdAt: Date;
             parentId: string | null;
             author: {
                 id: string;
                 username: string | null;
+                image: string | null;
+                role: UserRole;
             };
         }[];
 
         currentUserReaction?: ReactionType | null;
+        viewerCanDelete?: boolean;
+        viewerChannelRole?: string | null;
     }[];
 
     channelsCreated: {
@@ -82,85 +88,118 @@ export async function getProfileData(username: string, currentUserId?: string): 
         return null;
     }
 
-    const user = await prisma.user.findFirst({
-        where: { 
-            username: {
-                equals: username,
-                mode: 'insensitive'
-            }
-        },
-        select: {
-            id: true,
-            username: true,
-            name: true,
-            image: true,
-            walletAddress: true,
-            createdAt: true,
-            role: true,
-            isLocked: true,
-            
-            _count: {
-                select: {
-                    posts: true,
-                    channelsCreated: true,
+    // 1. Fetch Token & Current User Context
+    let bucketAuthToken = '';
+    try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
+
+    const [user, currentUserContext] = await Promise.all([
+        prisma.user.findFirst({
+            where: { 
+                username: {
+                    equals: username,
+                    mode: 'insensitive'
                 }
             },
-            
-            posts: {
-                take: 50,
-                orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true, title: true, content: true, createdAt: true, isVerified: true, isLocked: true,
-                    contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
-                    
-                    // 🆕 SELECT LINK METADATA
-                    linkTitle: true,
-                    linkDescription: true,
-                    linkImage: true,
-                    linkDomain: true,
+            select: {
+                id: true,
+                username: true,
+                name: true,
+                image: true,
+                walletAddress: true,
+                createdAt: true,
+                role: true,
+                isLocked: true,
+                
+                _count: {
+                    select: {
+                        posts: true,
+                        channelsCreated: true,
+                    }
+                },
+                
+                posts: {
+                    take: 50,
+                    orderBy: { createdAt: 'desc' },
+                    select: {
+                        id: true, title: true, content: true, createdAt: true, isVerified: true, isLocked: true,
+                        contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
+                        
+                        // 🆕 SELECT LINK METADATA
+                        linkTitle: true,
+                        linkDescription: true,
+                        linkImage: true,
+                        linkDomain: true,
 
-                    // Counts
-                    likesCount: true,
-                    dislikesCount: true,
+                        // Counts
+                        likesCount: true,
+                        dislikesCount: true,
 
-                    channel: { select: { id: true, name: true, slug: true, creatorId: true } }, 
-                    
-                    comments: {
-                        orderBy: { createdAt: 'asc' }, 
-                        select: {
-                            id: true, content: true, parentId: true, 
-                            author: { select: { id: true, username: true } }
-                        }
-                    },
+                        channel: { select: { id: true, name: true, slug: true, creatorId: true } }, 
+                        
+                        comments: {
+                            orderBy: { createdAt: 'asc' }, 
+                            select: {
+                                id: true, content: true, parentId: true, createdAt: true,
+                                author: { select: { id: true, username: true, image: true, role: true } }
+                            }
+                        },
 
-                    likes: currentUserId ? {
-                        where: { userId: currentUserId },
-                        select: { type: true }
-                    } : false,
-                    
-                    _count: { select: { comments: true } } 
-                }
-            },
+                        likes: currentUserId ? {
+                            where: { userId: currentUserId },
+                            select: { type: true }
+                        } : false,
+                        
+                        _count: { select: { comments: true } } 
+                    }
+                },
 
-            channelsCreated: {
-                orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true, name: true, slug: true,
-                    _count: { select: { subscribers: true } }
+                channelsCreated: {
+                    orderBy: { createdAt: 'desc' },
+                    select: {
+                        id: true, name: true, slug: true,
+                        _count: { select: { subscribers: true } }
+                    }
                 }
             }
-        }
-    });
+        }),
+        currentUserId ? prisma.user.findUnique({
+            where: { id: currentUserId },
+            select: { 
+                id: true,
+                role: true, 
+                subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } 
+            }
+        }) : null
+    ]);
 
     if (!user) return null;
+
+    const isGlobalAdmin = currentUserContext?.role === 'ADMIN';
 
     // TRANSFORM DATA
     const formattedPosts = user.posts.map(post => {
         // @ts-ignore 
         const userReaction = post.likes?.[0]?.type || null;
 
+        // Find subscription for this specific post's channel
+        const sub = currentUserContext?.subscriptions?.find((s: any) => s.channelId === post.channel.id);
+        const isCreator = post.channel.creatorId === currentUserContext?.id;
+
+        const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
+        const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
+
+        // 🟢 FIX: Handle Private B2 Bucket URLs
+        let finalMediaUrl = post.mediaUrl ?? null;
+        if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
+            if (finalMediaUrl.includes('s3.us-east-005')) {
+                finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
+            }
+            finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
+        }
+
         return {
             ...post,
+            mediaUrl: finalMediaUrl,
             // Ensure counts are safe
             likesCount: post.likesCount ?? 0,
             dislikesCount: post.dislikesCount ?? 0,
@@ -170,7 +209,9 @@ export async function getProfileData(username: string, currentUserId?: string): 
                 likes: post.likesCount ?? 0,
                 dislikes: post.dislikesCount ?? 0
             },
-            currentUserReaction: userReaction
+            currentUserReaction: userReaction,
+            viewerCanDelete,
+            viewerChannelRole
         };
     });
 
