@@ -74,8 +74,8 @@ export default function CreatePostForm({
   const { status: linkStatus, metadata: linkMetadata, url: linkPreviewUrl } = useLinkPreview(content);
 
   // 4. Form State
-  const [state, formAction] = useActionState(createPost, initialFormState);
-  const { pending } = useFormStatus();
+  const [state, formAction, isPending] = useActionState(createPost, initialFormState);
+  // const { pending } = useFormStatus(); // REMOVED: Incorrect usage outside form children
 
   // 5. Local State
   const [isExpanded, setIsExpanded] = useState(false);
@@ -120,9 +120,8 @@ export default function CreatePostForm({
   }, [content]);
 
   useEffect(() => {
-    if (state.message && state.errors) {
-        toast.error(state.message);
-    } else if (state.success) {
+    console.log("📝 Form State Update:", state); // 🟢 LOGGING
+    if (state.success) {
         setContent(""); 
         setIsExpanded(false); 
         setMethod('NONE'); 
@@ -133,6 +132,15 @@ export default function CreatePostForm({
         setMediaPreview(null);
         router.refresh(); 
         toast.success("Post published successfully!");
+    } else if (state.message) {
+        console.error("❌ Post Creation Error:", state.message, state.errors); // 🟢 LOGGING
+        toast.error(state.message);
+        // Also show specific field errors if available
+        if (state.errors) {
+            Object.entries(state.errors).forEach(([key, msgs]) => {
+                msgs.forEach(msg => toast.error(`${key}: ${msg}`));
+            });
+        }
     }
   }, [state, router]);
 
@@ -297,7 +305,7 @@ export default function CreatePostForm({
   }, [pendingVerifyChoice, postHash, address, isConnected, signMessageAsync, startVerification, resetAdState, router, username, linkedWallet]);
 
   const isPostReady = content.trim() && (method === 'SKIP' || signature);
-  const isButtonDisabled = pending || isPreparing || !isPostReady || uploading;
+  const isButtonDisabled = isPending || isPreparing || !isPostReady || uploading;
 
   return (
     <>
@@ -399,7 +407,8 @@ export default function CreatePostForm({
                       rows={isExpanded || mediaPreview ? 3 : 1}
                       placeholder="Share your truth..." 
                       name="content"
-                      className="w-full border-none focus:ring-0 resize-none p-2 text-lg bg-transparent placeholder-gray-500/50 focus:outline-none transition-all"
+                      readOnly={method === 'WALLET' || method === 'AD'}
+                      className="w-full border-none focus:ring-0 resize-none p-2 text-lg bg-transparent placeholder-gray-500/50 focus:outline-none transition-all read-only:opacity-70"
                       style={{ color: 'var(--text-primary)' }}
                       onClick={() => setIsExpanded(true)}
                   />
@@ -558,7 +567,7 @@ export default function CreatePostForm({
                   <button type="submit" disabled={isButtonDisabled}
                       className="px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(13,148,136,0.3)] hover:shadow-[0_0_25px_rgba(13,148,136,0.5)]"
                       style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', color: 'white' }}>
-                      {pending ? (<Loader2 className="animate-spin" size={16} />) : (`Post ${isPostReady ? `(${method})` : ''}`)}
+                      {isPending ? (<Loader2 className="animate-spin" size={16} />) : (`Post ${isPostReady ? `(${method})` : ''}`)}
                   </button>
                 </div>
               </>

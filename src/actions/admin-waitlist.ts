@@ -9,7 +9,7 @@ import { render } from "@react-email/render";
 import { ActivationEmail } from "@/components/emails/ActivationEmail"; // 🟢 Ensure this matches filename
 
 const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY) 
+  ? new Resend(process.env.RESEND_API_KEY.trim()) 
   : null;
 
 export async function getPendingWaitlist(limit = 100) {

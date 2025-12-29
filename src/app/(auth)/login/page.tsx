@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Welcome Back</h1>
         <p className="text-[var(--text-muted)]">Sign in to access your feed.</p>
       </div>
 
@@ -56,7 +56,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] transition-all"
+            className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] transition-all"
           />
         </div>
         
@@ -67,12 +67,12 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] transition-all"
+            className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] transition-all"
           />
           <div className="flex justify-end mt-2">
             <Link 
               href="/forgot-password" 
-              className="text-xs text-[var(--text-muted)] hover:text-white transition-colors"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               Forgot password?
             </Link>

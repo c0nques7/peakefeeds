@@ -11,12 +11,12 @@ export const parseMediaUrl = (url: string): MediaMeta => {
   if (!url) return { type: 'link', id: null, url: '' };
 
   // 1. IMAGES
-  if (url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || url.match(/(picsum\.photos|i\.imgur\.com)/)) {
+  if (url.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) || url.match(/(picsum\.photos|i\.imgur\.com)/) || url.startsWith('blob:')) {
     return { type: 'image', id: null, url };
   }
 
   // 1.5 VIDEOS
-  if (url.match(/\.(mp4|webm|ogg|mov)$/i)) {
+  if (url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i)) {
     return { type: 'video', id: null, url };
   }
 

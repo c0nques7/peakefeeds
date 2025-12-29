@@ -37,6 +37,7 @@ export async function createPost(
 ): Promise<CreatePostState> {
 
   console.log("🚀 Action Started: createPost");
+  console.log("📝 FormData Keys:", Array.from(formData.keys()));
 
   const session = await getServerSession(authOptions);
   
@@ -45,16 +46,22 @@ export async function createPost(
   }
 
   // 2. PARSE DATA
+  // Helper to convert empty strings to null
+  const getString = (key: string) => {
+      const val = formData.get(key);
+      return (val && val !== '') ? val : null;
+  };
+
   const validatedFields = FinalPostSchema.safeParse({
     content: formData.get('content'),
     channelId: formData.get('channelId'),
     verificationMethod: formData.get('verificationMethod'),
-    contentHash: formData.get('contentHash'),
-    salt: formData.get('salt'),
-    signature: formData.get('signature'),
-    adProofToken: formData.get('adProofToken'),
-    mediaUrl: formData.get('mediaUrl'),
-    mediaType: formData.get('mediaType'),
+    contentHash: getString('contentHash'),
+    salt: getString('salt'),
+    signature: getString('signature'),
+    adProofToken: getString('adProofToken'),
+    mediaUrl: getString('mediaUrl'),
+    mediaType: getString('mediaType'),
   });
 
   if (!validatedFields.success) {
@@ -82,8 +89,19 @@ export async function createPost(
   }
 
   // A. Integrity Check (Has content been tampered with?)
-  const serverRecalculatedHash = generateContentHash(content, salt);
+  // 🟢 NORMALIZE NEWLINES: Client (browser) uses LF, but FormData might have CRLF.
+  // We normalize to LF (\n) to match client-side React state behavior.
+  const normalizedContent = content.replace(/\r\n/g, '\n');
+  const serverRecalculatedHash = generateContentHash(normalizedContent, salt);
+  
   if (serverRecalculatedHash !== contentHash) {
+      console.error("❌ Hash Mismatch!", { 
+          serverHash: serverRecalculatedHash, 
+          clientHash: contentHash,
+          contentPreview: normalizedContent.substring(0, 20),
+          originalContentLen: content.length,
+          normalizedContentLen: normalizedContent.length 
+      });
       return { message: "Verification failed: Content integrity compromised." };
   }
 
@@ -119,7 +137,13 @@ export async function createPost(
       console.log(`✅ Ad Token Verified: ${adProofToken.slice(0, 15)}...`);
   }
 
-  console.log("✅ All Verification Passed. Saving to DB...");
+  console.log("✅ All Verification Passed. Saving to DB...", { 
+      contentLength: content.length, 
+      channelId, 
+      verificationMethod,
+      mediaType,
+      hasMediaUrl: !!mediaUrl 
+  });
 
   return await savePost({ 
     content, 
@@ -151,8 +175,10 @@ interface PostData {
 
 async function savePost(data: PostData): Promise<CreatePostState> {
     try {
+        console.log("💾 savePost called. Fetching metadata...");
         // 1. DETECT LINK METADATA
         const metadata = await fetchLinkMetadata(data.content);
+        console.log("🔗 Metadata fetched:", { title: metadata.title, url: metadata.url });
         
         // Determine Post Type
         let postType: any = "TEXT";
@@ -161,6 +187,7 @@ async function savePost(data: PostData): Promise<CreatePostState> {
         } else if (metadata.title) {
             postType = "LINK";
         }
+        console.log("📌 Determined Post Type:", postType);
 
         const newPost = await prisma.post.create({
             data: {
@@ -182,6 +209,7 @@ async function savePost(data: PostData): Promise<CreatePostState> {
                 linkDomain: metadata.domain,
             }
         });
+        console.log("✅ DB Insert Success! New Post ID:", newPost.id);
 
         // Revalidate
         const channel = await prisma.channel.findUnique({ where: { id: data.channelId }, select: { slug: true } });

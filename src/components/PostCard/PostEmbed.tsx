@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { ExternalLink, Loader2, Music, Video, MessageCircle } from 'lucide-react'
 import clsx from 'clsx'
 import { parseMediaUrl } from '@/lib/media-parser'
-import { OEmbedPlayer } from './OEmbedPlayer' // <--- The new component you created
+import { OEmbedPlayer } from './OEmbedPlayer'
 
 // --- 1. SIMPLE REUSABLE FALLBACK ---
 export const GenericLinkCard = ({ url, data, icon, label }: any) => (
@@ -42,6 +42,8 @@ export const GenericLinkCard = ({ url, data, icon, label }: any) => (
 const ImageEmbed = ({ url }: { url: string }) => {
     const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
 
+    if (status === 'error') return null;
+
     return (
         <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black/5 flex justify-center min-h-[200px]">
              {status === 'loading' && (
@@ -49,25 +51,15 @@ const ImageEmbed = ({ url }: { url: string }) => {
                      <Loader2 className="animate-spin" />
                  </div>
              )}
-             {status === 'error' && (
-                 <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)] bg-red-500/5">
-                     <ExternalLink className="opacity-20 mb-2" size={32} />
-                     <span className="text-[10px] uppercase font-bold opacity-40">Failed to load image</span>
-                 </div>
-             )}
             <img 
                 src={url} 
                 alt="Post content" 
                 className={clsx(
                     "w-full h-auto object-contain max-h-[600px] transition-opacity duration-500",
-                    status === 'loaded' ? 'opacity-100' : 'opacity-0',
-                    status !== 'loaded' && 'absolute invisible'
+                    status === 'loaded' ? 'opacity-100' : 'opacity-0'
                 )} 
                 onLoad={() => setStatus('loaded')}
-                onError={() => {
-                    console.error('Image load failed for URL:', url);
-                    setStatus('error');
-                }}
+                onError={() => setStatus('error')}
             />
         </div>
     );
@@ -80,7 +72,24 @@ const VideoEmbed = ({ url }: { url: string }) => {
             <video 
                 src={url} 
                 controls 
+                preload="metadata"
                 className="w-full h-auto max-h-[600px]"
+            />
+        </div>
+    );
+};
+
+// --- 2.6 YOUTUBE RENDERER ---
+const YouTubeEmbed = ({ id }: { id: string }) => {
+    return (
+        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video">
+            <iframe
+                src={`https://www.youtube.com/embed/${id}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
             />
         </div>
     );
@@ -88,8 +97,13 @@ const VideoEmbed = ({ url }: { url: string }) => {
 
 // --- 3. MAIN CONTROLLER ---
 export const PostEmbed = ({ url, fallbackData, forcedType }: { url: string, fallbackData?: any, forcedType?: string }) => {
-    const { type: detectedType } = useMemo(() => parseMediaUrl(url), [url]);
-    const type = forcedType || detectedType;
+    const { type: detectedType, id } = useMemo(() => parseMediaUrl(url), [url]);
+    
+    // Logic: Use forcedType unless it's just a generic 'link' or 'video' and we detected something better (like YouTube)
+    let type = forcedType || detectedType;
+    if ((type === 'link' || type === 'video') && detectedType !== 'link' && detectedType !== 'video') {
+        type = detectedType;
+    }
 
     if (!url) return null;
 
@@ -103,9 +117,14 @@ export const PostEmbed = ({ url, fallbackData, forcedType }: { url: string, fall
         return <VideoEmbed url={url} />;
     }
 
+    // CASE A.6: YouTube
+    if (type === 'youtube' && id) {
+        return <YouTubeEmbed id={id} />;
+    }
+
     // CASE B: Rich Media (Delegate to OEmbed Proxy)
-    // This covers Spotify, YouTube, TikTok, SoundCloud, Reddit
-    if (['spotify', 'youtube', 'tiktok', 'soundcloud', 'reddit'].includes(type)) {
+    // This covers Spotify, TikTok, SoundCloud, Reddit
+    if (['spotify', 'tiktok', 'soundcloud', 'reddit'].includes(type)) {
         return (
             <div className="mt-3 relative z-10 w-full max-w-[650px]">
                 <OEmbedPlayer 
