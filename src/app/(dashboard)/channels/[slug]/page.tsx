@@ -105,6 +105,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
 
   // 2. Transform Data (Fix Dates & Nulls)
   const viewerSubscription = channel.subscribers[0];
+  const isCreator = channel.creatorId === currentUserId;
+  const isSubscribedInitial = channel.subscribers.length > 0;
   
   const formattedPosts = channel.posts.map((post) => {
       // @ts-ignore
@@ -144,9 +146,6 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           currentUserReaction: userReaction
       }
   });
-
-  const isSubscribedInitial = channel.subscribers.length > 0;
-  const isCreator = channel.creatorId === currentUserId;
 
   return (
     <div className={styles.feedWrapper}>

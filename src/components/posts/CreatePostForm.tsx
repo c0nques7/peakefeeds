@@ -7,7 +7,7 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom'; 
 
 // UI Components
-import { Loader2, User, Wallet, PlayCircle, ShieldOff, ShieldCheck, ArrowRight, Eye, Lock } from 'lucide-react';
+import { Loader2, User, Wallet, PlayCircle, ShieldOff, ShieldCheck, ArrowRight, Eye, Lock, Image as ImageIcon, Video as VideoIcon, X } from 'lucide-react';
 import { toast } from 'sonner'; 
 
 // Actions & Utils
@@ -15,6 +15,7 @@ import { createPost, CreatePostState } from '@/actions/create-post';
 import { verifyWalletAddress } from '@/actions/verify-wallet'; 
 import { generateContentHash, generateSalt } from '@/lib/verification'; 
 import { VerificationMethod } from '@/lib/types'; 
+import { validateFile, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from '@/lib/storage-utils';
 
 // Hooks
 import { useAdMediator } from '@/hooks/useAdMediator';
@@ -70,7 +71,7 @@ export default function CreatePostForm({
   // 3. Link Preview Hook
   const [content, setContent] = useState("");
   // ✅ FIX: Destructure 'metadata' (not 'meta') and alias it to 'linkMetadata'
-  const { status: linkStatus, metadata: linkMetadata, url: previewUrl } = useLinkPreview(content);
+  const { status: linkStatus, metadata: linkMetadata, url: linkPreviewUrl } = useLinkPreview(content);
 
   // 4. Form State
   const [state, formAction] = useActionState(createPost, initialFormState);
@@ -88,7 +89,17 @@ export default function CreatePostForm({
   const [postSalt, setPostSalt] = useState<string | null>(null);
   const [adProofToken, setAdProofToken] = useState<string | null>(null);
 
-  // 7. Verification Confirmation
+  // 7. Media State
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'IMAGE' | 'VIDEO' | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // 8. Verification Confirmation
   const [showVerifyWarning, setShowVerifyWarning] = useState(false);
   const [pendingVerifyChoice, setPendingVerifyChoice] = useState<'WALLET' | 'AD' | null>(null);
 
@@ -117,14 +128,97 @@ export default function CreatePostForm({
         setMethod('NONE'); 
         setSignature(null);
         setAdProofToken(null);
+        setMediaUrl(null);
+        setMediaType(null);
+        setMediaPreview(null);
         router.refresh(); 
         toast.success("Post published successfully!");
     }
   }, [state, router]);
 
+  useEffect(() => {
+    return () => {
+      if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+    };
+  }, [mediaPreview]);
+
   const redirectToProfile = () => {
       toast.info("Please connect your wallet in your profile.");
       router.push(`/profile/${username}?tab=wallet`);
+  };
+
+  // --- Upload Logic ---
+  const handleFileUpload = async (file: File) => {
+    try {
+      validateFile(file);
+      setUploading(true);
+      setUploadProgress(10);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Create local preview
+      if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+      const preview = URL.createObjectURL(file);
+      setMediaPreview(preview);
+      const isVideo = ALLOWED_VIDEO_TYPES.includes(file.type);
+      setMediaType(isVideo ? 'VIDEO' : 'IMAGE');
+
+      setUploadProgress(30);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      setUploadProgress(80);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      setMediaUrl(data.url);
+      setUploadProgress(100);
+      toast.success('Media uploaded successfully');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Failed to upload media');
+      setMediaPreview(null);
+      setMediaType(null);
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadProgress(0), 1000);
+    }
+  };
+
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  };
+
+  const removeMedia = () => {
+    setMediaUrl(null);
+    setMediaPreview(null);
+    setMediaType(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileUpload(file);
   };
 
   // --- Verification Logic ---
@@ -203,7 +297,7 @@ export default function CreatePostForm({
   }, [pendingVerifyChoice, postHash, address, isConnected, signMessageAsync, startVerification, resetAdState, router, username, linkedWallet]);
 
   const isPostReady = content.trim() && (method === 'SKIP' || signature);
-  const isButtonDisabled = pending || isPreparing || !isPostReady;
+  const isButtonDisabled = pending || isPreparing || !isPostReady || uploading;
 
   return (
     <>
@@ -279,6 +373,9 @@ export default function CreatePostForm({
         )}
 
         <form action={formAction}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           onSubmit={(e) => { 
               if (!content.trim() || method === 'NONE') { 
                   e.preventDefault();
@@ -286,7 +383,7 @@ export default function CreatePostForm({
                   return;
               }
           }}
-          className="relative rounded-2xl p-4 backdrop-blur-md transition-all duration-300"
+          className={`relative rounded-2xl p-4 backdrop-blur-md transition-all duration-300 ${isDragging ? 'ring-2 ring-teal-500/50 bg-teal-500/5' : ''}`}
           style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-card)' }}
         >
           
@@ -299,7 +396,7 @@ export default function CreatePostForm({
                   <textarea 
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
-                      rows={isExpanded ? 3 : 1}
+                      rows={isExpanded || mediaPreview ? 3 : 1}
                       placeholder="Share your truth..." 
                       name="content"
                       className="w-full border-none focus:ring-0 resize-none p-2 text-lg bg-transparent placeholder-gray-500/50 focus:outline-none transition-all"
@@ -313,6 +410,40 @@ export default function CreatePostForm({
                   <input type="hidden" name="signature" value={signature || ''} />
                   <input type="hidden" name="verificationMethod" value={method} />
                   <input type="hidden" name="adProofToken" value={adProofToken || ''} />
+                  <input type="hidden" name="mediaUrl" value={mediaUrl || ''} />
+                  <input type="hidden" name="mediaType" value={mediaType || ''} />
+
+                  {/* MEDIA PREVIEW */}
+                  {mediaPreview && (
+                    <div className="relative mt-2 rounded-xl overflow-hidden group border border-[var(--glass-border)]">
+                      {mediaType === 'IMAGE' ? (
+                        <img src={mediaPreview} alt="Upload preview" className="w-full h-auto max-h-[300px] object-cover" />
+                      ) : (
+                        <video src={mediaPreview} controls className="w-full h-auto max-h-[300px] object-cover" />
+                      )}
+                      
+                      {uploading && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
+                           <div className="text-center">
+                              <Loader2 className="animate-spin text-white mb-2 mx-auto" size={24} />
+                              <div className="w-32 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                                 <div className="h-full bg-teal-500 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                              </div>
+                           </div>
+                        </div>
+                      )}
+
+                      {!uploading && (
+                        <button 
+                          type="button" 
+                          onClick={removeMedia}
+                          className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* LIVE PREVIEW AREA */}
                   {isExpanded && content.trim().length > 0 && showPreview && (
@@ -327,7 +458,8 @@ export default function CreatePostForm({
                                 verificationMethod={method}
                                 linkStatus={linkStatus}
                                 linkMetadata={linkMetadata}
-                                previewUrl={previewUrl}
+                                previewUrl={mediaPreview || mediaUrl || linkPreviewUrl}
+                                mediaType={mediaType}
                                 authorName={username}
                                 authorHandle={username} 
                                 authorAvatar={userImage || undefined}
@@ -337,18 +469,45 @@ export default function CreatePostForm({
                       </div>
                   )}
 
-                  {isExpanded && (
-                      <div className="flex justify-between items-center mt-2">
-                          <p className="text-[10px] text-[var(--text-muted)] opacity-70">* Content hashed locally before signing.</p>
-                          <button 
-                             type="button" 
-                             onClick={() => setShowPreview(!showPreview)}
-                             className="text-[10px] flex items-center gap-1 text-[var(--text-muted)] hover:text-white transition-colors"
-                          >
-                             <Eye size={12} /> {showPreview ? 'Hide Preview' : 'Show Preview'}
-                          </button>
+                  <div className="flex justify-between items-center mt-2">
+                      <div className="flex gap-4">
+                        <button 
+                          type="button" 
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="text-[var(--text-muted)] hover:text-teal-400 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                        >
+                          <ImageIcon size={18} />
+                          <span>Photo</span>
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="text-[var(--text-muted)] hover:text-teal-400 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                        >
+                          <VideoIcon size={18} />
+                          <span>Video</span>
+                        </button>
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={onFileSelect} 
+                          className="hidden" 
+                          accept="image/*,video/*"
+                        />
                       </div>
-                  )}
+
+                      {isExpanded && (
+                        <button 
+                          type="button" 
+                          onClick={() => setShowPreview(!showPreview)}
+                          className="text-[10px] flex items-center gap-1 text-[var(--text-muted)] hover:text-white transition-colors"
+                        >
+                          <Eye size={12} /> {showPreview ? 'Hide Preview' : 'Show Preview'}
+                        </button>
+                      )}
+                  </div>
               </div>
           </div>
 
