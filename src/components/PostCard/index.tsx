@@ -425,7 +425,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
               )}
           </div>
 
-          {hasEmbed && <PostEmbed url={mediaUrl} fallbackData={post} />}
+          {hasEmbed && <PostEmbed url={mediaUrl} fallbackData={post} forcedType={post.type?.toLowerCase()} />}
 
           {/* ACTIONS FOOTER */}
           <div className="flex flex-col gap-3 pt-3 border-t border-[var(--glass-border)] mt-auto">

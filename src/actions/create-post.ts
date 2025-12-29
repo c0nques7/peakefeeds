@@ -13,10 +13,12 @@ const FinalPostSchema = z.object({
   content: z.string().min(1).max(2000),
   channelId: z.string(),
   verificationMethod: z.enum(['WALLET', 'AD', 'SKIP']), 
-  contentHash: z.string().optional(),
-  salt: z.string().optional(),
-  signature: z.string().optional(),
-  adProofToken: z.string().optional(), // 🆕 NEW FIELD
+  contentHash: z.string().nullable().optional(),
+  salt: z.string().nullable().optional(),
+  signature: z.string().nullable().optional(),
+  adProofToken: z.string().nullable().optional(),
+  mediaUrl: z.string().nullable().optional(),
+  mediaType: z.enum(['IMAGE', 'VIDEO']).nullable().optional(),
 });
 
 export type CreatePostState = {
@@ -50,7 +52,9 @@ export async function createPost(
     contentHash: formData.get('contentHash'),
     salt: formData.get('salt'),
     signature: formData.get('signature'),
-    adProofToken: formData.get('adProofToken'), // 🆕 EXTRACT
+    adProofToken: formData.get('adProofToken'),
+    mediaUrl: formData.get('mediaUrl'),
+    mediaType: formData.get('mediaType'),
   });
 
   if (!validatedFields.success) {
@@ -61,11 +65,11 @@ export async function createPost(
     };
   }
 
-  const { content, channelId, verificationMethod, contentHash, salt, signature, adProofToken } = validatedFields.data;
+  const { content, channelId, verificationMethod, contentHash, salt, signature, adProofToken, mediaUrl, mediaType } = validatedFields.data;
 
   // Case: SKIP (Unverified)
   if (verificationMethod === 'SKIP') {
-      return await savePost({ content, channelId, authorId: session.user.id });
+      return await savePost({ content, channelId, authorId: session.user.id, mediaUrl, mediaType });
   }
 
   // Case: WALLET/AD - Verification Logic
@@ -125,7 +129,9 @@ export async function createPost(
     contentHash,
     salt,
     signature,
-    verificationSource: verificationMethod === 'AD' ? 'HYPELAB' : 'WALLET'
+    verificationSource: verificationMethod === 'AD' ? 'HYPELAB' : 'WALLET',
+    mediaUrl,
+    mediaType
   });
 }
 
@@ -139,6 +145,8 @@ interface PostData {
     salt?: string;
     signature?: string;
     verificationSource?: string;
+    mediaUrl?: string;
+    mediaType?: 'IMAGE' | 'VIDEO';
 }
 
 async function savePost(data: PostData): Promise<CreatePostState> {
@@ -147,7 +155,12 @@ async function savePost(data: PostData): Promise<CreatePostState> {
         const metadata = await fetchLinkMetadata(data.content);
         
         // Determine Post Type
-        const postType = metadata.title ? "LINK" : "TEXT"; 
+        let postType: any = "TEXT";
+        if (data.mediaType) {
+            postType = data.mediaType;
+        } else if (metadata.title) {
+            postType = "LINK";
+        }
 
         const newPost = await prisma.post.create({
             data: {
@@ -162,7 +175,7 @@ async function savePost(data: PostData): Promise<CreatePostState> {
                 
                 // 2. SAVE DYNAMIC TYPE & METADATA
                 type: postType,
-                mediaUrl: metadata.url,
+                mediaUrl: data.mediaUrl || metadata.url,
                 linkTitle: metadata.title,
                 linkDescription: metadata.description,
                 linkImage: metadata.image,

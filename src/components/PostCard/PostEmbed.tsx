@@ -42,8 +42,6 @@ export const GenericLinkCard = ({ url, data, icon, label }: any) => (
 const ImageEmbed = ({ url }: { url: string }) => {
     const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
 
-    if (status === 'error') return null;
-
     return (
         <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black/5 flex justify-center min-h-[200px]">
              {status === 'loading' && (
@@ -51,29 +49,58 @@ const ImageEmbed = ({ url }: { url: string }) => {
                      <Loader2 className="animate-spin" />
                  </div>
              )}
+             {status === 'error' && (
+                 <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)] bg-red-500/5">
+                     <ExternalLink className="opacity-20 mb-2" size={32} />
+                     <span className="text-[10px] uppercase font-bold opacity-40">Failed to load image</span>
+                 </div>
+             )}
             <img 
                 src={url} 
                 alt="Post content" 
                 className={clsx(
                     "w-full h-auto object-contain max-h-[600px] transition-opacity duration-500",
-                    status === 'loaded' ? 'opacity-100' : 'opacity-0'
+                    status === 'loaded' ? 'opacity-100' : 'opacity-0',
+                    status !== 'loaded' && 'absolute invisible'
                 )} 
                 onLoad={() => setStatus('loaded')}
-                onError={() => setStatus('error')}
+                onError={() => {
+                    console.error('Image load failed for URL:', url);
+                    setStatus('error');
+                }}
+            />
+        </div>
+    );
+};
+
+// --- 2.5 LOCAL VIDEO RENDERER ---
+const VideoEmbed = ({ url }: { url: string }) => {
+    return (
+        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black/5 flex justify-center bg-black">
+            <video 
+                src={url} 
+                controls 
+                className="w-full h-auto max-h-[600px]"
             />
         </div>
     );
 };
 
 // --- 3. MAIN CONTROLLER ---
-export const PostEmbed = ({ url, fallbackData }: { url: string, fallbackData?: any }) => {
-    const { type } = useMemo(() => parseMediaUrl(url), [url]);
+export const PostEmbed = ({ url, fallbackData, forcedType }: { url: string, fallbackData?: any, forcedType?: string }) => {
+    const { type: detectedType } = useMemo(() => parseMediaUrl(url), [url]);
+    const type = forcedType || detectedType;
 
     if (!url) return null;
 
     // CASE A: Images (Handle locally for speed)
     if (type === 'image') {
         return <ImageEmbed url={url} />;
+    }
+
+    // CASE A.5: Videos
+    if (type === 'video') {
+        return <VideoEmbed url={url} />;
     }
 
     // CASE B: Rich Media (Delegate to OEmbed Proxy)

@@ -23,6 +23,7 @@ interface PostPreviewProps {
   linkStatus: LinkStatus;
   linkMetadata?: LinkMetadata; 
   previewUrl?: string | null;  
+  mediaType?: string | null;
   authorName?: string;
   authorHandle?: string;
   authorAvatar?: string;
@@ -47,6 +48,7 @@ export default function PostPreview({
   linkStatus,
   linkMetadata,
   previewUrl,
+  mediaType,
   authorName = "Anon User",
   authorHandle = "anon",
   authorAvatar,
@@ -108,6 +110,7 @@ export default function PostPreview({
                 <PostEmbed 
                   url={previewUrl} 
                   fallbackData={linkMetadata} // Used if it falls back to GenericLinkCard
+                  forcedType={mediaType?.toLowerCase()}
                 />
              </div>
           )}

@@ -1,4 +1,4 @@
-export type MediaType = 'youtube' | 'spotify' | 'soundcloud' | 'instagram' | 'tiktok' | 'image' | 'link';
+export type MediaType = 'youtube' | 'spotify' | 'soundcloud' | 'instagram' | 'tiktok' | 'image' | 'video' | 'link';
 
 export interface MediaMeta {
   type: MediaType;
@@ -13,6 +13,11 @@ export const parseMediaUrl = (url: string): MediaMeta => {
   // 1. IMAGES
   if (url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || url.match(/(picsum\.photos|i\.imgur\.com)/)) {
     return { type: 'image', id: null, url };
+  }
+
+  // 1.5 VIDEOS
+  if (url.match(/\.(mp4|webm|ogg|mov)$/i)) {
+    return { type: 'video', id: null, url };
   }
 
   // 2. YOUTUBE
