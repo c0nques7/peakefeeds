@@ -41,7 +41,7 @@ export async function requestPasswordReset(formData: FormData) {
     });
 
     const TOKEN_LIFETIME_MS = 3600 * 1000; // 1 hour
-    const COOLDOWN_MS = 10 * 60 * 1000;    // 10 minutes
+    const COOLDOWN_MS = 60 * 1000;         // 1 minute
 
     if (existing) {
       const createdAt = new Date(existing.expires.getTime() - TOKEN_LIFETIME_MS);
@@ -104,7 +104,8 @@ export async function requestPasswordReset(formData: FormData) {
 
         if (error) {
           console.error('[RESEND ERROR] API returned error:', error.name, error.message);
-          // If you see "Domain not verified" here, you must verify peakefeeds.com in the Resend dashboard.
+          // If sending fails, delete the token so user isn't rate-limited
+          await prisma.verificationToken.deleteMany({ where: { identifier: email.toLowerCase() } });
           throw new Error(error.message);
         }
 
@@ -112,6 +113,13 @@ export async function requestPasswordReset(formData: FormData) {
 
       } catch (err) {
         console.error('[RESEND CRITICAL] Failed to dispatch email:', err);
+        // Clean up token on critical failure as well
+        try {
+          await prisma.verificationToken.deleteMany({ where: { identifier: email.toLowerCase() } });
+        } catch (cleanupErr) {
+          console.error('[DB ERROR] Failed to cleanup token after email failure:', cleanupErr);
+        }
+        
         // Fallback: Log link to console so developers can still test if email fails
         console.log(`\n------------------------------------------------`);
         console.log(`[STAGING FALLBACK] RESET LINK for ${email}:`);
