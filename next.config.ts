@@ -21,6 +21,34 @@ const nextConfig: NextConfig = {
   },
 
   // 2. HEADERS (Security)
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.backblazeb2.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pbs.twimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'abs.twimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+    ],
+  },
   async headers() {
     return [
       {

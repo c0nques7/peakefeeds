@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import B2 from 'backblaze-b2';
 
 const b2 = new B2({
@@ -97,13 +98,19 @@ export async function getAuthorizedDownloadUrl(fileName: string, validDurationIn
 
 /**
  * 🟢 NEW: Get a bucket-wide auth token for efficient signing of multiple images
+ * Cached for 58 minutes to avoid spamming B2 API on every request
  */
-export async function getBucketAuthToken(validDurationInSeconds = 3600) {
-  await authorize();
-  const response = await b2.getDownloadAuthorization({
-    bucketId: process.env.B2_BUCKET_ID || '',
-    fileNamePrefix: "", // Empty prefix = access to all files in bucket
-    validDurationInSeconds,
-  });
-  return response.data.authorizationToken;
-}
+export const getBucketAuthToken = unstable_cache(
+  async (validDurationInSeconds = 3600) => {
+    await authorize();
+    const response = await b2.getDownloadAuthorization({
+      bucketId: process.env.B2_BUCKET_ID || '',
+      fileNamePrefix: "", // Empty prefix = access to all files in bucket
+      validDurationInSeconds,
+    });
+    return response.data.authorizationToken;
+  },
+  ['b2-bucket-auth-token'],
+  { revalidate: 3500 } // Cache for slightly less than 1 hour
+);
+

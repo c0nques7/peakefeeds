@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Image from 'next/image'
 import { ExternalLink, Loader2, Music, Video, MessageCircle } from 'lucide-react'
 import clsx from 'clsx'
 import { parseMediaUrl } from '@/lib/media-parser'
@@ -15,8 +16,14 @@ export const GenericLinkCard = ({ url, data, icon, label }: any) => (
     className="group relative z-10 flex mt-3 h-24 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-panel)] hover:bg-white/5 transition-all"
   >
       {data?.linkImage ? (
-          <div className="w-24 h-full flex-shrink-0">
-              <img src={data.linkImage} className="w-full h-full object-cover" alt="" />
+          <div className="w-24 h-full flex-shrink-0 relative">
+              <Image 
+                src={data.linkImage} 
+                className="object-cover" 
+                alt="" 
+                fill
+                sizes="96px"
+              />
           </div>
       ) : (
           <div className="w-20 h-full flex-shrink-0 bg-[var(--surface-elevated)] flex items-center justify-center border-r border-[var(--glass-border)] text-[var(--text-muted)]">
@@ -51,13 +58,15 @@ const ImageEmbed = ({ url }: { url: string }) => {
                      <Loader2 className="animate-spin" />
                  </div>
              )}
-            <img 
+            <Image 
                 src={url} 
                 alt="Post content" 
+                fill
                 className={clsx(
-                    "w-full h-auto object-contain max-h-[600px] transition-opacity duration-500",
+                    "object-contain transition-opacity duration-500",
                     status === 'loaded' ? 'opacity-100' : 'opacity-0'
-                )} 
+                )}
+                sizes="(max-width: 768px) 100vw, 600px"
                 onLoad={() => setStatus('loaded')}
                 onError={() => setStatus('error')}
             />
