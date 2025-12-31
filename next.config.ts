@@ -80,6 +80,9 @@ const nextConfig: NextConfig = {
                 https://apnews.com 
                 https://www.eporner.com; 
               script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://va.vercel-scripts.com https://www.youtube.com https://s.ytimg.com;
+              style-src 'self' 'unsafe-inline';
+              img-src 'self' data: blob: https:;
+              font-src 'self' data:;
               connect-src 'self' https://vitals.vercel-insights.com https://*.backblazeb2.com https://www.youtube.com https://*.googlevideo.com;
               media-src 'self' data: blob: https://www.youtube.com https://youtu.be https://*.backblazeb2.com https://*.googlevideo.com;
             `.replace(/\s{2,}/g, ' ').trim() 
