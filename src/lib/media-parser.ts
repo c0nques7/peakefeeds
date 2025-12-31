@@ -21,7 +21,8 @@ export const parseMediaUrl = (url: string): MediaMeta => {
   }
 
   // 2. YOUTUBE
-  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=)|shorts\/)([^#&?]*).*/);
+  // Supports: youtube.com, www.youtube.com, m.youtube.com, music.youtube.com, youtu.be
+  const ytMatch = url.match(/(?:youtu\.be\/|(?:www\.|m\.|music\.)?youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=)|shorts\/)([^#&?]*).*/);
   if (ytMatch && ytMatch[1].length === 11) {
     return { type: 'youtube', id: ytMatch[1], url };
   }

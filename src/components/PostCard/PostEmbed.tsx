@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Image from 'next/image'
 import { ExternalLink, Loader2, Music, Video, MessageCircle } from 'lucide-react'
 import clsx from 'clsx'
 import { parseMediaUrl } from '@/lib/media-parser'
@@ -15,8 +16,14 @@ export const GenericLinkCard = ({ url, data, icon, label }: any) => (
     className="group relative z-10 flex mt-3 h-24 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-panel)] hover:bg-white/5 transition-all"
   >
       {data?.linkImage ? (
-          <div className="w-24 h-full flex-shrink-0">
-              <img src={data.linkImage} className="w-full h-full object-cover" alt="" />
+          <div className="w-24 h-full flex-shrink-0 relative">
+              <Image 
+                src={data.linkImage} 
+                className="object-cover" 
+                alt="" 
+                fill
+                sizes="96px"
+              />
           </div>
       ) : (
           <div className="w-20 h-full flex-shrink-0 bg-[var(--surface-elevated)] flex items-center justify-center border-r border-[var(--glass-border)] text-[var(--text-muted)]">
@@ -51,13 +58,15 @@ const ImageEmbed = ({ url }: { url: string }) => {
                      <Loader2 className="animate-spin" />
                  </div>
              )}
-            <img 
+            <Image 
                 src={url} 
                 alt="Post content" 
+                fill
                 className={clsx(
-                    "w-full h-auto object-contain max-h-[600px] transition-opacity duration-500",
+                    "object-contain transition-opacity duration-500",
                     status === 'loaded' ? 'opacity-100' : 'opacity-0'
-                )} 
+                )}
+                sizes="(max-width: 768px) 100vw, 600px"
                 onLoad={() => setStatus('loaded')}
                 onError={() => setStatus('error')}
             />
@@ -80,17 +89,29 @@ const VideoEmbed = ({ url }: { url: string }) => {
 };
 
 // --- 2.6 YOUTUBE RENDERER ---
-const YouTubeEmbed = ({ id }: { id: string }) => {
+const YouTubeEmbed = ({ id, url, fallbackData }: { id: string, url: string, fallbackData?: any }) => {
     return (
-        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video">
+        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video group">
             <iframe
-                src={`https://www.youtube.com/embed/${id}`}
+                src={`https://www.youtube.com/embed/${id}?origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                 title="YouTube video player"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-                className="absolute inset-0 w-full h-full"
+                className="absolute inset-0 w-full h-full z-10"
             />
+            {/* Fallback/Overlay Link (visible if iframe fails or behind it) */}
+            <a 
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none"
+            >
+                <div className="flex items-center gap-2 bg-black/70 px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto">
+                    <ExternalLink size={16} />
+                    <span className="text-xs font-bold">Open in YouTube</span>
+                </div>
+            </a>
         </div>
     );
 };
@@ -119,7 +140,7 @@ export const PostEmbed = ({ url, fallbackData, forcedType }: { url: string, fall
 
     // CASE A.6: YouTube
     if (type === 'youtube' && id) {
-        return <YouTubeEmbed id={id} />;
+        return <YouTubeEmbed id={id} url={url} fallbackData={fallbackData} />;
     }
 
     // CASE B: Rich Media (Delegate to OEmbed Proxy)

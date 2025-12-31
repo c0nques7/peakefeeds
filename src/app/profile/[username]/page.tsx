@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProfileData } from '@/lib/profile-service';
-import { ShieldCheck, Calendar, Users, LayoutGrid } from 'lucide-react';
+import { ShieldCheck, Calendar, Users, LayoutGrid, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PostCard } from "@/components/PostCard";
 import { getServerSession } from "next-auth"; 
@@ -154,7 +154,16 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                     {/* ACTION AREA (Wallet + Message) */}
                     <div className="flex items-center justify-center gap-3">
                         {isOwnProfile ? (
-                            <ConnectWalletButton />
+                            <>
+                                <ConnectWalletButton />
+                                <Link 
+                                    href="/settings" 
+                                    className="p-3 rounded-xl bg-[var(--glass-panel)] hover:bg-[var(--glass-hover)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors" 
+                                    title="Settings"
+                                >
+                                    <Settings size={20} />
+                                </Link>
+                            </>
                         ) : (
                             <>
                                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] text-sm font-medium">

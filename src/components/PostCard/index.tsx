@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { 
@@ -328,7 +329,19 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
             <div className={styles.authorInfo}>
                 {/* 🟢 1. LINK TO PROFILE IMAGE */}
                 <Link href={`/profile/${post.author.username}`} className={styles.avatar}>
-                    {post.author.image ? <img src={post.author.image} className="w-full h-full object-cover rounded-full" /> : <span>{post.author.username?.[0]}</span>}
+                    {post.author.image ? (
+                        <div className="relative w-full h-full">
+                            <Image 
+                                src={post.author.image} 
+                                alt={post.author.username || "User"} 
+                                fill
+                                className="object-cover rounded-full"
+                                sizes="48px"
+                            />
+                        </div>
+                    ) : (
+                        <span>{post.author.username?.[0]}</span>
+                    )}
                 </Link>
                 <div>
                     <div className="flex items-center">

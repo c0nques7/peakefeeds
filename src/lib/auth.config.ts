@@ -3,6 +3,7 @@ import { NextAuthOptions, getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import * as argon2 from "argon2";
+import { authenticator } from "otplib";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -13,7 +14,8 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        twoFactorCode: { label: "2FA Code", type: "text" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
@@ -21,12 +23,41 @@ export const authOptions: NextAuthOptions = {
         const user = await prisma.user.findUnique({
           where: { email: credentials.email.toLowerCase() },
           // Fetch the roles/wallet here
-          select: { id: true, email: true, name: true, username: true, passwordHash: true, role: true, walletAddress: true }
+          select: { 
+            id: true, 
+            email: true, 
+            name: true, 
+            username: true, 
+            passwordHash: true, 
+            role: true, 
+            walletAddress: true,
+            twoFactorEnabled: true,
+            twoFactorSecret: true
+          }
         });
 
         if (!user || !user.passwordHash) return null;
         const isValid = await argon2.verify(user.passwordHash, credentials.password);
         if (!isValid) return null;
+
+        if (user.twoFactorEnabled) {
+          if (!credentials.twoFactorCode || credentials.twoFactorCode === "undefined" || credentials.twoFactorCode === "") {
+            throw new Error("2FA_REQUIRED");
+          }
+
+          if (!user.twoFactorSecret) {
+            return null;
+          }
+
+          const isValidToken = authenticator.verify({
+            token: credentials.twoFactorCode,
+            secret: user.twoFactorSecret
+          });
+
+          if (!isValidToken) {
+            throw new Error("INVALID_2FA_CODE"); 
+          }
+        }
 
         return {
           id: user.id,
