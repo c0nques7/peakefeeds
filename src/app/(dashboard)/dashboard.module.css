@@ -21,9 +21,8 @@
   .layoutContainer {
     grid-template-columns: 260px 1fr 320px;
     grid-template-areas: "sidebar main right";
-    padding: 0;
-    max-width: 1400px; 
-    margin: 0 auto;
+    padding: 0 2rem;
+    width: 100%;
     gap: 2rem; 
     overflow-x: visible; 
   }
@@ -50,8 +49,6 @@
   display: none;
   position: sticky;
   top: 1.5rem;
-  height: calc(100vh - 3rem);
-  overflow-y: auto;
   padding-right: 1rem;
 }
 
