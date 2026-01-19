@@ -219,7 +219,7 @@ export function Sidebar({ user }: SidebarProps) {
         {/* 🆕 SETTINGS CHECKBOX */}
 
 
-        <div className="flex items-center justify-between w-full pt-2 border-t border-[var(--glass-border)]">
+        <div className="flex items-center justify-between w-full">
             <ThemeToggle /> 
 
             {user ? (
