@@ -59,7 +59,7 @@ export default function RegisterPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm animate-in slide-in-from-top-2">
+        <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)]/20 text-[var(--status-error)] text-sm animate-in slide-in-from-top-2">
           <AlertCircle size={16} />
           <span>{error}</span>
         </div>
@@ -109,7 +109,7 @@ export default function RegisterPage() {
         {/* --- STEP 2: USER DETAILS --- */}
         <div className={`space-y-4 animate-in slide-in-from-right-8 ${step === 2 ? 'block' : 'hidden'}`}>
            {/* Code Confirmation Badge */}
-           <div className="flex items-center gap-2 mb-4 p-2 bg-emerald-500/10 rounded border border-emerald-500/20 text-emerald-400 text-xs">
+           <div className="flex items-center gap-2 mb-4 p-2 bg-[var(--status-success-bg)] rounded border border-[var(--status-success)]/20 text-[var(--status-success)] text-xs">
                 <CheckCircle size={14} />
                 <span className="font-mono">CODE: {formData.inviteCode.toUpperCase()}</span>
                 <button type="button" onClick={() => setStep(1)} className="ml-auto hover:underline opacity-70">Change</button>

@@ -20,12 +20,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className={styles.layoutContainer}>
 
-      {/* 1. BACKGROUND LAYER */}
-      <div className={styles.backgroundLayer}>
-          <div className={styles.orbTeal} />
-          <div className={styles.orbPurple} />
-      </div>
-
       {/* 2. LEFT SIDEBAR (Desktop) */}
       <aside className={styles.desktopSidebar}>
         {/* Sidebar uses props because it's a Server Component here */}

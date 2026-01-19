@@ -15,72 +15,31 @@
   transition: color 0.5s ease;
 
   /* Theme Defaults (Local Scoping) */
-  --landing-bg: #f8fafc; 
-  --text-main: #0f172a;
-  --text-sub: #475569;
-  --text-muted: #94a3b8;
+  --landing-bg: #f5f7f9; 
+  --text-main: #111827;
+  --text-sub: #374151;
+  --text-muted: #6b7280;
   
-  /* Brand Gradients */
-  --grad-start: #2dd4bf; /* Teal */
-  --grad-end: #a855f7;   /* Purple */
+  /* Brand Gradients (Navy/Emerald) */
+  --grad-start: #1e3a8a; /* Navy */
+  --grad-end: #059669;   /* Emerald */
 
-  /* Glass Defaults */
-  --glass-border: rgba(148, 163, 184, 0.4); 
-  --glass-panel: rgba(255, 255, 255, 0.7);
-  --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+  /* Institutional Defaults */
+  --glass-border: #e5e7eb; 
+  --glass-panel: #ffffff;
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 /* 🌙 DARK MODE OVERRIDES */
 :global(.dark) .container {
-  --landing-bg: #020617;
-  --text-main: #f8fafc;
-  --text-sub: #94a3b8;
-  --text-muted: #64748b;
+  --landing-bg: #0f1115;
+  --text-main: #f9fafb;
+  --text-sub: #d1d5db;
+  --text-muted: #9ca3af;
   
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-panel: rgba(15, 23, 42, 0.6);
-  --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
-}
-
-/* --- 🌬️ ANIMATED BACKGROUND LAYER (ORBS) --- */
-.backgroundLayer {
-  position: fixed;
-  inset: 0;
-  z-index: -1; 
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.orbTeal, .orbPurple {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px); 
-  will-change: transform;
-  mix-blend-mode: multiply; 
-}
-
-:global(.dark) .orbTeal, 
-:global(.dark) .orbPurple {
-  mix-blend-mode: screen; 
-  opacity: 0.5;
-}
-
-.orbTeal {
-  top: -10%; left: -10%; width: 60vw; height: 60vw;
-  background: radial-gradient(circle, rgba(45, 212, 191, 0.6) 0%, rgba(45, 212, 191, 0) 70%);
-  animation: breathe 10s ease-in-out infinite alternate;
-}
-
-.orbPurple {
-  bottom: -10%; right: -5%; width: 60vw; height: 60vw;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, rgba(168, 85, 247, 0) 70%);
-  animation: breathe 14s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes breathe {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(20px, -20px) scale(1.1); }
-  100% { transform: translate(-10px, 10px) scale(1); }
+  --glass-border: #2d3342;
+  --glass-panel: #181b21;
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
 /* --- 🚀 HERO SECTION --- */
@@ -112,8 +71,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 1rem;
-  background: rgba(45, 212, 191, 0.1);
-  border: 1px solid rgba(45, 212, 191, 0.2);
+  background: rgba(30, 58, 138, 0.1); /* Navy tint */
+  border: 1px solid rgba(30, 58, 138, 0.2);
   border-radius: 99px;
   color: var(--grad-start); 
   font-size: 0.7rem;
@@ -137,7 +96,7 @@
   margin-bottom: 1.5rem;
   color: var(--text-main);
   text-wrap: balance; 
-  text-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  /* Removed text shadow for cleaner look */
 }
 
 .gradientText {
@@ -161,19 +120,19 @@
   display: flex;
   align-items: center;
   position: relative;
-  background: rgba(255, 255, 255, 0.6);
-  :global(.dark) & { background: rgba(0,0,0,0.3); }
+  background: var(--glass-panel);
+  :global(.dark) & { background: var(--glass-panel); }
   
   border: 1px solid var(--glass-border);
-  border-radius: 16px; 
+  border-radius: 8px; /* Sharper */
   padding: 0.4rem;
   box-shadow: var(--glass-shadow);
   transition: all 0.3s ease;
 }
 
 .inputGroup:focus-within {
-  border-color: var(--grad-end);
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  border-color: var(--grad-start);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
   background: var(--landing-bg);
 }
 
@@ -194,22 +153,22 @@
 /* 🛡️ BUTTON CONTRAST FIX */
 .waitlistButton {
   padding: 0.8rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 6px; /* Sharper */
   font-weight: 700;
   font-size: 0.95rem;
   border: none;
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s;
-  background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
-  color: var(--btn-primary-text); 
-  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  background: var(--grad-start); /* Solid Navy */
+  color: #ffffff; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .waitlistButton:hover:not(:disabled) {
   opacity: 0.95;
   transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.4);
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-end)); /* Gradient on hover only */
 }
 
 .waitlistButton:disabled {
@@ -230,13 +189,13 @@
   width: 450px; 
   height: 450px;
   position: relative;
-  transform: rotateY(-8deg) rotateX(4deg);
+  transform: rotateY(-5deg) rotateX(2deg); /* Subtle rotation */
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: transform;
 }
 
 .demoCardWrapper:hover { 
-  transform: rotateY(0) rotateX(0) scale(1.02); 
+  transform: rotateY(0) rotateX(0) scale(1.01); 
 }
 
 /* --- ✨ FEATURES GRID --- */
@@ -250,35 +209,34 @@
 }
 
 .featureCard {
-  background: linear-gradient(145deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
-  :global(.dark) & { background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); }
+  background: var(--glass-panel);
+  :global(.dark) & { background: var(--glass-panel); }
   border: 1px solid var(--glass-border);
   padding: 2.5rem;
-  border-radius: 24px;
+  border-radius: 12px; /* Less rounded */
   transition: all 0.3s;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
 }
 
 .featureCard:hover {
-  background: var(--glass-panel);
-  transform: translateY(-8px);
+  transform: translateY(-4px);
   border-color: var(--grad-start);
-  box-shadow: 0 20px 40px -5px rgba(124, 58, 237, 0.15);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .iconWrapper {
   width: 56px;
   height: 56px;
-  border-radius: 16px;
-  background: rgba(124, 58, 237, 0.1); 
-  color: var(--grad-end); 
+  border-radius: 8px; /* Sharper */
+  background: rgba(30, 58, 138, 0.05); 
+  color: var(--grad-start); 
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
-  border: 1px solid rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(30, 58, 138, 0.1);
 }
 
 .featureTitle { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-main); }

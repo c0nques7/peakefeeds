@@ -12,9 +12,6 @@ export default async function AdminLayout({
 
   return (
     <div className={styles.adminContainer}>
-      {/* Background Orb */}
-      <div className={styles.orbAdmin} />
-
       {/* 🟢 UPDATED: We replaced the static <aside> with the responsive 
         <AdminSidebar /> component. This handles the mobile hamburger 
         menu state which requires 'use client'.

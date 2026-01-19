@@ -3,90 +3,90 @@
 @tailwind utilities;
 
 :root {
-  /* --- ☀️ LIGHT MODE --- */
-  --bg-app: #f1f5f9;       
-  --bg-grid: #cbd5e1;      
+  /* --- ☀️ LIGHT MODE (Institutional) --- */
+  --bg-app: #f5f7f9;       /* Light Gray/Blue tint - Official feel */
+  --bg-grid: transparent;  /* Clean, no grid */
   
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  --text-primary: #111827; /* Near Black */
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
   
-  --accent-primary: #7c3aed;   
-  --accent-secondary: #0d9488; 
+  --accent-primary: #1e3a8a;   /* Navy Blue (Trust) */
+  --accent-secondary: #059669; /* Deep Emerald (Verification) */
   
-  /* Glass Vars */
-  --glass-panel: rgba(255, 255, 255, 0.85); 
-  --glass-card: #ffffff;  /* 🟢 SOLID WHITE for cards (Light Mode) */
-  --glass-card-hover: #f8fafc;
+  /* Solid/Card Vars (No Glass) */
+  --glass-panel: #ffffff; 
+  --glass-card: #ffffff;  
+  --glass-card-hover: #f9fafb;
   
-  --glass-border: rgba(100, 116, 139, 0.5); 
-  --glass-shadow: 0 4px 20px -2px rgba(0,0,0,0.1); 
+  --glass-border: #e5e7eb; 
+  --glass-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* Sharp, subtle shadow */
   
-  --orb-opacity: 0.6;
+  --orb-opacity: 0; /* Hide orbs */
   
-  --sidebar-bg: rgba(255, 255, 255, 0.95);
-  --table-header-bg: rgba(0, 0, 0, 0.05);
+  --sidebar-bg: #ffffff;
+  --table-header-bg: #f3f4f6;
 
   /* Status Colors */
-  --status-success: #10b981;
-  --status-success-bg: rgba(16, 185, 129, 0.1);
-  --status-warning: #f59e0b;
-  --status-warning-bg: rgba(245, 158, 11, 0.1);
-  --status-error: #ef4444;
-  --status-error-bg: rgba(239, 68, 68, 0.1);
+  --status-success: #059669;
+  --status-success-bg: #ecfdf5;
+  --status-warning: #d97706;
+  --status-warning-bg: #fffbeb;
+  --status-error: #dc2626;
+  --status-error-bg: #fef2f2;
 
-  --status-info: #3b82f6;
-  --status-info-bg: rgba(59, 130, 246, 0.1);
-  --status-accent: #d946ef;
-  --status-accent-bg: rgba(217, 70, 239, 0.1);
+  --status-info: #2563eb;
+  --status-info-bg: #eff6ff;
+  --status-accent: #1e3a8a;
+  --status-accent-bg: #eff6ff;
 
   /* Button Primaries */
   --btn-primary: var(--accent-primary);
-  --btn-primary-hover: #6d28d9;
+  --btn-primary-hover: #1e40af;
   --btn-primary-text: #ffffff;
 }
 
-/* 🌙 DARK MODE */
+/* 🌙 DARK MODE (Bloomberg/Financial Terminal) */
 .dark {
-  --bg-app: #020617;
-  --bg-grid: #1e293b;
+  --bg-app: #0f1115; /* Very dark blue-grey */
+  --bg-grid: transparent;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
   
-  --accent-primary: #a855f7;
-  --accent-secondary: #2dd4bf;
+  --accent-primary: #60a5fa;   /* Brighter Blue for dark mode readability */
+  --accent-secondary: #34d399; /* Bright Emerald */
   
-  --glass-panel: rgba(15, 23, 42, 0.95); 
-  --glass-card: #0a0a0a; /* 🟢 SOLID BLACK for cards (Dark Mode) */
-  --glass-card-hover: #171717;
+  --glass-panel: #181b21; 
+  --glass-card: #181b21; 
+  --glass-card-hover: #232730;
   
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.6);
+  --glass-border: #2d3342;
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   
-  --orb-opacity: 0.4;
+  --orb-opacity: 0;
   
-  --sidebar-bg: rgba(10, 10, 15, 0.95);
-  --table-header-bg: rgba(255, 255, 255, 0.03);
+  --sidebar-bg: #13161c;
+  --table-header-bg: #1f242d;
 
   /* Status Colors (Dark) */
   --status-success: #34d399;
-  --status-success-bg: rgba(16, 185, 129, 0.15);
+  --status-success-bg: rgba(5, 150, 105, 0.2);
   --status-warning: #fbbf24;
-  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  --status-warning-bg: rgba(217, 119, 6, 0.2);
   --status-error: #f87171;
-  --status-error-bg: rgba(239, 68, 68, 0.15);
+  --status-error-bg: rgba(220, 38, 38, 0.2);
 
   --status-info: #60a5fa;
-  --status-info-bg: rgba(59, 130, 246, 0.15);
-  --status-accent: #f5d0fe;
-  --status-accent-bg: rgba(217, 70, 239, 0.15);
+  --status-info-bg: rgba(37, 99, 235, 0.2);
+  --status-accent: #93c5fd;
+  --status-accent-bg: rgba(30, 58, 138, 0.2);
 
   /* Button Primaries (Dark) */
   --btn-primary: var(--accent-primary);
-  --btn-primary-hover: #c084fc;
-  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #93c5fd;
+  --btn-primary-text: #0f1115;
 }
 
 /* --- 🧱 GLOBAL LAYOUT --- */
@@ -94,17 +94,6 @@ body {
   background-color: var(--bg-app);
   color: var(--text-primary);
   min-height: 100vh;
-  
-  /* Grid Pattern */
-  background-size: 40px 40px;
-  background-image:
-    linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
-  
-  /* 🔴 REMOVED: These lines were fading out the top/bottom of the screen 
-     -webkit-mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
-     mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
-  */
   
   background-attachment: fixed; 
 }

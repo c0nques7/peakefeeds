@@ -1,32 +1,29 @@
 .glassBtn {
-  /* Glass Base */
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  /* Institutional Base */
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   
   /* Text & Shape */
-  color: white;
+  color: var(--accent-primary);
   padding: 0.5rem 1.5rem;
   border-radius: 9999px;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 0.875rem;
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .glassBtn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--glass-card-hover);
+  border-color: var(--accent-primary);
   transform: translateY(-1px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }
 
 .active {
-  background: rgba(16, 185, 129, 0.2); /* Greenish tint for "Following" */
-  border-color: rgba(16, 185, 129, 0.4);
-  color: #6ee7b7;
+  background: var(--status-success-bg); 
+  border-color: var(--status-success);
+  color: var(--status-success);
 }
 
 .loading {

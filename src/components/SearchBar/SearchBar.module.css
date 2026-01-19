@@ -16,8 +16,6 @@
     
     /* Use global variables for theme consistency */
     background: var(--glass-card);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     
     border: 1px solid var(--glass-border);
     border-radius: 99px; /* Pill shape */
@@ -69,8 +67,6 @@
     
     /* 🟢 FIX: Use variable instead of hardcoded black so it works in Light Mode */
     background: var(--glass-panel); 
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
     
     border: 1px solid var(--glass-border);
     border-radius: 1.5rem;

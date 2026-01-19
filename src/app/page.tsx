@@ -162,12 +162,6 @@ export default function LandingPage() {
   return (
     <div className={styles.container}>
       
-      {/* Background Orbs */}
-      <div className={styles.backgroundLayer}>
-         <div className={styles.orbTeal} />
-         <div className={styles.orbPurple} />
-      </div>
-
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={`${styles.heroContent} animate-in slide-in-from-left-10 duration-700 fade-in`}>

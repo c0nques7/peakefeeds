@@ -16,9 +16,7 @@
 
   /* 🟢 THEME-AWARE BACKGROUND */
   /* Uses your global variables for Light/Dark support */
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--sidebar-bg);
   border-top: 1px solid var(--glass-border);
   box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
 
@@ -28,8 +26,8 @@
 
 /* Dark Mode Override */
 :global(.dark) .bottomNav {
-  background: rgba(5, 5, 5, 0.95);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--sidebar-bg);
+  border-top: 1px solid var(--glass-border);
   box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
 }
 
@@ -85,7 +83,6 @@
   /* z-45 ensures it sits immediately BEHIND the nav bar (z-50) */
   z-index: 45; 
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
   
   display: flex;
   align-items: flex-end; /* Align bottom */
@@ -103,7 +100,6 @@
   
   /* Theme Aware Colors */
   background: var(--glass-panel);
-  backdrop-filter: blur(24px);
   border-top: 1px solid var(--glass-border);
   
   /* Rounded Top Corners */

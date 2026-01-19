@@ -10,9 +10,7 @@
   
   background: var(--glass-panel);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--glass-shadow);
   
   display: flex;
   align-items: center;

@@ -13,10 +13,6 @@
   line-height: 1;
   user-select: none;
   
-  /* Glassmorphism */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  
   /* The Animated Border */
   border: 1px solid transparent; /* Fallback */
   border-color: rgba(var(--badge-color), 0.3); /* Initial State */
