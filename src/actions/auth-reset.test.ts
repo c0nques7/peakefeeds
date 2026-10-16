@@ -43,7 +43,8 @@ describe('auth-reset action', () => {
 
     // Reset mocks
     sendMock.mockReset();
-    vi.useFakeTimers();
+    // Only fake Date (for the cooldown check); faking all timers would freeze the DB driver's I/O.
+    vi.useFakeTimers({ toFake: ['Date'] });
   });
 
   afterEach(async () => {

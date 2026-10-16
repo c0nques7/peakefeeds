@@ -16,7 +16,9 @@
     "@coinbase/wallet-sdk": "^4.3.7",
     "@gemini-wallet/core": "^0.3.2",
     "@metamask/sdk": "^0.33.1",
+    "@neondatabase/serverless": "^0.10.4",
     "@next-auth/prisma-adapter": "^1.0.7",
+    "@prisma/adapter-neon": "^5.22.0",
     "@prisma/client": "^5.22.0",
     "@react-email/components": "^0.5.7",
     "@react-email/render": "^1.4.0",
@@ -53,6 +55,7 @@
     "tailwind-merge": "^3.4.0",
     "viem": "^2.41.2",
     "wagmi": "^3.1.0",
+    "ws": "^8.22.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
@@ -64,6 +67,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.22",
     "babel-plugin-react-compiler": "1.0.0",

@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  serverExternalPackages: ["argon2"],
+  serverExternalPackages: ["argon2", "ws"],
   turbopack: {},
   // 1. WEBPACK CONFIG
   webpack: (config) => {
