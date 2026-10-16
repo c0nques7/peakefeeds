@@ -34,8 +34,22 @@ export default function RegisterPage() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  // Step 1 only collects the invite code; Enter should move on, not submit the hidden email form
+  const continueFromCode = () => {
+    if (formData.inviteCode.trim().length < 5) {
+      setError("Enter the invite code from your email, for example PEAKE-1A2B3C.");
+    } else {
+      setError("");
+      setStep(2);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (step === 1) {
+      continueFromCode();
+      return;
+    }
     setError("");
 
     startTransition(async () => {
@@ -91,19 +105,7 @@ export default function RegisterPage() {
             hint={<>No code yet? <Link href="/" className="underline hover:text-[var(--text-primary)]">Join the waitlist</Link>.</>}
           />
 
-          <Button
-            size="lg"
-            fullWidth
-            onClick={() => {
-                // Client-side basic validation
-                if(formData.inviteCode.trim().length < 5) {
-                    setError("Enter the invite code from your email, for example PEAKE-1A2B3C.");
-                } else {
-                    setError("");
-                    setStep(2);
-                }
-            }}
-          >
+          <Button size="lg" fullWidth onClick={continueFromCode}>
             Continue
           </Button>
         </div>

@@ -279,7 +279,7 @@ export default function SupportQueue() {
               {/* Main Workspace Feed (Messaging) */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-[var(--glass-border)] flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white">
+                <div className="p-4 border-b border-[var(--glass-border)] flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-[var(--glass-card)]">
                   <div className="flex gap-4 items-center">
                     <button onClick={() => setSelectedTicketId(null)} className="lg:hidden p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] mr-2"><ArrowLeft size={20}/></button>
                     <div className="flex gap-2 items-center">
@@ -372,7 +372,7 @@ export default function SupportQueue() {
                           // Bot Style
                           isBot ? "bg-[var(--glass-card-hover)] text-[var(--text-secondary)] border border-[var(--glass-border)] italic rounded-2xl rounded-tl-sm" :
                           // User Style
-                          "bg-white dark:bg-[#1a1a1a] text-[var(--text-primary)] border border-[var(--glass-border)] rounded-2xl rounded-tl-sm shadow-sm"
+                          "bg-[var(--glass-card)] text-[var(--text-primary)] border border-[var(--glass-border)] rounded-2xl rounded-tl-sm shadow-sm"
                         )}>
                            {msg.text}
                         </div>
@@ -473,7 +473,7 @@ export default function SupportQueue() {
                       <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-[var(--text-muted)] mb-3">
                         <UserPlus size={12} /> User Profile
                       </label>
-                      <div className="p-3 bg-white rounded-lg border border-[var(--glass-border)] space-y-3">
+                      <div className="p-3 bg-[var(--glass-card-hover)] rounded-lg border border-[var(--glass-border)] space-y-3">
                         {currentTicket.user ? (
                           <>
                             <div>
@@ -491,7 +491,7 @@ export default function SupportQueue() {
                             {currentTicket.user.walletAddress && (
                               <div>
                                 <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Wallet</p>
-                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400/80 font-mono break-all">{currentTicket.user.walletAddress}</p>
+                                <p className="text-[10px] text-[var(--status-success)] font-mono break-all">{currentTicket.user.walletAddress}</p>
                               </div>
                             )}
 
@@ -522,7 +522,7 @@ export default function SupportQueue() {
                             <p className="text-[10px] text-[var(--text-muted)] italic">No staff notes yet.</p>
                          ) : (
                             internalNoteFeed.map((note, idx) => (
-                               <div key={idx} className="p-3 bg-white border border-[var(--glass-border)] rounded-lg text-xs">
+                               <div key={idx} className="p-3 bg-[var(--glass-card-hover)] border border-[var(--glass-border)] rounded-lg text-xs">
                                   <p className="text-[var(--text-secondary)] leading-relaxed">{note.text}</p>
                                   <div className="mt-2 flex justify-between items-center text-[9px] text-[var(--text-muted)] font-mono">
                                      <span>{note.senderInfo?.username ? `@${note.senderInfo.username}` : 'Staff Note'}</span>

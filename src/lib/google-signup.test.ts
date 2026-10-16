@@ -19,7 +19,7 @@ import { claimInvite, decodeInviteCookie, encodeInviteCookie, INVITE_COOKIE, INV
 import { prepareGoogleSignup } from '@/actions/oauth-invite';
 import { chooseUsername } from '@/actions/choose-username';
 
-const tag = `goo${Date.now()}`;
+const tag = `gtest${Date.now()}`;
 const code = (n: string) => `PEAKE-${tag.toUpperCase()}-${n}`;
 const userIds: string[] = [];
 
@@ -141,10 +141,10 @@ describe('claimInvite', () => {
   it('lets only one account claim a code', async () => {
     const a = await makeUser({ email: `ca-${tag}@example.com` });
     const b = await makeUser({ email: `cb-${tag}@example.com` });
-    await prisma.inviteCode.create({ data: { code: code('ONCE') } });
+    await prisma.inviteCode.create({ data: { code: code('SAME') } });
     const results = await Promise.all([
-      prisma.$transaction(tx => claimInvite(tx, code('ONCE'), a)),
-      prisma.$transaction(tx => claimInvite(tx, code('ONCE'), b)),
+      prisma.$transaction(tx => claimInvite(tx, code('SAME'), a)),
+      prisma.$transaction(tx => claimInvite(tx, code('SAME'), b)),
     ].map(p => p.catch(() => false)));
     expect(results.filter(Boolean)).toHaveLength(1);
   });
@@ -163,5 +163,13 @@ describe('chooseUsername', () => {
     expect(await chooseUsername(`pick.${tag}`)).toEqual({ ok: true });
     expect((await prisma.user.findUnique({ where: { id } }))?.username).toBe(`pick.${tag}`);
     expect(await chooseUsername(`again_${tag}`)).toEqual({ error: 'Your account already has a username.' });
+  });
+});
+
+describe('normalizeInviteCode', () => {
+  it('reads a typed O as 0 and I/L as 1 in the code part only', async () => {
+    const { normalizeInviteCode } = await import('./invites');
+    expect(normalizeInviteCode(' peake-7e57co ')).toBe('PEAKE-7E57C0');
+    expect(normalizeInviteCode('PEAKE-1A2BLI')).toBe('PEAKE-1A2B11');
   });
 });

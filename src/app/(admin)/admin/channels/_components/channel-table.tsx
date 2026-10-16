@@ -69,12 +69,12 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                     <input 
                       value={editData.name}
                       onChange={e => setEditData({...editData, name: e.target.value})}
-                      className="bg-white dark:bg-[var(--glass-card)] border border-[var(--glass-border)] rounded px-2 py-1 text-sm text-[var(--text-primary)] w-full"
+                      className="bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-2 py-1 text-sm text-[var(--text-primary)] w-full"
                     />
                     <textarea 
                       value={editData.description}
                       onChange={e => setEditData({...editData, description: e.target.value})}
-                      className="bg-white dark:bg-[var(--glass-card)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-[var(--text-muted)] w-full resize-none"
+                      className="bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-[var(--text-muted)] w-full resize-none"
                       rows={2}
                     />
                   </div>

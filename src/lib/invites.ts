@@ -7,8 +7,11 @@ import type { Prisma } from '@prisma/client';
 
 export const INVITES_PER_NEW_USER = 3;
 
+// Generated codes are "PEAKE-" plus hex (0-9, A-F), so a typed O, I or L can only mean 0 or 1
 export function normalizeInviteCode(code: string) {
-  return code.trim().toUpperCase();
+  const upper = code.trim().toUpperCase();
+  if (!upper.startsWith('PEAKE-')) return upper;
+  return 'PEAKE-' + upper.slice(6).replace(/O/g, '0').replace(/[IL]/g, '1');
 }
 
 /** The invite if it exists and hasn't been claimed yet. */
