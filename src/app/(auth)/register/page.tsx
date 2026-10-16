@@ -1,16 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { registerUser } from "@/actions/auth-register";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { Button, TextField } from "@/components/ui";
+import { GoogleSignIn } from "@/components/auth/GoogleButton";
+import { describeAuthError, readAuthErrorFromUrl } from "@/components/auth/authErrors";
+import { prepareGoogleSignup } from "@/actions/oauth-invite";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
+
+  // Sent back here by Google sign-in when there's no account and no invite code yet
+  useEffect(() => {
+    const code = readAuthErrorFromUrl();
+    if (code) setError(describeAuthError(code));
+  }, []);
   
   // State for the multi-step wizard
   const [step, setStep] = useState(1); // 1 = Code Check, 2 = Details
@@ -99,13 +108,24 @@ export default function RegisterPage() {
           </Button>
         </div>
 
-        {/* --- STEP 2: ACCOUNT DETAILS --- */}
+        {/* --- STEP 2: GOOGLE OR EMAIL --- */}
         <div className={step === 2 ? 'flex flex-col gap-4' : 'hidden'}>
            <div className="flex items-center gap-2 p-2.5 rounded-[var(--radius-control)] bg-[var(--status-success-bg)] text-[var(--status-success)] text-xs">
                 <CheckCircle size={14} aria-hidden="true" />
                 <span className="font-mono">Invite code {formData.inviteCode.toUpperCase()}</span>
                 <button type="button" onClick={() => setStep(1)} className="ml-auto underline">Change</button>
            </div>
+
+           <GoogleSignIn
+             label="Sign up with Google"
+             callbackUrl="/welcome"
+             beforeSignIn={async () => {
+               // Keep the invite code for the round trip through Google
+               const res = await prepareGoogleSignup(formData.inviteCode);
+               if ('error' in res) { setError(res.error); return false; }
+               return true;
+             }}
+           />
 
            <TextField id="username" name="username" label="Username" autoComplete="username" required={step === 2} value={formData.username} onChange={handleChange} />
            <TextField id="email" name="email" type="email" label="Email" autoComplete="email" required={step === 2} value={formData.email} onChange={handleChange} />

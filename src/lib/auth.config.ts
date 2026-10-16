@@ -2,14 +2,20 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { NextAuthOptions, getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import * as argon2 from "argon2";
 import { authenticator } from "otplib";
 import { getSessionAccountStatus, isBanned } from "@/lib/penalties";
+import { claimInviteForNewGoogleUser, decideGoogleSignIn } from "@/lib/google-signup";
+
+// Google sign-in is only offered when its credentials are configured
+const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  // Errors (e.g. a refused Google sign-in) come back to the login page, which explains them
+  pages: { signIn: "/login", error: "/login" },
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -79,9 +85,30 @@ export const authOptions: NextAuthOptions = {
           walletAddress: user.walletAddress,
         };
       }
-    })
+    }),
+    ...(googleEnabled ? [GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Google verifies email addresses (checked again in decideGoogleSignIn), so an existing
+      // email-and-password account with the same address is linked rather than duplicated
+      allowDangerousEmailAccountLinking: true,
+    })] : []),
   ],
+  events: {
+    async createUser({ user }) {
+      // Only Google creates users through the adapter; email sign-up creates them directly
+      await claimInviteForNewGoogleUser(user.id, user.email);
+    },
+  },
   callbacks: {
+    async signIn({ account, profile }) {
+      if (account?.provider !== "google") return true; // the credentials provider checks in authorize()
+      return decideGoogleSignIn({
+        providerAccountId: account.providerAccountId,
+        email: profile?.email,
+        emailVerified: (profile as { email_verified?: boolean } | undefined)?.email_verified === true,
+      });
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -91,12 +118,13 @@ export const authOptions: NextAuthOptions = {
       }
 
       // End sessions of banned or deleted users (throwing makes next-auth clear the session),
-      // and pick up role and linked-wallet changes. Cached for up to a minute per server instance.
+      // and pick up role, username and linked-wallet changes. Cached for up to a minute per server instance.
       if (token.id) {
         const status = await getSessionAccountStatus(token.id as string);
         if (!status || isBanned(status)) throw new Error("ACCOUNT_SUSPENDED");
         token.role = status.role;
         token.walletAddress = status.walletAddress;
+        token.username = status.username;
       }
       return token;
     },

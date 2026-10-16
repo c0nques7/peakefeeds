@@ -60,3 +60,15 @@ Unit tests are implemented using **Vitest**.
 - **Verified Content**: Once signed and published to the blockchain, content **cannot** be edited or deleted.
 - **Unverified Content**: Can be edited/deleted by the Author, Channel Owner, Moderator (with `canDeletePosts` permission), or Global Admin.
 - **Locked Content**: Admins can lock any content for review. Locked content shows a `LockedOverlay` and disables all interactions.
+
+## 🔑 Google Sign-In
+Google sign-in is offered only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
+
+- **Invite-only:** a new account needs an unclaimed invite code. The register page checks it and keeps it in a signed, httpOnly cookie (`pf_invite`, 15 minutes) for the round trip through Google. The code is claimed atomically when the account is created (`src/lib/invites.ts`, `src/lib/google-signup.ts`).
+- **Existing members** sign in with Google without a code. A Google account with the same verified email as an email-and-password account is linked to it.
+- **Usernames:** Google doesn't provide one, so new Google users choose it at `/welcome` before using the app.
+- **Bans** are checked on Google sign-in as well as on every session.
+
+**Google Cloud setup:** create an OAuth client ID (type "Web application") and add these authorised redirect URIs:
+- `http://localhost:3000/api/auth/callback/google`
+- `https://www.peakefeeds.com/api/auth/callback/google`

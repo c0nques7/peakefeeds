@@ -11,6 +11,7 @@ export type AccountStatus = {
   bannedUntil: Date | null;
   mutedUntil: Date | null;
   walletAddress: string | null;
+  username: string | null;
 };
 
 export function isBanned(status: AccountStatus, now = new Date()): boolean {
@@ -24,7 +25,7 @@ export function isMuted(status: AccountStatus, now = new Date()): boolean {
 async function loadStatus(userId: string): Promise<AccountStatus | null> {
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true, isBanned: true, bannedUntil: true, mutedUntil: true, walletAddress: true },
+    select: { role: true, isBanned: true, bannedUntil: true, mutedUntil: true, walletAddress: true, username: true },
   });
 }
 

@@ -2,7 +2,9 @@
 
 import { prisma } from "@/lib/db";
 import { hash } from "argon2";
-import { randomBytes } from "crypto";
+import { claimInvite, findUsableInvite } from "@/lib/invites";
+
+class InviteAlreadyClaimed extends Error {}
 
 export async function registerUser(formData: FormData) {
   const username = formData.get("username") as string;
@@ -15,17 +17,10 @@ export async function registerUser(formData: FormData) {
     return { error: "All fields are required." };
   }
 
-  // 2. 🛡️ THE VELVET ROPE: Validate Invite Code
-  // We check if it exists AND is unused (usedAt is null)
-  const validInvite = await prisma.inviteCode.findUnique({
-    where: { code: inviteCode.trim().toUpperCase() }
-  });
-
+  // 2. Validate the invite code (it is claimed atomically below)
+  const validInvite = await findUsableInvite(inviteCode);
   if (!validInvite) {
-    return { error: "Invalid invite code." };
-  }
-  if (validInvite.usedAt) {
-    return { error: "This invite code has already been claimed." };
+    return { error: "That invite code isn't valid or has already been used." };
   }
 
   // 3. Check for existing users
@@ -48,44 +43,27 @@ export async function registerUser(formData: FormData) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      // A. Create the User
+      // A. Create the user
       const newUser = await tx.user.create({
         data: {
           username,
           email: normalizedEmail,
           passwordHash,
-          // Link the user to the invite code (Tracking who invited them)
-          inviteUsed: {
-            connect: { id: validInvite.id }
-          }
         }
       });
 
-      // B. Mark the Incoming Invite as Used
-      await tx.inviteCode.update({
-        where: { id: validInvite.id },
-        data: {
-          usedAt: new Date(),
-          usedById: newUser.id
-        }
-      });
-
-      // C. 🚀 THE GROWTH ENGINE: Mint 3 Golden Tickets
-      // We automatically generate 3 unique codes for this new user to share.
-      // This turns every new user into a potential multiplier.
-      for (let i = 0; i < 3; i++) {
-        const code = `PEAKE-${randomBytes(3).toString("hex").toUpperCase()}`;
-        await tx.inviteCode.create({
-          data: {
-            code: code,
-            issuerId: newUser.id, // This user owns these codes
-          }
-        });
+      // B. Claim the invite (fails if someone claimed it in the meantime) and mint the
+      //    new user's own invites
+      if (!(await claimInvite(tx, inviteCode, newUser.id))) {
+        throw new InviteAlreadyClaimed();
       }
     });
 
     return { success: true };
   } catch (err) {
+    if (err instanceof InviteAlreadyClaimed) {
+      return { error: "That invite code has just been used by someone else." };
+    }
     console.error("Registration Error:", err);
     return { error: "Registration failed. Please try again." };
   }

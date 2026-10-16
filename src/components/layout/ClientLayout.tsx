@@ -9,7 +9,7 @@ import clsx from 'clsx'
 
 // Pages with no navigation of their own (landing, auth) get the theme toggle in the corner.
 // App and admin pages have one in their sidebar or Settings.
-const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/signin']
+const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/signin', '/welcome']
 const LEGAL_PATHS = ['/terms', '/privacy']
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {

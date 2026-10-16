@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, AlertCircle } from "lucide-react";
 import { checkLoginRequirement } from "@/actions/auth-check";
 import { Button, TextField } from "@/components/ui";
+import { GoogleSignIn } from "@/components/auth/GoogleButton";
+import { describeAuthError, readAuthErrorFromUrl } from "@/components/auth/authErrors";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +18,12 @@ export default function LoginPage() {
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Errors sent back here by a Google sign-in (e.g. a suspended account)
+  useEffect(() => {
+    const code = readAuthErrorFromUrl();
+    if (code) setError(describeAuthError(code));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +101,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {!showTwoFactor ? (
           <>
+            <GoogleSignIn />
             <TextField
               id="email"
               label="Email"
