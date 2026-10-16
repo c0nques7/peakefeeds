@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { submitReport } from '@/actions/report-actions';
 import { blockUser } from '@/actions/block-user';
 import { ReportTargetType } from '@prisma/client';
+import { buttonClasses } from '@/components/ui';
 
 const REPORT_REASONS = [
   { value: 'SPAM', label: 'Spam' },
@@ -114,11 +115,11 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-3xl p-6 shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-[var(--radius-card)] p-6 shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
         
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-white transition-colors touch-manipulation p-2 -m-2"
+          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors touch-manipulation p-2 -m-2"
           style={{ WebkitTapHighlightColor: 'transparent' }}
           aria-label="Close"
         >
@@ -130,7 +131,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-4 text-emerald-400 border border-emerald-500/30">
               <CheckCircle2 size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Report Successful</h2>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Report Successful</h2>
             <p className="text-[var(--text-muted)] text-sm mb-6">
               Thank you for helping us keep PeakeFeeds safe. Our moderators will review this shortly.
             </p>
@@ -148,7 +149,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               {reportedUserId && (
                 <button 
                   onClick={() => { setShowSuccess(false); setShowBlockPrompt(true); }}
-                  className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 active:bg-zinc-300 transition-all flex items-center justify-center gap-2 touch-manipulation"
+                  className={`${buttonClasses({ variant: 'primary', size: 'lg', fullWidth: true })} touch-manipulation`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   Next: Security Options
@@ -156,7 +157,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               )}
               <button 
                 onClick={handleClose}
-                className="w-full bg-[var(--glass-panel)] text-[var(--text-primary)] font-bold py-3 rounded-xl hover:bg-[var(--glass-panel-hover)] active:opacity-80 transition-all touch-manipulation"
+                className={`${buttonClasses({ variant: 'secondary', size: 'lg', fullWidth: true })} touch-manipulation`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 Done
@@ -166,7 +167,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
         ) : !showBlockPrompt ? (
           <>
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500/20 mb-3 text-red-400 border border-red-500/30">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--status-error-bg)] mb-3 text-[var(--status-error)]">
                 <AlertTriangle size={24} />
               </div>
               <h2 className="text-xl font-bold text-[var(--text-primary)]">{displayTitle}</h2>
@@ -181,7 +182,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
                 <select 
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors appearance-none"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors appearance-none"
                 >
                   {REPORT_REASONS.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -196,14 +197,14 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
                   onChange={(e) => setDetails(e.target.value)}
                   rows={3}
                   placeholder="Provide more context..."
-                  className="w-full bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors resize-none"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors resize-none"
                 />
               </div>
 
               <button 
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 touch-manipulation"
+                className={`${buttonClasses({ variant: 'danger', size: 'lg', fullWidth: true })} touch-manipulation`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : "Submit Report"}
@@ -224,7 +225,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               <button 
                 onClick={handleBlock}
                 disabled={isBlocking}
-                className="w-full bg-white text-black hover:bg-zinc-200 active:bg-zinc-300 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 touch-manipulation"
+                className={`${buttonClasses({ variant: 'primary', size: 'lg', fullWidth: true })} touch-manipulation`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isBlocking ? <Loader2 className="animate-spin" size={18} /> : "Yes, Block User"}
@@ -232,7 +233,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               <button 
                 onClick={handleClose}
                 disabled={isBlocking}
-                className="w-full bg-[var(--glass-panel)] hover:bg-[var(--glass-panel-hover)] active:opacity-80 text-[var(--text-primary)] font-bold py-3 rounded-xl transition-all disabled:opacity-50 touch-manipulation"
+                className={`${buttonClasses({ variant: 'secondary', size: 'lg', fullWidth: true })} touch-manipulation`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 No, just close

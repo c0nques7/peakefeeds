@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, AlertTriangle, Loader2 } from 'lucide-react';
+import { buttonClasses } from '@/components/ui';
 
 const DELETION_REASONS = [
   { value: 'SPAM', label: 'Spam / Automated Content' },
@@ -36,33 +37,33 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-zinc-900 border border-red-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-[var(--radius-card)] p-6 shadow-2xl relative overflow-hidden">
         
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
         >
           <X size={20} />
         </button>
 
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500/20 mb-3 text-red-400 border border-red-500/30">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--status-error-bg)] mb-3 text-[var(--status-error)]">
             <AlertTriangle size={24} />
           </div>
-          <h2 className="text-xl font-bold text-white">Administrative Deletion</h2>
-          <p className="text-zinc-400 text-sm mt-1">
+          <h2 className="text-xl font-bold text-[var(--text-primary)]">Delete this post?</h2>
+          <p className="text-[var(--text-muted)] text-sm mt-1">
             You are deleting content authored by another user. Please specify a reason for this action.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Reason for Deletion *</label>
+            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Reason (required)</label>
             <select 
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500 transition-colors appearance-none"
+              className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--status-error)] transition-colors appearance-none"
             >
               <option value="" disabled>Select a reason...</option>
               {DELETION_REASONS.map((r) => (
@@ -72,13 +73,13 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Internal Comments (Optional)</label>
+            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Internal note (optional)</label>
             <textarea 
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               rows={3}
               placeholder="Additional context for the log..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500 transition-colors resize-none"
+              className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--status-error)] transition-colors resize-none"
             />
           </div>
 
@@ -86,14 +87,14 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
             <button 
               type="submit"
               disabled={isDeleting || !reason}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className={buttonClasses({ variant: 'danger', size: 'lg', fullWidth: true })}
             >
-              {isDeleting ? <Loader2 className="animate-spin" size={18} /> : "Delete Forever"}
+              {isDeleting ? <Loader2 className="animate-spin" size={18} aria-label="Deleting" /> : "Delete permanently"}
             </button>
             <button 
               type="button"
               onClick={onClose}
-              className="w-full bg-zinc-800 text-white font-bold py-3 rounded-xl hover:bg-zinc-700 transition-all"
+              className={buttonClasses({ variant: 'secondary', size: 'lg', fullWidth: true })}
             >
               Cancel
             </button>

@@ -117,7 +117,7 @@ export default async function AdminPostsPage({
                   <td className="p-4 align-top">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[var(--glass-border)] overflow-hidden">
-                        <div className="w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-xs font-bold text-[var(--text-primary)]">
+                        <div className="w-full h-full flex items-center justify-center bg-[var(--glass-card-hover)] text-xs font-bold text-[var(--text-primary)]">
                             {post.author.username?.[0]?.toUpperCase() || "?"}
                         </div>
                       </div>

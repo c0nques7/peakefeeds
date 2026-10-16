@@ -168,7 +168,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
              </div>
              <p className="text-[var(--text-primary)] mb-4 whitespace-pre-wrap">{report.post.content}</p>
              {report.post.mediaUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-[var(--glass-border)] bg-slate-100 dark:bg-black/20 relative">
+                <div className="mt-2 rounded-lg overflow-hidden border border-[var(--glass-border)] bg-[var(--glass-card-hover)] relative">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
                    <img 
                       src={report.post.mediaUrl} 

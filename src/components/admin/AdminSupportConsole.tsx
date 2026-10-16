@@ -197,7 +197,7 @@ export default function AdminSupportConsole() {
                       "p-3 rounded-xl text-sm shadow-md",
                       msg.sender === 'admin' 
                         ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)] rounded-br-none" 
-                        : "bg-[#1a1a1a] text-gray-200 rounded-bl-none border border-white/10"
+                        : "bg-[#1a1a1a] text-[var(--text-muted)] rounded-bl-none border border-white/10"
                     )}>
                       {msg.text}
                     </div>

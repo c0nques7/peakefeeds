@@ -48,7 +48,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[var(--glass-border)] bg-black/5 dark:bg-white/5">
+              <tr className="border-b border-[var(--glass-border)] bg-black/5">
                 <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Timestamp</th>
                 <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Admin</th>
                 <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Event Type</th>
@@ -65,7 +65,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
                 </tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                  <tr key={log.id} className="hover:bg-black/5 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col text-xs">
                         <span className="text-[var(--text-primary)] font-medium">{new Date(log.createdAt).toLocaleString()}</span>
@@ -86,7 +86,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-xs font-mono text-[var(--text-muted)] bg-black/5 dark:bg-white/5 px-2 py-1 rounded">
+                      <span className="text-xs font-mono text-[var(--text-muted)] bg-black/5 px-2 py-1 rounded">
                         {log.targetResource || 'N/A'}
                       </span>
                     </td>
@@ -130,7 +130,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
 function getLogTypeStyles(type: AdminLogType) {
   switch (type) {
     case 'AUTH_LOGIN': return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    case 'AUTH_LOGOUT': return 'text-slate-500 dark:text-zinc-400 bg-slate-500/10 dark:bg-zinc-500/10 border-slate-500/20 dark:border-zinc-500/20';
+    case 'AUTH_LOGOUT': return 'text-[var(--text-muted)] bg-[var(--glass-card-hover)] border-[var(--glass-border)]';
     case 'USER_UPDATE': return 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20';
     case 'USER_DELETE': return 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20';
     case 'CONTENT_LOCK': return 'text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/20';
@@ -138,6 +138,6 @@ function getLogTypeStyles(type: AdminLogType) {
     case 'REPORT_RESOLVE': return 'text-[var(--accent-primary)] text-[var(--accent-primary)] bg-[var(--status-info-bg)] border-[var(--accent-primary)]';
     case 'CONFIG_CHANGE': return 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20';
     case 'SUPPORT_TICKET': return 'text-[var(--accent-primary)] text-[var(--accent-primary)] bg-[var(--status-info-bg)] border-[var(--accent-primary)]';
-    default: return 'text-slate-500 dark:text-zinc-400 bg-slate-500/10 dark:bg-zinc-500/10 border-slate-500/20 dark:border-zinc-500/20';
+    default: return 'text-[var(--text-muted)] bg-[var(--glass-card-hover)] border-[var(--glass-border)]';
   }
 }

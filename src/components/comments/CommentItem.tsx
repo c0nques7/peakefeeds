@@ -123,7 +123,7 @@ const CommentEmbed = ({ url }: { url: string }) => {
                             {label} • Click to open
                         </span>
                     </div>
-                    <div className="ml-auto text-gray-400 group-hover:text-[var(--accent-primary)] transition-colors">
+                    <div className="ml-auto text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] transition-colors">
                         <CornerDownRight size={14} />
                     </div>
                 </div>
@@ -140,13 +140,13 @@ const CommentEmbed = ({ url }: { url: string }) => {
 };
 
 const GenericLinkCard = ({ url, icon, label }: any) => (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 p-2 pr-4 rounded-xl border border-[var(--glass-border)] bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-colors max-w-md group/card">
+    <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 p-2 pr-4 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-card)] hover:bg-[var(--glass-card-hover)] transition-colors max-w-md group/card">
         <div className="p-2 bg-[var(--glass-card-hover)] rounded-lg text-[var(--text-muted)] group-hover/card:text-[var(--accent-primary)] transition-colors">
             {icon || <ExternalLink size={16} />}
         </div>
         <div className="flex flex-col overflow-hidden">
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate">{label || new URL(url).hostname}</span>
-            <span className="text-[10px] text-gray-400 truncate">{url}</span>
+            <span className="text-xs font-bold text-[var(--text-primary)] truncate">{label || new URL(url).hostname}</span>
+            <span className="text-[10px] text-[var(--text-muted)] truncate">{url}</span>
         </div>
     </a>
 );
@@ -336,7 +336,7 @@ export function CommentItem({
             )}
          </Link>
          {comment.replies && comment.replies.length > 0 && (
-             <div className="w-[2px] bg-gray-200 dark:bg-gray-700/50 flex-grow mt-2 rounded-full min-h-[20px]" />
+             <div className="w-[2px] bg-[var(--glass-border)] flex-grow mt-2 rounded-full min-h-[20px]" />
          )}
       </div>
 
@@ -345,7 +345,7 @@ export function CommentItem({
         {/* BUBBLE CONTAINER */}
         <div className={clsx(
             "relative rounded-2xl p-3 border-2 group transition-colors duration-500",
-            "bg-gray-50 dark:bg-white/5 overflow-visible",
+            "bg-[var(--glass-card-hover)] overflow-visible",
             randomBorderClass
         )}>
             {comment.isLocked && <LockedOverlay className="rounded-2xl" />}
@@ -391,7 +391,7 @@ export function CommentItem({
                                     <div className="relative">
                     
                     
-                            <button onClick={() => setShowMenu(!showMenu)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 -mr-1">
+                            <button onClick={() => setShowMenu(!showMenu)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 -mr-1">
                                 <MoreVertical size={14} />
                             </button>
                             
@@ -401,7 +401,7 @@ export function CommentItem({
                                     
                                     <div className="absolute right-0 top-6 bg-[var(--glass-card)] shadow-xl border border-[var(--glass-border)] rounded-lg z-30 p-1 w-24 animate-in fade-in zoom-in-95 duration-100">
                                         {canEdit && (
-                                            <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-700 dark:text-gray-200">
+                                            <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs hover:bg-[var(--glass-card-hover)] rounded text-[var(--text-primary)]">
                                                 <Edit2 size={10} className="mr-2"/> Edit
                                             </button>
                                         )}
@@ -435,7 +435,7 @@ export function CommentItem({
                         onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
                     />
                     <div className="flex gap-2 mt-2 justify-end">
-                        <button onClick={() => setIsEditing(false)} className="text-xs text-[var(--text-muted)] px-2 py-1 hover:text-gray-700 dark:hover:text-gray-200">Cancel</button>
+                        <button onClick={() => setIsEditing(false)} className="text-xs text-[var(--text-muted)] px-2 py-1 hover:text-[var(--text-primary)]">Cancel</button>
                         <button onClick={handleUpdate} disabled={isSubmitting} className="text-xs bg-[var(--btn-primary)] text-[var(--btn-primary-text)] px-2 py-1 rounded hover:bg-[var(--btn-primary-hover)] flex items-center gap-1">
                             {isSubmitting && <Loader2 size={10} className="animate-spin" />} Save
                         </button>
@@ -463,11 +463,11 @@ export function CommentItem({
         {/* Reply Input Form */}
         {isReplying && (
             <div className="flex items-center gap-2 mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                <CornerDownRight size={14} className="text-gray-300 dark:text-gray-600" />
+                <CornerDownRight size={14} className="text-[var(--text-muted)]" />
                 <input 
                     type="text" 
                     placeholder="Write a reply..." 
-                    className="flex-1 min-w-0 bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                    className="flex-1 min-w-0 bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors shadow-sm placeholder:text-[var(--text-muted)]"
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleReply()}

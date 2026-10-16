@@ -86,7 +86,7 @@ export function CreateUserButton() {
                       type="checkbox" 
                       name="generateInvites" 
                       defaultChecked 
-                      className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-500 bg-slate-900 transition-all checked:border-[var(--accent-primary)] checked:bg-[var(--accent-primary)]"
+                      className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-[var(--glass-border)] bg-[var(--glass-card)] transition-all checked:border-[var(--accent-primary)] checked:bg-[var(--accent-primary)]"
                     />
                     <Ticket size={12} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--text-primary)] opacity-0 peer-checked:opacity-100" />
                   </div>

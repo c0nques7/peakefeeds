@@ -27,7 +27,7 @@ export function AdminSidebar() {
         </div>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/10 rounded-lg"
+          className="p-2 text-[var(--text-primary)] hover:bg-black/5 rounded-lg"
           aria-label="Toggle Menu"
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -92,7 +92,7 @@ function NavLink({ href, icon, label, active, onClick }: any) {
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
         active 
         ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)]" 
-        : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5"
+        : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5"
       }`}
     >
       {icon}

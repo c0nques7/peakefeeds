@@ -52,7 +52,7 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
     <div className="overflow-x-auto">
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="border-b border-[var(--glass-border)] bg-black/5 dark:bg-white/5">
+          <tr className="border-b border-[var(--glass-border)] bg-black/5">
             <th className="px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Channel</th>
             <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-center">Stats</th>
             <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Creator</th>
@@ -62,27 +62,27 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
         </thead>
         <tbody className="divide-y divide-[var(--glass-border)]">
           {channels.map((channel) => (
-            <tr key={channel.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+            <tr key={channel.id} className="hover:bg-black/5 transition-colors">
               <td className="px-6 py-4">
                 {editingId === channel.id ? (
                   <div className="space-y-2">
                     <input 
                       value={editData.name}
                       onChange={e => setEditData({...editData, name: e.target.value})}
-                      className="bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded px-2 py-1 text-sm text-slate-900 dark:text-white w-full"
+                      className="bg-white dark:bg-[var(--glass-card)] border border-[var(--glass-border)] rounded px-2 py-1 text-sm text-[var(--text-primary)] w-full"
                     />
                     <textarea 
                       value={editData.description}
                       onChange={e => setEditData({...editData, description: e.target.value})}
-                      className="bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded px-2 py-1 text-xs text-slate-500 dark:text-zinc-400 w-full resize-none"
+                      className="bg-white dark:bg-[var(--glass-card)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-[var(--text-muted)] w-full resize-none"
                       rows={2}
                     />
                   </div>
                 ) : (
                   <div className="flex flex-col">
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
                       #{channel.slug}
-                      <Link href={`/channels/${channel.slug}`} target="_blank" className="p-1 -m-1 text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white">
+                      <Link href={`/channels/${channel.slug}`} target="_blank" className="p-1 -m-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                         <ExternalLink size={12} />
                       </Link>
                     </div>
@@ -99,11 +99,11 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                 <div className="flex items-center justify-center gap-4">
                   <div className="flex flex-col items-center">
                     <Users size={12} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">{channel._count.subscribers}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)]">{channel._count.subscribers}</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <FileText size={12} className="text-[var(--accent-primary)] text-[var(--accent-primary)] mb-1" />
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">{channel._count.posts}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)]">{channel._count.posts}</span>
                   </div>
                 </div>
               </td>
@@ -112,8 +112,8 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
               </td>
               <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                 <div className="flex flex-col text-[10px]">
-                  <span className="text-slate-500 dark:text-zinc-400">Created {new Date(channel.createdAt).toLocaleDateString()}</span>
-                  <span className="text-slate-500 dark:text-zinc-500">{formatDistanceToNow(new Date(channel.createdAt), { addSuffix: true })}</span>
+                  <span className="text-[var(--text-muted)]">Created {new Date(channel.createdAt).toLocaleDateString()}</span>
+                  <span className="text-[var(--text-muted)]">{formatDistanceToNow(new Date(channel.createdAt), { addSuffix: true })}</span>
                 </div>
               </td>
               <td className="px-6 py-4 text-right">
@@ -123,7 +123,7 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                       <button onClick={() => handleSave(channel.id)} disabled={isPending} className="p-3 md:p-2 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-500/30">
                         {isPending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                       </button>
-                      <button onClick={() => setEditingId(null)} className="p-3 md:p-2 bg-slate-200 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 rounded-lg hover:bg-slate-300 dark:hover:bg-zinc-700">
+                      <button onClick={() => setEditingId(null)} className="p-3 md:p-2 bg-[var(--glass-card-hover)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--glass-card-hover)]">
                         <X size={16} />
                       </button>
                     </>

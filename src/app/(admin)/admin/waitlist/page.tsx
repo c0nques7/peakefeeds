@@ -21,7 +21,7 @@ export default async function WaitlistPage() {
         <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] bg-[var(--glass-panel)] px-4 py-2 rounded-full border border-[var(--glass-border)]">
           <Users size={16} />
           <span>Queue Depth: </span>
-          <span className="text-slate-900 dark:text-white font-bold">{pendingUsers.length} visible</span>
+          <span className="text-[var(--text-primary)] font-bold">{pendingUsers.length} visible</span>
         </div>
       </div>
 
