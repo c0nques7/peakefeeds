@@ -74,7 +74,9 @@ export default function HelpBot() {
 
   // --- HANDLERS ---
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  useEffect(() => scrollToBottom(), [messages, isOpen])
+  // Braces matter: newer browsers return a Promise from smooth scrollIntoView, and React
+  // would call an implicitly returned Promise as a cleanup function and crash the page
+  useEffect(() => { scrollToBottom() }, [messages, isOpen])
 
   const handleSend = async () => {
     if (!input.trim()) return
