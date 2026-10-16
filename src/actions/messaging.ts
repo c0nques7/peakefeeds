@@ -8,6 +8,9 @@ import { addMessageAction } from "@/actions/support" // Reuse existing support l
 import { revalidatePath } from "next/cache"
 import { SupportStatus } from "@prisma/client"
 
+// Only these user fields may leave the server (never passwordHash, twoFactorSecret, email)
+const PUBLIC_PARTICIPANT = { id: true, username: true, name: true, image: true } as const
+
 // --- TYPES ---
 // A unified type so the UI doesn't know the difference
 type UnifiedConversation = {
@@ -205,7 +208,7 @@ export async function getMessages(conversationId: string) {
     // B. If not Ticket, Check DM Conversation
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      include: { participants: true }
+      include: { participants: { select: PUBLIC_PARTICIPANT } }
     })
 
     if (conversation && conversation.participants.some(p => p.id === session.user.id)) {
@@ -263,10 +266,10 @@ export async function sendMessage(id: string, content: string) {
     // B. Send DM (Standard)
     const conversation = await prisma.conversation.findUnique({
       where: { id },
-      include: { participants: true }
+      include: { participants: { select: PUBLIC_PARTICIPANT } }
     })
 
-    if (!conversation) {
+    if (!conversation || !conversation.participants.some(p => p.id === session.user.id)) {
       return { error: "Conversation not found" }
     }
 

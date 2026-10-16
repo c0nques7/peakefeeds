@@ -259,6 +259,17 @@ export async function disconnectWallet(userId: string) {
 export async function updateUserDetails(userId: string, data: { name?: string | null, username?: string | null, email?: string | null }) {
   const session = await requireStaff();
 
+  // Moderators can't edit staff accounts (changing an admin's email would allow a takeover via password reset)
+  if (session.user.role !== UserRole.ADMIN) {
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (target && (target.role === UserRole.ADMIN || target.role === UserRole.MODERATOR)) {
+      return { error: "Only admins can edit staff accounts." };
+    }
+  }
+
+  // Lowercased to match the lookup in the credentials login
+  if (data.email) data = { ...data, email: data.email.trim().toLowerCase() };
+
   try {
     // Check if username or email is already taken by another user
     if (data.username) {
@@ -287,7 +298,8 @@ export async function updateUserDetails(userId: string, data: { name?: string | 
         name: data.name,
         username: data.username,
         email: data.email,
-      }
+      },
+      select: { id: true, name: true, username: true, email: true, role: true }
     });
 
     await createAdminLog({

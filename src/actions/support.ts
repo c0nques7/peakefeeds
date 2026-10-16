@@ -7,6 +7,9 @@ import { revalidatePath } from "next/cache"
 import { Ticket } from "@/context/SupportContext"
 import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType } from "@prisma/client"
 import { createAdminLog } from "@/lib/admin-logger"
+import { requireStaff } from "@/lib/rbac"
+
+const isStaffRole = (role?: string | null) => role === UserRole.ADMIN || role === UserRole.MODERATOR
 
 // --- 1. FETCHING ACTIONS ---
 
@@ -111,6 +114,9 @@ export async function getAllTicketsAction() {
 }
 
 export async function getTicketAction(ticketId: string) {
+  const session = await getServerSession(authOptions)
+  const isStaff = isStaffRole(session?.user?.role)
+
   try {
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
@@ -127,6 +133,12 @@ export async function getTicketAction(ticketId: string) {
     })
 
     if (!ticket) return { success: false, error: "Ticket not found" }
+
+    // Staff see every ticket. Others only see their own; anonymous Help Bot tickets
+    // (no userId) stay readable by whoever holds the ticket id.
+    if (!isStaff && ticket.userId && ticket.userId !== session?.user?.id) {
+      return { success: false, error: "Ticket not found" }
+    }
 
     let assignee = null;
     if (ticket.assigneeId) {
@@ -145,9 +157,9 @@ export async function getTicketAction(ticketId: string) {
       userId: ticket.userId,
       assigneeId: ticket.assigneeId,
       assignee: assignee,
-      internalNotes: ticket.internalNotes,
+      internalNotes: isStaff ? ticket.internalNotes : null,
       updatedAt: ticket.updatedAt,
-      messages: ticket.messages.map(m => ({
+      messages: ticket.messages.filter(m => isStaff || !m.isInternal).map(m => ({
         sender: m.sender as 'user' | 'admin' | 'bot',
         text: m.text,
         timestamp: m.createdAt.getTime(),
@@ -199,6 +211,17 @@ export async function createTicketAction(initialMsg: string) {
 
 export async function addMessageAction(ticketId: string, text: string, sender: 'user' | 'admin' | 'bot', isInternal: boolean = false) {
   const session = await getServerSession(authOptions);
+
+  if (sender === 'admin' || sender === 'bot') {
+    await requireStaff();
+  } else {
+    // Users can only post to their own ticket, and never as an internal note
+    const owner = await prisma.supportTicket.findUnique({ where: { id: ticketId }, select: { userId: true } });
+    if (!owner) return { success: false, error: "Ticket not found" };
+    if (owner.userId && owner.userId !== session?.user?.id) return { success: false, error: "Unauthorized" };
+    isInternal = false;
+  }
+
   const adminId = (sender === 'admin' || sender === 'bot') ? session?.user?.id : null;
 
   try {
@@ -253,6 +276,7 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
 }
 
 export async function updateSeverityAction(ticketId: string, severity: number) {
+  await requireStaff()
   try {
     await prisma.supportTicket.update({
       where: { id: ticketId },
@@ -266,6 +290,7 @@ export async function updateSeverityAction(ticketId: string, severity: number) {
 }
 
 export async function resolveTicketAction(ticketId: string) {
+  await requireStaff()
   const session = await getServerSession(authOptions)
   try {
     const ticket = await prisma.supportTicket.update({
@@ -303,6 +328,7 @@ export async function resolveTicketAction(ticketId: string) {
 }
 
 export async function updateTicketStatusAction(ticketId: string, status: SupportStatus) {
+  await requireStaff()
   const session = await getServerSession(authOptions)
   try {
     const ticket = await prisma.supportTicket.update({
@@ -338,6 +364,7 @@ export async function updateTicketStatusAction(ticketId: string, status: Support
 }
 
 export async function updateTicketPriorityAction(ticketId: string, priority: SupportPriority) {
+  await requireStaff()
   const session = await getServerSession(authOptions)
   try {
     await prisma.supportTicket.update({
@@ -362,6 +389,7 @@ export async function updateTicketPriorityAction(ticketId: string, priority: Sup
 }
 
 export async function updateTicketAssigneeAction(ticketId: string, assigneeId: string | null) {
+  await requireStaff()
   const session = await getServerSession(authOptions)
   try {
     await prisma.supportTicket.update({
@@ -386,6 +414,7 @@ export async function updateTicketAssigneeAction(ticketId: string, assigneeId: s
 }
 
 export async function updateInternalNotesAction(ticketId: string, internalNotes: string) {
+  await requireStaff()
   const session = await getServerSession(authOptions)
   try {
     await prisma.supportTicket.update({
@@ -410,6 +439,7 @@ export async function updateInternalNotesAction(ticketId: string, internalNotes:
 }
 
 export async function sendMessageToUserAction(ticketId: string, text: string) {
+  await requireStaff()
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: "Not authenticated" }
 

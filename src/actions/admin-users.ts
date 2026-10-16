@@ -125,17 +125,28 @@ export async function getStaffUsers() {
  */
 export async function createUser(formData: FormData) {
   // 1. Security Check
-  await requireStaff(); 
+  const session = await requireStaff();
 
-  const email = formData.get("email") as string;
+  // Lowercased to match the lookup in the credentials login
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
-  const role = formData.get("role") as UserRole;
+  const role = (formData.get("role") as UserRole) || UserRole.STANDARD;
   const shouldGenerateInvites = formData.get("generateInvites") === "on";
 
   // 2. Validation
   if (!email || !username || !password) {
     return { error: "Missing required fields." };
+  }
+
+  if (!Object.values(UserRole).includes(role)) {
+    return { error: "Invalid role." };
+  }
+
+  // Only admins can create staff accounts
+  const staffRoles: UserRole[] = [UserRole.ADMIN, UserRole.MODERATOR];
+  if (staffRoles.includes(role) && session.user.role !== UserRole.ADMIN) {
+    return { error: "Only admins can create admin or moderator accounts." };
   }
 
   const existing = await prisma.user.findFirst({
