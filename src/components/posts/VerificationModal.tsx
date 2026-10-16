@@ -111,10 +111,10 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
                 <button 
                     onClick={handleWalletVerify}
                     disabled={isSigning}
-                    className="w-full flex items-center justify-between p-4 rounded-xl bg-indigo-600/10 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white text-indigo-400 transition-all group"
+                    className="w-full flex items-center justify-between p-4 rounded-xl bg-[var(--status-info-bg)] border border-[var(--accent-primary)] hover:bg-[var(--btn-primary-hover)] hover:text-white text-[var(--accent-primary)] transition-all group"
                 >
                     <div className="flex items-center gap-4">
-                        <div className="bg-indigo-500/20 p-2 rounded-lg group-hover:bg-white/20"><Wallet size={24} /></div>
+                        <div className="bg-[var(--status-info-bg)] p-2 rounded-lg group-hover:bg-white/20"><Wallet size={24} /></div>
                         <div className="text-left">
                             <span className="block font-bold text-sm">Connect Wallet</span>
                             <span className="block text-[10px] opacity-70">Sign & Pay Gas (Self-Custody)</span>

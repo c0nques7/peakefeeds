@@ -55,7 +55,7 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
           disabled={selected.length === 0 || isPending}
           className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${
             selected.length > 0 
-              ? "bg-[var(--accent-primary)] text-white hover:opacity-90 shadow-[0_0_15px_rgba(124,58,237,0.5)]" 
+              ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]" 
               : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
           }`}
         >

@@ -22,7 +22,7 @@ export default async function AdminUsersPage({
   return (
     <div className="space-y-6">
       {/* HEADER & FILTERS */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-end">
+      <div className="flex flex-col md:flex-row gap-4 justify-between md:items-end">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">User Registry</h1>
           <p className="text-[var(--text-muted)]">Manage roles, permissions, and bans.</p>
@@ -62,9 +62,9 @@ export default async function AdminUsersPage({
         </div>
       </div>
 
-      {/* DATA TABLE (Horizontal Scroll Wrapper from Script A) */}
+      {/* DATA TABLE: rows become stacked cards on phones */}
       <div className={styles.tableWrapper}>
-        <table className="w-full text-left border-collapse min-w-[800px] md:min-w-0">
+        <table className={`w-full text-left border-collapse ${styles.stackOnPhone}`}>
           <thead>
             <tr>
               <th className={`p-4 ${styles.tableHeader}`}>User Identity</th>
@@ -93,7 +93,7 @@ export default async function AdminUsersPage({
                     ${user.role === 'ADMIN' ? styles.badgeRed : 
                       user.role === 'MODERATOR' ? styles.badgeGold : 
                       user.role === 'BUSINESS' ? styles.badgeBlue : 
-                      'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'}
+                      'bg-[var(--glass-card-hover)] text-[var(--text-secondary)] border-[var(--glass-border)]'}
                   `}>
                     {user.role}
                   </span>
@@ -102,7 +102,7 @@ export default async function AdminUsersPage({
                 {/* Stats (Hidden on Mobile) */}
                 <td className="p-4 text-sm text-[var(--text-muted)] hidden md:table-cell">
                   <div>{user._count.posts} Posts</div>
-                  <div className="text-xs opacity-70">Joined {new Date(user.createdAt).toLocaleDateString()}</div>
+                  <div className="text-xs opacity-70">Joined {new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
                 </td>
 
                 {/* Safety Standing */}
@@ -119,7 +119,7 @@ export default async function AdminUsersPage({
                     )}
                     
                     {user._count.reportsAgainst > 0 && (
-                      <span className="text-xs text-orange-400 font-mono ml-2 flex items-center gap-1">
+                      <span className="text-xs text-[var(--status-warning)] font-mono ml-2 flex items-center gap-1">
                         <Shield size={12} /> {user._count.reportsAgainst} Reports
                       </span>
                     )}

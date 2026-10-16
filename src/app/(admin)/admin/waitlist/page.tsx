@@ -12,7 +12,7 @@ export default async function WaitlistPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-3">
-            <Ticket className="text-purple-600 dark:text-purple-400" />
+            <Ticket className="text-[var(--accent-primary)] text-[var(--accent-primary)]" />
             The Air Lock
           </h1>
           <p className="text-[var(--text-muted)]">Batch activate users from the waitlist.</p>

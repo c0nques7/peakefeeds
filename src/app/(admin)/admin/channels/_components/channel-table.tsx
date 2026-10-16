@@ -102,7 +102,7 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                     <span className="text-xs font-bold text-slate-900 dark:text-white">{channel._count.subscribers}</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <FileText size={12} className="text-indigo-600 dark:text-indigo-400 mb-1" />
+                    <FileText size={12} className="text-[var(--accent-primary)] text-[var(--accent-primary)] mb-1" />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">{channel._count.posts}</span>
                   </div>
                 </div>
@@ -129,7 +129,7 @@ export function ChannelManagementTable({ initialChannels }: { initialChannels: a
                     </>
                   ) : (
                     <>
-                      <button onClick={() => handleEdit(channel)} className="p-3 md:p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-500/20">
+                      <button onClick={() => handleEdit(channel)} className="p-3 md:p-2 bg-[var(--status-info-bg)] text-[var(--accent-primary)] text-[var(--accent-primary)] rounded-lg hover:bg-[var(--btn-primary-hover)]/20">
                         <Edit2 size={16} />
                       </button>
                       <button onClick={() => handleDelete(channel.id)} className="p-3 md:p-2 bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-500/20">

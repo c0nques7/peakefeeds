@@ -38,7 +38,7 @@ export default function QuickActionsFab() {
             href="/channels/create"
             className={`flex items-center gap-3 bg-gray-900 border border-white/20 backdrop-blur-xl !text-white px-5 py-3 rounded-2xl shadow-2xl hover:bg-gray-800 transition-all whitespace-nowrap w-max ${isOpen ? 'delay-75' : ''}`}
         >
-            <div className="bg-indigo-600 p-2 rounded-full text-white">
+            <div className="bg-[var(--btn-primary)] p-2 rounded-full text-[var(--btn-primary-text)]">
                 <Users size={20} />
             </div>
             <span className="font-bold text-sm tracking-wide">New Community</span>
@@ -64,7 +64,7 @@ export default function QuickActionsFab() {
         className={`
             h-16 w-16 rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.5)] 
             transition-all duration-300 border border-white/20 relative z-50
-            ${isOpen ? 'bg-gray-800 rotate-45 border-white/40' : 'bg-gradient-to-tr from-indigo-600 to-purple-600 hover:scale-110'}
+            ${isOpen ? 'bg-gray-800 rotate-45 border-white/40' : 'bg-[var(--btn-primary)] hover:scale-110'}
         `}
       >
         <Plus size={32} className="text-white" strokeWidth={3} />

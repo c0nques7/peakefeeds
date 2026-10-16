@@ -78,7 +78,7 @@ export default function LogFilters() {
       <div className="flex gap-2">
         <button
           onClick={handleSearch}
-          className="px-4 py-2 bg-[var(--accent-primary)] hover:bg-pink-500 text-white rounded-lg text-sm font-bold transition-colors"
+          className="px-4 py-2 bg-[var(--btn-primary)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-[var(--radius-control)] text-sm font-bold transition-colors"
         >
           Search
         </button>

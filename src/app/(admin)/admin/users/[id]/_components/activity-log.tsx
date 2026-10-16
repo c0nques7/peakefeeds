@@ -26,7 +26,7 @@ export function ActivityLog({ activity }: { activity: ActivityItem[] }) {
     switch (type) {
       case "POST": return <FileText size={14} className="text-blue-400" />;
       case "COMMENT": return <MessageSquare size={14} className="text-emerald-400" />;
-      case "REACTION": return <Heart size={14} className="text-pink-400" />;
+      case "REACTION": return <Heart size={14} className="text-[var(--accent-primary)]" />;
       default: return <Clock size={14} className="text-[var(--text-muted)]" />;
     }
   };

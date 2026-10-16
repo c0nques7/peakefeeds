@@ -66,7 +66,7 @@ export default async function ChannelSettingsPage({ params }: ChannelSettingsPag
           </div>
         </div>
         
-        <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-wider">
+        <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--status-info-bg)] border border-[var(--accent-primary)] text-[var(--accent-primary)] text-xs font-bold uppercase tracking-wider">
           <Shield size={14} />
           {isCreator ? 'Owner Access' : 'Moderator Access'}
         </div>

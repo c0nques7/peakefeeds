@@ -149,7 +149,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
                 <tr key={p.userId} className="hover:bg-white/5 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white overflow-hidden border border-white/10">
+                      <div className="w-8 h-8 rounded-full bg-[var(--accent-secondary)] flex items-center justify-center text-white overflow-hidden border border-white/10">
                         {p.user.image ? (
                           <img src={p.user.image} alt="" className="w-full h-full object-cover" />
                         ) : (

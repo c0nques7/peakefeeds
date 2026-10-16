@@ -40,7 +40,7 @@ export function EmailTriggers({ userId }: { userId: string }) {
         className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all border border-[var(--glass-border)]"
       >
         <span className="flex items-center gap-2">
-          <Mail size={16} className="text-purple-400" />
+          <Mail size={16} className="text-[var(--accent-primary)]" />
           <span>Send Activation (Invite Code)</span>
         </span>
         {isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={14} className="opacity-50" />}

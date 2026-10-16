@@ -74,7 +74,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                        <div className="w-6 h-6 rounded-full bg-[var(--status-info-bg)] flex items-center justify-center text-[var(--accent-primary)] text-[var(--accent-primary)]">
                           <User size={12} />
                         </div>
                         <span className="text-sm text-[var(--text-primary)]">@{log.admin.username}</span>
@@ -114,7 +114,7 @@ export default async function AdminLogsPage({ searchParams }: LogsPageProps) {
               href={`?page=${i + 1}${type ? `&type=${type}` : ''}${adminId ? `&adminId=${adminId}` : ''}${search ? `&search=${search}` : ''}`}
               className={`px-4 py-2 rounded-lg border transition-all text-xs font-bold ${
                 currentPage === i + 1
-                  ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
+                  ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)] border-[var(--btn-primary)]"
                   : "bg-[var(--glass-panel)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -135,9 +135,9 @@ function getLogTypeStyles(type: AdminLogType) {
     case 'USER_DELETE': return 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20';
     case 'CONTENT_LOCK': return 'text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/20';
     case 'CONTENT_UNLOCK': return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    case 'REPORT_RESOLVE': return 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20';
+    case 'REPORT_RESOLVE': return 'text-[var(--accent-primary)] text-[var(--accent-primary)] bg-[var(--status-info-bg)] border-[var(--accent-primary)]';
     case 'CONFIG_CHANGE': return 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20';
-    case 'SUPPORT_TICKET': return 'text-pink-600 dark:text-pink-400 bg-pink-500/10 border-pink-500/20';
+    case 'SUPPORT_TICKET': return 'text-[var(--accent-primary)] text-[var(--accent-primary)] bg-[var(--status-info-bg)] border-[var(--accent-primary)]';
     default: return 'text-slate-500 dark:text-zinc-400 bg-slate-500/10 dark:bg-zinc-500/10 border-slate-500/20 dark:border-zinc-500/20';
   }
 }

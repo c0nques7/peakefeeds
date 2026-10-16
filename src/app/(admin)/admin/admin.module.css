@@ -52,13 +52,31 @@
 }
 
 /* --- 2. TABLE RESPONSIVENESS --- */
+/* Scrolls sideways when the table is wider than the screen. The edge shadows (drawn behind the
+   content and revealed as it scrolls) show that there is more to the side. */
 .tableWrapper {
   width: 100%;
-  overflow-x: auto; /* Enable horizontal scroll */
-  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
-  border-radius: 1rem;
-  background: var(--glass-card);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-card);
   border: 1px solid var(--glass-border);
+  background:
+    linear-gradient(to right, var(--glass-card) 30%, transparent) left center / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--glass-card) 30%, transparent) right center / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.25), transparent) left center / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.25), transparent) right center / 14px 100% no-repeat scroll,
+    var(--glass-card);
+}
+
+/* Phones: show each row as a stacked card instead of a table that scrolls sideways */
+@media (max-width: 767px) {
+  .stackOnPhone { min-width: 0 !important; }
+  .stackOnPhone thead { display: none; }
+  .stackOnPhone tbody,
+  .stackOnPhone tr,
+  .stackOnPhone td { display: block; }
+  .stackOnPhone tr { padding: 0.75rem 1rem; }
+  .stackOnPhone td { padding: 0.25rem 0 !important; text-align: left !important; }
 }
 
 /* --- 3. DESKTOP OVERRIDES (≥ 768px) --- */

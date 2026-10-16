@@ -8,14 +8,14 @@ import Link from 'next/link'
 
 // Visual Config for each type
 const TYPE_CONFIG = {
-  LIKE: { icon: Heart, color: "text-pink-500", bg: "bg-pink-500/10", label: "liked your post" },
+  LIKE: { icon: Heart, color: "text-[var(--status-error)]", bg: "bg-[var(--status-error-bg)]", label: "liked your post" },
   COMMENT: { icon: MessageCircle, color: "text-blue-500", bg: "bg-blue-500/10", label: "commented on your post" },
-  REPLY: { icon: Reply, color: "text-indigo-500", bg: "bg-indigo-500/10", label: "replied to you" },
+  REPLY: { icon: Reply, color: "text-[var(--accent-primary)]", bg: "bg-[var(--status-info-bg)]", label: "replied to you" },
   MENTION: { icon: AtSign, color: "text-orange-500", bg: "bg-orange-500/10", label: "mentioned you" },
   SYSTEM: { icon: ShieldAlert, color: "text-red-500", bg: "bg-red-500/10", label: "System Alert" },
   TICKET_REPLY: { icon: Info, color: "text-emerald-500", bg: "bg-emerald-500/10", label: "Support Update" },
   TICKET_UPDATE: { icon: Info, color: "text-emerald-500", bg: "bg-emerald-500/10", label: "updated your support ticket" },
-  MESSAGE: { icon: Send, color: "text-indigo-400", bg: "bg-indigo-400/10", label: "sent you a message" },
+  MESSAGE: { icon: Send, color: "text-[var(--accent-primary)]", bg: "bg-[var(--status-info-bg)]", label: "sent you a message" },
   REPORT: { icon: Flag, color: "text-yellow-500", bg: "bg-yellow-500/10", label: "A new report requires review" },
 }
 

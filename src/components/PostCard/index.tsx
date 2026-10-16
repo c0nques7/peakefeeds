@@ -426,7 +426,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                           <button 
                               onClick={handleEditPost}
                               disabled={isSavingEdit || !editContent.trim()}
-                              className="px-4 py-1.5 rounded-full bg-[var(--accent-primary)] text-white text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2"
+                              className="px-4 py-1.5 rounded-full bg-[var(--btn-primary)] text-[var(--btn-primary-text)] text-xs font-bold hover:bg-[var(--btn-primary-hover)] transition-all flex items-center gap-2"
                           >
                               {isSavingEdit ? <Loader2 size={12} className="animate-spin" /> : "Save Changes"}
                           </button>

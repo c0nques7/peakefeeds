@@ -2,23 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
+import { useState } from "react";
 // 🟢 Added FileText, ScrollText, Hash to imports
 import { 
-  ShieldAlert, Users, LayoutDashboard, LogOut, Activity, Ticket, Menu, X, FileText, ScrollText, Hash, MessageSquare, Sun, Moon 
+  ShieldAlert, Users, LayoutDashboard, LogOut, Activity, Ticket, Menu, X, FileText, ScrollText, Hash, MessageSquare 
 } from "lucide-react";
 import styles from "@/app/(admin)/admin/admin.module.css";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
-  const { setTheme, theme } = useTheme();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Close sidebar automatically when a link is clicked (Better UX)
   const handleLinkClick = () => setIsOpen(false);
@@ -77,19 +71,11 @@ export function AdminSidebar() {
         </nav>
 
         <div className="p-4 border-t border-[var(--glass-border)] space-y-2">
-          {mounted && (
-            <button 
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium w-full text-left"
-            >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-              <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            </button>
-          )}
+          <ThemeToggle variant="row" />
 
-          <Link href="/home" className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium">
-            <LogOut size={18} />
-            <span>Exit to App</span>
+          <Link href="/home" className="flex items-center gap-3 px-3 h-10 rounded-[var(--radius-control)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)] transition-colors text-sm font-medium">
+            <LogOut size={18} aria-hidden="true" />
+            <span>Back to the app</span>
           </Link>
         </div>
       </aside>
@@ -105,7 +91,7 @@ function NavLink({ href, icon, label, active, onClick }: any) {
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
         active 
-        ? "bg-[var(--accent-primary)] text-white shadow-lg shadow-indigo-500/20" 
+        ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)]" 
         : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5"
       }`}
     >

@@ -27,7 +27,7 @@ export function CreateUserButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-violet-600 text-[var(--text-primary)] rounded-lg font-bold text-sm transition-colors shadow-lg shadow-violet-500/20"
+        className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--btn-primary-hover)] text-[var(--text-primary)] rounded-lg font-bold text-sm transition-colors shadow-lg "
       >
         <Plus size={18} />
         Create User
@@ -108,7 +108,7 @@ export function CreateUserButton() {
                 <button 
                   type="submit" 
                   disabled={isPending}
-                  className="flex-1 py-2 rounded bg-[var(--accent-primary)] text-[var(--text-primary)] font-bold hover:bg-violet-600 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2 rounded bg-[var(--accent-primary)] text-[var(--text-primary)] font-bold hover:bg-[var(--btn-primary-hover)] transition-colors flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="animate-spin" size={16} />}
                   Create

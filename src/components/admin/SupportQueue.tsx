@@ -188,7 +188,7 @@ export default function SupportQueue() {
           <input 
             type="text" 
             placeholder="Search tickets..."
-            className="w-full bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-pink-500 transition-colors"
+            className="w-full bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -258,7 +258,7 @@ export default function SupportQueue() {
                     <span>{ticket.updatedAt ? formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true }) : 'Just now'}</span>
                   </div>
                   {ticket.assignee && (
-                    <div className="flex items-center gap-1 text-[10px] text-pink-400">
+                    <div className="flex items-center gap-1 text-[10px] text-[var(--accent-primary)]">
                       <UserIcon size={10} />
                       <span>{ticket.assignee.username}</span>
                     </div>

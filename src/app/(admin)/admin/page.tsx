@@ -2,6 +2,7 @@ import { getAdminDashboardStats } from "@/actions/admin-dashboard";
 import Link from "next/link";
 import { Users, ShieldAlert, UserPlus, Ticket, ShieldCheck, ArrowRight, MessageSquare } from "lucide-react";
 import styles from "./admin.module.css";
+import { ButtonLink } from "@/components/ui";
 
 export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
@@ -64,7 +65,7 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="p-6">
             {stats.pendingReports > 0 ? (
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--status-warning-bg)] border border-[var(--status-warning)]/20">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-[var(--radius-control)] bg-[var(--status-warning-bg)]">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-[var(--status-warning-bg)] rounded-full text-[var(--status-warning)]">
                     <ShieldAlert size={20} />
@@ -74,12 +75,7 @@ export default async function AdminDashboardPage() {
                     <p className="text-sm text-[var(--text-muted)]">{stats.pendingReports} reports pending.</p>
                   </div>
                 </div>
-                <Link 
-                  href="/admin/moderation"
-                  className="px-4 py-2 rounded-lg bg-[var(--status-warning)] text-white font-bold text-sm hover:opacity-90 transition-colors shadow-lg"
-                >
-                  Review
-                </Link>
+                <ButtonLink href="/admin/moderation">Review reports</ButtonLink>
               </div>
             ) : (
                <div className="text-center py-4 text-[var(--text-muted)]">
@@ -98,7 +94,7 @@ export default async function AdminDashboardPage() {
           <div className="p-6">
             {/* @ts-ignore */}
             {stats.waitlistCount > 0 ? (
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--status-info-bg)] border border-[var(--status-info)]/20">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-[var(--radius-control)] bg-[var(--status-info-bg)]">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-[var(--status-info-bg)] rounded-full text-[var(--status-info)]">
                     <Ticket size={20} />
@@ -109,12 +105,7 @@ export default async function AdminDashboardPage() {
                     <p className="text-sm text-[var(--text-muted)]">{stats.waitlistCount} people waiting.</p>
                   </div>
                 </div>
-                <Link 
-                  href="/admin/waitlist"
-                  className="px-4 py-2 rounded-lg bg-[var(--status-info)] text-white font-bold text-sm hover:opacity-90 transition-colors shadow-lg flex items-center gap-2"
-                >
-                  Manage Batch <ArrowRight size={14} />
-                </Link>
+                <ButtonLink href="/admin/waitlist" icon={<ArrowRight size={14} aria-hidden="true" />} className="flex-row-reverse">Open waitlist</ButtonLink>
               </div>
             ) : (
                <div className="text-center py-4 text-[var(--text-muted)]">
@@ -131,7 +122,7 @@ export default async function AdminDashboardPage() {
             <h3 className="text-lg font-bold text-[var(--text-primary)]">Support Channels</h3>
           </div>
           <div className="p-6">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--status-accent-bg)] border border-[var(--status-accent)]/20">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-[var(--radius-control)] bg-[var(--status-accent-bg)]">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-[var(--status-accent-bg)] rounded-full text-[var(--status-accent)]">
                   <MessageSquare size={20} />
@@ -141,12 +132,7 @@ export default async function AdminDashboardPage() {
                   <p className="text-sm text-[var(--text-muted)]">View live tickets from users requesting human assistance.</p>
                 </div>
               </div>
-              <Link 
-                href="/admin/support"
-                className="px-4 py-2 rounded-lg bg-[var(--status-accent)] text-white font-bold text-sm hover:opacity-90 transition-colors shadow-lg flex items-center gap-2"
-              >
-                Open Support Console <ArrowRight size={14} />
-              </Link>
+              <ButtonLink href="/admin/support" icon={<ArrowRight size={14} aria-hidden="true" />} className="flex-row-reverse">Open support queue</ButtonLink>
             </div>
           </div>
         </div>
@@ -161,7 +147,7 @@ function GlassStat({ label, value, icon, trend, href }: any) {
   const content = (
     <div className={`${styles.glassPanel} p-6 relative group transition-all hover:-translate-y-1 hover:border-[var(--accent-primary)] cursor-pointer`}>
       <div className="flex justify-between items-start mb-4">
-        <div className="p-3 rounded-xl bg-[var(--glass-panel)] text-[var(--text-primary)] group-hover:bg-[var(--accent-primary)] group-hover:text-white transition-colors">
+        <div className="p-3 rounded-xl bg-[var(--glass-panel)] text-[var(--text-primary)] group-hover:bg-[var(--btn-primary)] group-hover:text-[var(--btn-primary-text)] transition-colors">
           {icon}
         </div>
         {trend && <span className="text-xs font-bold text-[var(--text-muted)] group-hover:text-white uppercase tracking-wider transition-colors">{trend}</span>}

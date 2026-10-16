@@ -85,7 +85,7 @@ export default function AdminSupportConsole() {
       {/* Header */}
       <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-white/5">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-pink-500/20 rounded-lg text-pink-400">
+          <div className="p-2 bg-[var(--status-info-bg)] rounded-lg text-[var(--accent-primary)]">
             <MessageSquare size={20} />
           </div>
           <div>
@@ -121,7 +121,7 @@ export default function AdminSupportConsole() {
               >
                 {/* Active Indicator */}
                 {selectedTicketId === ticket.id && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-pink-500"></div>
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--btn-primary)]"></div>
                 )}
 
                 <div className="flex justify-between items-start mb-1">
@@ -196,7 +196,7 @@ export default function AdminSupportConsole() {
                     <div className={clsx(
                       "p-3 rounded-xl text-sm shadow-md",
                       msg.sender === 'admin' 
-                        ? "bg-pink-600 text-white rounded-br-none" 
+                        ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)] rounded-br-none" 
                         : "bg-[#1a1a1a] text-gray-200 rounded-bl-none border border-white/10"
                     )}>
                       {msg.text}
@@ -211,7 +211,7 @@ export default function AdminSupportConsole() {
               <div className="p-4 border-t border-white/10 bg-white/5">
                 <div className="flex gap-2">
                   <input 
-                    className="flex-1 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-pink-500 transition-colors"
+                    className="flex-1 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
                     placeholder="Type your reply..."
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
@@ -219,7 +219,7 @@ export default function AdminSupportConsole() {
                   />
                   <button 
                     onClick={handleSend}
-                    className="p-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg transition-colors shadow-lg shadow-pink-600/20"
+                    className="p-2 bg-[var(--btn-primary)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-lg transition-colors shadow-lg "
                   >
                     <Send size={18} />
                   </button>

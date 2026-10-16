@@ -294,7 +294,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
           // View 2: Penalty Selection
           <div className="space-y-2 animate-in slide-in-from-bottom-2 fade-in">
             <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => handlePenalize("WARNING")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-[var(--accent-primary)] hover:text-white transition-colors">Warning</button>
+                <button onClick={() => handlePenalize("WARNING")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-[var(--btn-primary)] hover:text-[var(--btn-primary-text)] transition-colors">Warning</button>
                 <button onClick={() => handlePenalize("CONTENT_REMOVAL")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-orange-500 hover:text-white transition-colors">Remove Content</button>
                 <button onClick={() => handlePenalize("STRIKE_2_SUSPENSION")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-red-500 hover:text-white transition-colors">Suspend (7d)</button>
                 <button onClick={() => handlePenalize("PERMANENT_BAN")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-red-700 hover:text-white font-bold transition-colors">PERMA-BAN</button>
