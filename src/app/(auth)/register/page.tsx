@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { registerUser } from "@/actions/auth-register";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Ticket, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Button, TextField } from "@/components/ui";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -51,113 +52,73 @@ export default function RegisterPage() {
 
   return (
     <>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Create Account</h1>
-        <p className="text-[var(--text-muted)]">
-          PeakeFeeds is currently in private beta.
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Create an account</h1>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          PeakeFeeds is in private beta, so you'll need an invite code.
         </p>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-[var(--status-error-bg)] border border-[var(--status-error)]/20 text-[var(--status-error)] text-sm animate-in slide-in-from-top-2">
-          <AlertCircle size={16} />
+        <div role="alert" className="flex items-center gap-2 p-3 mb-5 rounded-[var(--radius-control)] bg-[var(--status-error-bg)] text-[var(--status-error)] text-sm">
+          <AlertCircle size={16} aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        
-        {/* --- STEP 1: THE INVITE CODE GATE --- */}
-        <div className={`space-y-4 ${step === 1 ? 'block' : 'hidden'}`}>
-          <div>
-            <label className="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-wider mb-1 block">
-               Required for Access
-            </label>
-            <div className="relative">
-                <Ticket className="absolute left-3 top-3.5 text-[var(--accent-primary)]" size={18} />
-                <input
-                    name="inviteCode"
-                    type="text"
-                    placeholder="ENTER-INVITE-CODE"
-                    value={formData.inviteCode}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--glass-panel)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] font-mono uppercase tracking-widest transition-all"
-                />
-            </div>
-            <p className="text-xs text-[var(--text-muted)] mt-2">
-                Don't have one? <Link href="/" className="hover:text-[var(--text-primary)] underline">Join the Waitlist.</Link>
-            </p>
-          </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          <button 
-            type="button"
+        {/* --- STEP 1: INVITE CODE --- */}
+        <div className={step === 1 ? 'flex flex-col gap-4' : 'hidden'}>
+          <TextField
+            id="inviteCode"
+            name="inviteCode"
+            label="Invite code"
+            placeholder="PEAKE-XXXXXX"
+            autoComplete="off"
+            value={formData.inviteCode}
+            onChange={handleChange}
+            className="[&_input]:font-mono [&_input]:uppercase [&_input]:tracking-widest"
+            hint={<>No code yet? <Link href="/" className="underline hover:text-[var(--text-primary)]">Join the waitlist</Link>.</>}
+          />
+
+          <Button
+            size="lg"
+            fullWidth
             onClick={() => {
                 // Client-side basic validation
                 if(formData.inviteCode.trim().length < 5) {
-                    setError("Please enter a valid code format.");
-                } else { 
-                    setError(""); 
-                    setStep(2); 
+                    setError("Enter the invite code from your email, for example PEAKE-1A2B3C.");
+                } else {
+                    setError("");
+                    setStep(2);
                 }
             }}
-            className="w-full py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-[var(--text-primary)] font-bold border border-[var(--glass-border)] transition-all"
           >
             Continue
-          </button>
+          </Button>
         </div>
 
-        {/* --- STEP 2: USER DETAILS --- */}
-        <div className={`space-y-4 animate-in slide-in-from-right-8 ${step === 2 ? 'block' : 'hidden'}`}>
-           {/* Code Confirmation Badge */}
-           <div className="flex items-center gap-2 mb-4 p-2 bg-[var(--status-success-bg)] rounded border border-[var(--status-success)]/20 text-[var(--status-success)] text-xs">
-                <CheckCircle size={14} />
-                <span className="font-mono">CODE: {formData.inviteCode.toUpperCase()}</span>
-                <button type="button" onClick={() => setStep(1)} className="ml-auto hover:underline opacity-70">Change</button>
+        {/* --- STEP 2: ACCOUNT DETAILS --- */}
+        <div className={step === 2 ? 'flex flex-col gap-4' : 'hidden'}>
+           <div className="flex items-center gap-2 p-2.5 rounded-[var(--radius-control)] bg-[var(--status-success-bg)] text-[var(--status-success)] text-xs">
+                <CheckCircle size={14} aria-hidden="true" />
+                <span className="font-mono">Invite code {formData.inviteCode.toUpperCase()}</span>
+                <button type="button" onClick={() => setStep(1)} className="ml-auto underline">Change</button>
            </div>
 
-           <div className="grid grid-cols-1 gap-4">
-             <input
-                name="username"
-                type="text"
-                placeholder="Username"
-                required={step === 2}
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
-              />
-              <input
-                name="email"
-                type="email"
-                placeholder="Email Address"
-                required={step === 2}
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
-              />
-              <input
-                name="password"
-                type="password"
-                placeholder="Password"
-                required={step === 2}
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
-              />
-           </div>
+           <TextField id="username" name="username" label="Username" autoComplete="username" required={step === 2} value={formData.username} onChange={handleChange} />
+           <TextField id="email" name="email" type="email" label="Email" autoComplete="email" required={step === 2} value={formData.email} onChange={handleChange} />
+           <TextField id="password" name="password" type="password" label="Password" autoComplete="new-password" required={step === 2} value={formData.password} onChange={handleChange} />
 
-           <button 
-            type="submit" 
-            disabled={isPending}
-            className="w-full py-3 rounded-lg bg-[var(--accent-primary)] text-white font-bold hover:opacity-90 hover:translate-y-[-1px] transition-all flex items-center justify-center gap-2"
-          >
-            {isPending && <Loader2 className="animate-spin" size={18} />}
-            {isPending ? "Verifying & Creating..." : "Complete Registration"}
-          </button>
+           <Button type="submit" disabled={isPending} size="lg" fullWidth icon={isPending ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : undefined}>
+            {isPending ? "Creating account…" : "Create account"}
+           </Button>
         </div>
 
       </form>
-      
-      <div className="mt-8 text-center text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-6">
+
+      <div className="mt-6 text-center text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-5">
         <p>
           Already have an account?{" "}
           <Link href="/login" className="text-[var(--accent-primary)] font-bold hover:underline">

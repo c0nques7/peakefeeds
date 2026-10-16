@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useTransition, useEffect } from "react"
-import { Mail, Loader2, Check } from "lucide-react"
+import { Loader2, Check } from "lucide-react"
 import Link from "next/link"
 import { requestPasswordReset } from '@/actions/auth-reset'
+import { Button, TextField } from '@/components/ui'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -47,56 +48,46 @@ export default function ForgotPasswordPage() {
     return () => clearInterval(t)
   }, [cooldownSeconds])
 
+  // The auth layout already provides the card, so this page renders only its content
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)] p-4">
-      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-2xl p-8 shadow-2xl backdrop-blur-xl">
-        <div className="mb-6 text-center">
-          <div className="w-12 h-12 bg-[var(--glass-panel)] rounded-full flex items-center justify-center mx-auto mb-4 border border-[var(--glass-border)]">
-            <Mail className="text-[var(--accent-primary)]" size={24} />
-          </div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Reset your password</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-2">Enter your account email and we'll send a reset link.</p>
-        </div>
-
-        {message && (
-          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-300 text-center mb-4">
-            {message}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-[var(--text-muted)]">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@domain.com"
-              className="w-full mt-2 px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-all"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isPending || cooldownSeconds > 0}
-            className="w-full py-3 rounded-lg bg-[var(--accent-primary)] text-white font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2"
-          >
-            {isPending && <Loader2 className="animate-spin" size={16} />}
-            {cooldownSeconds > 0 ? `Please wait ${cooldownSeconds}s` : 'Send reset link'}
-          </button>
-        </form>
-
-        {cooldownSeconds > 0 && (
-          <div className="mt-3 text-center text-sm text-[var(--text-muted)]">
-            You can request another link in {cooldownSeconds} second{cooldownSeconds !== 1 ? 's' : ''}.
-          </div>
-        )}
-
-        <div className="mt-4 text-center text-sm text-[var(--text-muted)]">
-          <Link href="/signin" className="text-[var(--accent-primary)] hover:underline">Back to sign in</Link>
-        </div>
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Reset your password</h1>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">Enter your account email and we&apos;ll send you a reset link.</p>
       </div>
-    </div>
+
+      {message && (
+        <div role="status" className="flex items-start gap-2 p-3 mb-5 rounded-[var(--radius-control)] bg-[var(--status-success-bg)] text-[var(--status-success)] text-sm">
+          <Check size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>{message}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          disabled={isPending || cooldownSeconds > 0}
+          icon={isPending ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : undefined}
+        >
+          {cooldownSeconds > 0 ? `You can send another link in ${cooldownSeconds}s` : 'Send reset link'}
+        </Button>
+      </form>
+
+      <div className="mt-6 text-center text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-5">
+        Remembered it? <Link href="/login" className="text-[var(--accent-primary)] font-bold hover:underline">Log in</Link>
+      </div>
+    </>
   )
 }

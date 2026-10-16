@@ -109,6 +109,7 @@
 .authorInfo {
     display: flex;
     gap: 12px;
+    min-width: 0;
 }
 
 .avatar {
@@ -130,17 +131,24 @@
     color: var(--text-primary);
 }
 
+/* Time and channel wrap as whole units on narrow screens instead of breaking mid-phrase */
 .timestamp {
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 2px;
     font-size: 0.75rem;
     color: var(--text-muted);
 }
 
+.timestamp > * { white-space: nowrap; }
+
 .channelTag {
     font-size: 0.75rem;
     color: var(--accent-primary);
-    background: rgba(124, 58, 237, 0.1);
-    padding: 4px 10px;
+    background: var(--glass-card-hover);
+    padding: 2px 8px;
     border-radius: 99px;
     height: fit-content;
     white-space: nowrap;

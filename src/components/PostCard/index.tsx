@@ -344,7 +344,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                     )}
                 </Link>
                 <div>
-                    <div className="flex items-center">
+                    <div className="flex flex-wrap items-center gap-y-1">
                         {/* 🟢 1. LINK TO PROFILE NAME */}
                         <Link href={`/profile/${post.author.username}`} className={styles.authorName}>
                             @{post.author.username}
@@ -359,7 +359,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                        {/* 🟢 2. LINK TO CHANNEL */}
                        {post.channel && (
                            <>
-                               <span className="mx-1">•</span>
+                               <span aria-hidden="true">•</span>
                                <Link href={`/channels/${post.channel.slug}`} className={styles.channelTag}>
                                    /c/{post.channel.slug}
                                </Link>

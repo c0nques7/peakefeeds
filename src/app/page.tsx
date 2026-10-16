@@ -6,8 +6,6 @@ import { Hexagon, Layers, ShieldCheck, Mail, Check, AlertCircle, Copy, LogIn } f
 import { PostCard } from "@/components/PostCard"
 import { subscribeToWaitlist } from "@/actions/subscribe-waitlist"
 import { useSearchParams } from "next/navigation"
-// 🟢 UPDATE: Import the global ThemeToggle instead of defining it locally
-import ThemeToggle from "@/components/ThemeToggle" 
 import styles from "./landing.module.css" 
 
 // --- 1. CONFIGURATION ---
@@ -52,7 +50,8 @@ function WaitlistForm() {
                         </div>
                         <input
                             type="email"
-                            placeholder="Secure your handle..."
+                            placeholder="Your email address"
+                            aria-label="Email address for early access"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -64,13 +63,13 @@ function WaitlistForm() {
                             disabled={status === 'loading' || status === 'success'}
                             className={styles.waitlistButton}
                         >
-                            {status === 'loading' ? '...' : status === 'success' ? <Check size={18} /> : 'Get Access'}
+                            {status === 'loading' ? 'Joining…' : status === 'success' ? <Check size={18} aria-label="Joined" /> : 'Get access'}
                         </button>
                     </div>
                 </div>
                 
                 {message && (
-                    <div className={`mt-3 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2 ${status === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <div className={`mt-3 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2 ${status === 'success' ? 'text-[var(--status-success)]' : 'text-[var(--status-error)]'}`}>
                         {status === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
                         {message}
                     </div>
@@ -100,19 +99,20 @@ function DonationFooter() {
     };
 
     return (
-        <div className="mt-24 pt-12 border-t border-[var(--glass-border)] w-full flex flex-col items-center gap-4 pb-12">
+        <div className="w-full flex flex-col items-center gap-3">
             <p className="text-sm font-medium text-[var(--text-muted)]">
-                Built by independent developers.
+                Built by independent developers. Support the project:
             </p>
-            <button 
+            <button
                 onClick={handleCopy}
-                className="group flex items-center gap-3 px-5 py-2.5 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] hover:bg-[var(--glass-card)] hover:border-[var(--accent-primary)] transition-all cursor-pointer shadow-sm hover:shadow-md"
+                aria-label={copied ? "Wallet address copied" : `Copy the project's wallet address ${DEV_WALLET}`}
+                className="group flex items-center gap-3 px-4 h-10 rounded-[var(--radius-pill)] bg-[var(--glass-card)] border border-[var(--glass-border)] hover:border-[var(--accent-primary)] transition-colors"
             >
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="font-mono text-xs sm:text-sm text-[var(--text-secondary)]">
-                    {DEV_WALLET.slice(0, 6)}...{DEV_WALLET.slice(-4)}
+                    {DEV_WALLET.slice(0, 6)}…{DEV_WALLET.slice(-4)}
                 </span>
-                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="opacity-40 group-hover:opacity-100 transition-opacity" />}
+                {copied ? <Check size={14} className="text-[var(--status-success)]" aria-hidden="true" /> : <Copy size={14} className="opacity-60 group-hover:opacity-100 transition-opacity" aria-hidden="true" />}
+                <span className="text-xs text-[var(--text-muted)]">{copied ? 'Copied' : 'Copy'}</span>
             </button>
         </div>
     );
@@ -214,9 +214,10 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className={styles.footer}>
         <DonationFooter />
-        <div className="text-[var(--text-muted)] text-xs mt-8">
-            <Link href="/terms" className="hover:text-[var(--text-primary)] mx-2">Terms</Link> • 
-            <Link href="/privacy" className="hover:text-[var(--text-primary)] mx-2">Privacy</Link>
+        <div className="text-[var(--text-muted)] text-xs mt-8 flex flex-wrap justify-center gap-x-3 gap-y-1">
+            <span>© {new Date().getFullYear()} PeakeFeeds</span>
+            <Link href="/terms" className="hover:text-[var(--text-primary)]">Terms</Link>
+            <Link href="/privacy" className="hover:text-[var(--text-primary)]">Privacy</Link>
         </div>
       </footer>
     </div>

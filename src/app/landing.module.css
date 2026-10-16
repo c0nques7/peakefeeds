@@ -131,7 +131,7 @@
 }
 
 .inputGroup:focus-within {
-  border-color: var(--grad-start);
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
   background: var(--landing-bg);
 }
@@ -153,22 +153,20 @@
 /* 🛡️ BUTTON CONTRAST FIX */
 .waitlistButton {
   padding: 0.8rem 1.5rem;
-  border-radius: 6px; /* Sharper */
+  border-radius: var(--radius-control);
   font-weight: 700;
   font-size: 0.95rem;
   border: none;
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s;
-  background: var(--grad-start); /* Solid Navy */
-  color: #ffffff; 
+  background: var(--btn-primary);
+  color: var(--btn-primary-text);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .waitlistButton:hover:not(:disabled) {
-  opacity: 0.95;
-  transform: translateY(-1px);
-  background: linear-gradient(135deg, var(--grad-start), var(--grad-end)); /* Gradient on hover only */
+  background: var(--btn-primary-hover);
 }
 
 .waitlistButton:disabled {
@@ -244,7 +242,7 @@
 
 /* --- 🦶 FOOTER --- */
 .footer {
-  padding: 4rem 2rem;
+  padding: 3rem max(1rem, env(safe-area-inset-left, 0px)) 2.5rem;
   border-top: 1px solid var(--glass-border);
   margin-top: auto;
   text-align: center;
@@ -259,8 +257,7 @@
     .hero { 
         grid-template-columns: 1fr; 
         text-align: center; 
-        /* 🟢 FIX: Increased side padding to 2.5rem for more breathing room */
-        padding: 6rem 0rem 4rem; 
+        padding: 6rem max(1rem, env(safe-area-inset-right, 0px)) 4rem max(1rem, env(safe-area-inset-left, 0px));
         gap: 3rem;
     }
 
