@@ -10,6 +10,7 @@ import { createAdminLog } from "@/lib/admin-logger"
 import { requireStaff } from "@/lib/rbac"
 
 const isStaffRole = (role?: string | null) => role === UserRole.ADMIN || role === UserRole.MODERATOR
+const TICKET_LIST_LIMIT = 200
 
 // --- 1. FETCHING ACTIONS ---
 
@@ -22,8 +23,10 @@ export async function getAllTicketsAction() {
 
   try {
     const [tickets, staff] = await Promise.all([
+      // Polled every 10s by the staff console: cap it at the most recently active tickets
       prisma.supportTicket.findMany({
         orderBy: { updatedAt: 'desc' },
+        take: TICKET_LIST_LIMIT,
         include: { 
           messages: { 
             orderBy: { createdAt: 'asc' },

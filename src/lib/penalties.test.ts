@@ -31,7 +31,7 @@ const loginAs = (u: U) =>
 const authorize = (email: string, password = PASSWORD) =>
   (authOptions.providers[0] as unknown as { options: { authorize: (c: Record<string, string>) => Promise<unknown> } })
     .options.authorize({ email, password });
-const jwt = (id: string) => authOptions.callbacks!.jwt!({ token: { id }, user: undefined as never, account: null });
+const jwt = (id: string) => authOptions.callbacks!.jwt!({ token: { id } as never, user: undefined as never, account: null });
 
 beforeAll(async () => {
   const passwordHash = await argon2.hash(PASSWORD);

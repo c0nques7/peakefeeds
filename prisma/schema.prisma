@@ -236,6 +236,7 @@ model Post {
 
   @@index([channelId, createdAt(sort: Desc)])
   @@index([authorId])
+  @@index([createdAt])
 }
 
 model Comment {
@@ -475,7 +476,7 @@ model DirectMessage {
   isRead    Boolean @default(false)
   reports   Report[]
 
-  @@index([conversationId])
+  @@index([conversationId, createdAt])
 }
 
 model Block {

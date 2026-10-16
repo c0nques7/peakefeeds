@@ -47,12 +47,13 @@ export default function MessagingUI() {
      return convoParams.find((p: any) => p.id !== session?.user?.id) || { username: 'Unknown', image: null }
   }
 
-  // Scroll to bottom on new message
+  // Scroll to bottom when a new message arrives (not on every render or poll)
+  const lastMessageId = messages[messages.length - 1]?.id
   useEffect(() => {
     if (mobileView === 'CHAT') {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
-  }, [messages, mobileView])
+  }, [messages.length, lastMessageId, mobileView])
 
   const handleSend = async () => {
     if (!selectedConvoId || !inputText.trim()) return

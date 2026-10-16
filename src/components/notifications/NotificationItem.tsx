@@ -30,15 +30,13 @@ export function NotificationItem({ note, mutate }: { note: any, mutate: () => vo
     }
   }
 
-  const Wrapper = ({ children }: { children: React.ReactNode }) => {
-    if (note.ticketId) return <Link href="/messages" onClick={handleClick}>{children}</Link>
-    if (note.type === 'MESSAGE') return <Link href="/messages" onClick={handleClick}>{children}</Link>
-    if (note.type === 'REPORT') return <Link href="/admin/moderation" onClick={handleClick}>{children}</Link>
-    return <div onClick={handleClick}>{children}</div>
-  }
+  // Computed rather than a component defined during render, which would remount
+  // the item (and lose its state) on every refresh of the feed
+  const href = note.ticketId || note.type === 'MESSAGE' ? '/messages'
+    : note.type === 'REPORT' ? '/admin/moderation'
+    : null
 
-  return (
-    <Wrapper>
+  const content = (
       <div 
         className={clsx(
           "flex gap-3 p-3 rounded-xl transition-all cursor-pointer border mb-2",
@@ -71,6 +69,9 @@ export function NotificationItem({ note, mutate }: { note: any, mutate: () => vo
           <div className="w-2 h-2 rounded-full bg-[var(--accent-primary)] mt-2 flex-shrink-0" />
         )}
       </div>
-    </Wrapper>
   )
+
+  return href
+    ? <Link href={href} onClick={handleClick}>{content}</Link>
+    : <div onClick={handleClick}>{content}</div>
 }

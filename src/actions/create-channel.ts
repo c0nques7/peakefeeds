@@ -7,7 +7,8 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import slugify from 'slugify';
 import { redirect } from 'next/navigation';
-import { ChannelRole } from '@prisma/client';
+import { ChannelRole, Prisma } from '@prisma/client';
+import { randomBytes } from 'crypto';
 import { getPostingBlockReason } from "@/lib/penalties";
 
 // ---------------------------------------------------------
@@ -41,18 +42,20 @@ export type CreateChannelState = {
 // 3. Helper: Unique Slug Generator
 // ---------------------------------------------------------
 async function generateUniqueSlug(name: string): Promise<string> {
-  // strict: true removes special characters
-  let slug = slugify(name, { lower: true, strict: true });
-  let uniqueSlug = slug;
-  let count = 1;
+  // strict: true removes special characters, so names made only of emoji or
+  // non-Latin text come out empty; fall back to "channel" for those
+  const slug = slugify(name, { lower: true, strict: true }) || 'channel';
 
-  // Check database for existing slug, append number if found
-  while (await prisma.channel.findUnique({ where: { slug: uniqueSlug } })) {
-    uniqueSlug = `${slug}-${count}`;
-    count++;
-  }
-  
-  return uniqueSlug;
+  // One query for every taken variant, instead of one query per suffix
+  const taken = new Set(
+    (await prisma.channel.findMany({ where: { slug: { startsWith: slug } }, select: { slug: true } }))
+      .map(c => c.slug)
+  );
+  if (!taken.has(slug)) return slug;
+
+  let count = 1;
+  while (taken.has(`${slug}-${count}`)) count++;
+  return `${slug}-${count}`;
 }
 
 // ---------------------------------------------------------
@@ -101,11 +104,12 @@ export async function createChannel(
   try {
     newSlug = await generateUniqueSlug(name);
 
-    // D. Database Insertion
-    await prisma.channel.create({
+    // D. Database Insertion. If someone took the same slug in the meantime,
+    // retry once with a random suffix.
+    const createWithSlug = (slug: string) => prisma.channel.create({
       data: {
         name,
-        slug: newSlug,
+        slug,
         description: description || '',
         tags: tagsArray,
         creatorId: session.user.id,
@@ -118,6 +122,14 @@ export async function createChannel(
         }
       },
     });
+
+    try {
+      await createWithSlug(newSlug);
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) throw error;
+      newSlug = `${newSlug}-${randomBytes(3).toString('hex')}`;
+      await createWithSlug(newSlug);
+    }
 
   } catch (error) {
     console.error("Database Error:", error);

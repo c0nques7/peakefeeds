@@ -91,11 +91,12 @@ export const authOptions: NextAuthOptions = {
       }
 
       // End sessions of banned or deleted users (throwing makes next-auth clear the session),
-      // and pick up role changes. Cached for up to a minute per server instance.
+      // and pick up role and linked-wallet changes. Cached for up to a minute per server instance.
       if (token.id) {
         const status = await getSessionAccountStatus(token.id as string);
         if (!status || isBanned(status)) throw new Error("ACCOUNT_SUSPENDED");
         token.role = status.role;
+        token.walletAddress = status.walletAddress;
       }
       return token;
     },

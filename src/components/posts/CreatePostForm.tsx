@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 // Actions & Utils
 import { createPost, CreatePostState } from '@/actions/create-post'; 
-import { verifyWalletAddress } from '@/actions/verify-wallet'; 
+import { useLinkWallet } from '@/hooks/useLinkWallet';
 import { generateContentHash, generateSalt } from '@/lib/verification'; 
 import { VerificationMethod } from '@/lib/types'; 
 import { validateFile, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from '@/lib/storage-utils';
@@ -53,6 +53,7 @@ export default function CreatePostForm({
   // 1. Web3 Hooks
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const linkWallet = useLinkWallet();
   
   // 2. Hydration Fix
   const [mounted, setMounted] = useState(false);
@@ -278,10 +279,10 @@ export default function CreatePostForm({
       const hashToSign = postHash as `0x${string}`;
       const sig = await signMessageAsync({ message: { raw: hashToSign } });
       
+      // Verified posts need this wallet linked to the account; awaited so a failure stops here
       if (address) {
-          const formData = new FormData();
-          formData.append('address', address);
-          verifyWalletAddress(formData);
+          const linked = await linkWallet(address);
+          if (!linked.success) throw new Error(`Wallet link failed: ${linked.error}`);
       }
 
       setSignature(sig);
@@ -291,6 +292,8 @@ export default function CreatePostForm({
       console.error(e);
       if (e.message?.includes('User rejected')) {
           toast.warning("Signature rejected.");
+      } else if (e.message?.startsWith('Wallet link failed')) {
+          toast.error(e.message);
       } else {
           toast.error("Verification failed.");
       }

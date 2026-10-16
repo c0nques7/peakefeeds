@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TrendingUp, Users, ArrowRight, ShieldCheck } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { SubscribeButton } from "@/components/SubscribeButton";
@@ -20,18 +21,50 @@ type PostPreview = {
     likesCount: number;
 }
 
+const getSidebarData = unstable_cache(async () => {
+    // Newest channels with subscriber counts
+    const channels = await prisma.channel.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, name: true, slug: true, _count: { select: { subscribers: true } } },
+    });
+
+    // Latest post per channel: one small indexed query each (a nested `take` would load
+    // whole channels' posts into memory in Prisma 5)
+    const latestPosts = await Promise.all(channels.map(c => prisma.post.findFirst({
+        where: { channelId: c.id },
+        orderBy: { createdAt: 'desc' },
+        select: { title: true, content: true },
+    })));
+
+    // Most-liked posts from the last 7 days
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+    const trending = await prisma.post.findMany({
+        where: { createdAt: { gte: sevenDaysAgo } },
+        take: 4,
+        orderBy: { likesCount: 'desc' },
+        select: { id: true, title: true, content: true, likesCount: true, channel: { select: { slug: true } } }
+    });
+
+    return {
+        channelSummaries: channels.map(c => ({ id: c.id, name: c.name, slug: c.slug, subscribersCount: c._count.subscribers })) as ChannelSummary[],
+        latestByChannel: Object.fromEntries(channels.map((c, i) => [c.id, latestPosts[i]])),
+        trendingPosts: trending.map(p => ({
+            id: p.id,
+            title: p.title,
+            content: p.content,
+            likesCount: p.likesCount ?? 0,
+            channelSlug: p.channel?.slug
+        })),
+    };
+}, ['right-sidebar'], { revalidate: 60 });
+
 export async function RightSidebar() {
     // 1. DATA FETCHING -------------------------------------
     
-    // A. Fetch top channels (for suggestions)
-    const channels = await prisma.channel.findMany({
-        take: 5, // Reduced from 10 to fit UI better
-        include: { _count: { select: { subscribers: true } } },
-        orderBy: { createdAt: 'desc' } // Just fetching some distinct channels for now
-    });
-
-    const channelSummaries: ChannelSummary[] = channels
-        .map(c => ({ id: c.id, name: c.name, slug: c.slug, subscribersCount: c._count?.subscribers ?? 0 }));
+    // A. Shared data (same for every visitor), cached for a minute instead of
+    // running these queries on every page render
+    const { channelSummaries, latestByChannel, trendingPosts } = await getSidebarData();
 
     // B. Check User Subscriptions
     const session = await getServerSession(authOptions);
@@ -46,33 +79,7 @@ export async function RightSidebar() {
         subscribedSet = new Set(subs.map(s => s.channelId));
     }
 
-    // C. Fetch Context for Channels (Latest Post)
-    const channelContextPromises = channelSummaries.map(async (ch) => {
-        const latest = await prisma.post.findFirst({
-            where: { channelId: ch.id },
-            orderBy: { createdAt: 'desc' },
-            select: { title: true, content: true }
-        });
-        return { channel: ch, latest: latest ?? null };
-    });
-    const suggestedChannels = await Promise.all(channelContextPromises);
-
-    // D. Fetch Trending Posts (Global Hot List)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
-    const trendingPostsRaw = await prisma.post.findMany({
-        where: { createdAt: { gte: sevenDaysAgo } },
-        take: 4,
-        orderBy: { likesCount: 'desc' },
-        select: { id: true, title: true, content: true, likesCount: true, channel: { select: { slug: true } } }
-    });
-
-    const trendingPosts = trendingPostsRaw.map(p => ({
-        id: p.id,
-        title: p.title,
-        content: p.content,
-        likesCount: p.likesCount ?? 0,
-        channelSlug: p.channel?.slug
-    }));
+    const suggestedChannels = channelSummaries.map(ch => ({ channel: ch, latest: latestByChannel[ch.id] ?? null }));
 
     // 2. RENDER UI -----------------------------------------
     return (

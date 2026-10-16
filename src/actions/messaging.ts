@@ -11,6 +11,7 @@ import { SupportStatus } from "@prisma/client"
 
 // Only these user fields may leave the server (never passwordHash, twoFactorSecret, email)
 const PUBLIC_PARTICIPANT = { id: true, username: true, name: true, image: true } as const
+const MESSAGE_PAGE_SIZE = 50
 
 // --- TYPES ---
 // A unified type so the UI doesn't know the difference
@@ -228,13 +229,15 @@ export async function getMessages(conversationId: string) {
           if (block) return { error: "You cannot view this conversation." }
        }
 
-       const messages = await prisma.directMessage.findMany({
+       // Polled every few seconds, so only send the latest messages (oldest first for display)
+       const messages = (await prisma.directMessage.findMany({
          where: { conversationId },
-         orderBy: { createdAt: 'asc' },
+         orderBy: { createdAt: 'desc' },
+         take: MESSAGE_PAGE_SIZE,
          include: {
            sender: { select: { id: true, username: true, image: true } }
          }
-       })
+       })).reverse()
        
        return { success: true, type: 'DM', data: messages, participants: conversation.participants }
     }

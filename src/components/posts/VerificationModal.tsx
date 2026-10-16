@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAccount, useConnect, useSignMessage } from 'wagmi';
 import { Wallet, PlayCircle, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 
@@ -19,10 +19,21 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
   const [adProgress, setAdProgress] = useState(0);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const adTimers = useRef<{ interval?: ReturnType<typeof setInterval>; timeout?: ReturnType<typeof setTimeout> }>({});
+
+  const clearAdTimers = () => {
+    clearInterval(adTimers.current.interval);
+    clearTimeout(adTimers.current.timeout);
+    adTimers.current = {};
+  };
+
+  // Stop a running ad countdown if the modal unmounts, so onVerified can't fire afterwards
+  useEffect(() => clearAdTimers, []);
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
+        clearAdTimers();
         setAdProgress(0);
         setIsWatchingAd(false);
         setIsSigning(false);
@@ -63,14 +74,15 @@ export function VerificationModal({ isOpen, onClose, onVerified, contentHash }: 
 
   // --- OPTION B: AD ---
   const handleWatchAd = () => {
+    clearAdTimers();
     setIsWatchingAd(true);
     let progress = 0;
-    const interval = setInterval(() => {
+    adTimers.current.interval = setInterval(() => {
         progress += 10;
         setAdProgress(progress);
         if (progress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
+            clearInterval(adTimers.current.interval);
+            adTimers.current.timeout = setTimeout(() => {
                 onVerified('AD'); 
             }, 500);
         }
