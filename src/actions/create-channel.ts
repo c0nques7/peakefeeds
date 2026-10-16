@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import slugify from 'slugify';
 import { redirect } from 'next/navigation';
 import { ChannelRole } from '@prisma/client';
+import { getPostingBlockReason } from "@/lib/penalties";
 
 // ---------------------------------------------------------
 // 1. Zod Validation Schema
@@ -70,6 +71,9 @@ export async function createChannel(
       message: "You must be signed in to create a channel."
     };
   }
+
+  const blocked = await getPostingBlockReason(session.user.id);
+  if (blocked) return { message: blocked };
 
   // B. Parse & Validate Data
   const validatedFields = CreateChannelSchema.safeParse({

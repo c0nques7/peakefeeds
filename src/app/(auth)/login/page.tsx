@@ -50,7 +50,12 @@ export default function LoginPage() {
           return;
         }
         
-        if (result.error.toLowerCase().includes("invalid_2fa_code")) {
+        if (result.error.startsWith("ACCOUNT_SUSPENDED")) {
+          const until = result.error.split("ACCOUNT_SUSPENDED:")[1];
+          setError(until
+            ? `This account is suspended until ${new Date(until).toLocaleString()}.`
+            : "This account has been banned.");
+        } else if (result.error.toLowerCase().includes("invalid_2fa_code")) {
           setError("Invalid authentication code");
         } else {
           setError("Invalid email or password");

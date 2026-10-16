@@ -4,10 +4,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { getPostingBlockReason } from "@/lib/penalties";
 
 export async function setReaction(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized" };
+
+  const blocked = await getPostingBlockReason(session.user.id);
+  if (blocked) return { error: blocked };
 
   const postId = formData.get("postId") as string;
   const reactionType = formData.get("reactionType") as "LIKE" | "DISLIKE";

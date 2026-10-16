@@ -3,13 +3,17 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
 import { uploadFile, getDownloadUrl } from '@/lib/b2';
 import { generateFileName, validateFile } from '@/lib/storage-utils';
+import { getPostingBlockReason } from "@/lib/penalties";
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const blocked = await getPostingBlockReason(session.user.id);
+    if (blocked) return NextResponse.json({ error: blocked }, { status: 403 });
 
     const formData = await req.formData();
     const file = formData.get('file') as File;

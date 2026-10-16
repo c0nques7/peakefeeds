@@ -129,6 +129,7 @@ model User {
   isBanned        Boolean   @default(false)
   isLocked        Boolean   @default(false)
   mutedUntil      DateTime?
+  bannedUntil     DateTime?
   managerId       String?
   manager         User?     @relation("BusinessManagement", fields: [managerId], references: [id])
   managedUsers    User[]    @relation("BusinessManagement")

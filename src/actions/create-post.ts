@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateContentHash, recoverSignerAddress } from "@/lib/verification"; 
 import { fetchLinkMetadata } from "@/lib/metadata"; 
+import { getPostingBlockReason } from "@/lib/penalties";
 
 // 1. UPDATE SCHEMA
 const FinalPostSchema = z.object({
@@ -44,6 +45,9 @@ export async function createPost(
   if (!session?.user?.id) {
     return { message: "You must be signed in to post." };
   }
+
+  const blocked = await getPostingBlockReason(session.user.id);
+  if (blocked) return { message: blocked };
 
   // 2. PARSE DATA
   // Helper to convert empty strings to null

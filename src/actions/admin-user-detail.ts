@@ -22,6 +22,7 @@ import { render } from "@react-email/render";
 import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
 import { ActivationEmail } from "@/components/emails/ActivationEmail";
 import { AdminWelcomeEmail } from "@/components/emails/AdminWelcomeEmail";
+import { clearAccountStatusCache } from "@/lib/penalties";
 
 // Initialize Resend safely
 const resend = process.env.RESEND_API_KEY 
@@ -84,12 +85,28 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
 export async function toggleBan(userId: string, shouldBan: boolean, reason?: string) {
   const session = await requireStaff();
 
+  // Moderators can't ban staff accounts
+  if (session.user.role !== UserRole.ADMIN) {
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (target && (target.role === UserRole.ADMIN || target.role === UserRole.MODERATOR)) {
+      return { success: false, error: "Only admins can ban staff accounts." };
+    }
+  }
+
   await prisma.$transaction(async (tx) => {
     // A. Update User Status
     await tx.user.update({
       where: { id: userId },
-      data: { isBanned: shouldBan }
+      // Unbanning also lifts any temporary suspension
+      data: shouldBan ? { isBanned: true } : { isBanned: false, bannedUntil: null }
     });
+
+    if (!shouldBan) {
+      await tx.penalty.updateMany({
+        where: { userId, isActive: true, type: { in: ["PERMANENT_BAN", "STRIKE_2_SUSPENSION"] } },
+        data: { isActive: false }
+      });
+    }
 
     // B. Log to Penalty Table
     if (shouldBan) {
@@ -104,6 +121,8 @@ export async function toggleBan(userId: string, shouldBan: boolean, reason?: str
       });
     }
   });
+
+  clearAccountStatusCache(userId);
 
   await createAdminLog({
     adminId: session.user.id,

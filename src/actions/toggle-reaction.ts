@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { ReactionType } from '@prisma/client';
 import { createNotification } from "@/lib/notifications"; // 1. Import
+import { getPostingBlockReason } from "@/lib/penalties";
 
 const ReactionSchema = z.object({
   postId: z.string(),
@@ -17,6 +18,9 @@ const ReactionSchema = z.object({
 export async function setReaction(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized" };
+
+  const blocked = await getPostingBlockReason(session.user.id);
+  if (blocked) return { error: blocked };
 
   const validated = ReactionSchema.safeParse({
     postId: formData.get('postId'),

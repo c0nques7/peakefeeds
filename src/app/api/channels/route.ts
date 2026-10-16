@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
+import { getPostingBlockReason } from "@/lib/penalties";
 
 // GET: List all channels
 export async function GET() {
@@ -20,9 +21,12 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   
-  if (!session) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await getPostingBlockReason(session.user.id);
+  if (blocked) return NextResponse.json({ error: blocked }, { status: 403 });
 
   try {
     const { name, description, slug } = await request.json();

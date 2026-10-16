@@ -14,6 +14,7 @@ import { requireStaff } from "@/lib/rbac";
 import { ReportStatus, PenaltyType, AdminLogType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { createAdminLog } from "@/lib/admin-logger";
+import { TIMEOUT_MS, SUSPENSION_MS, clearAccountStatusCache } from "@/lib/penalties";
 
 /**
  * Fetches reports that haven't been resolved yet.
@@ -119,7 +120,10 @@ export async function resolveReport({
           userId: offenderId,
           issuerId: session.user.id,
           reportId: report.id,
-          isActive: true
+          isActive: true,
+          expiresAt: penaltyType === "STRIKE_1_TIMEOUT" ? new Date(Date.now() + TIMEOUT_MS)
+            : penaltyType === "STRIKE_2_SUSPENSION" ? new Date(Date.now() + SUSPENSION_MS)
+            : null,
         }
       });
 
@@ -129,12 +133,18 @@ export async function resolveReport({
           where: { id: offenderId },
           data: { isBanned: true }
         });
-      } else if (["STRIKE_1_TIMEOUT", "STRIKE_2_SUSPENSION"].includes(penaltyType!)) {
+      } else if (penaltyType === "STRIKE_1_TIMEOUT") {
         await tx.user.update({
             where: { id: offenderId },
-            data: { strikeCount: { increment: 1 } }
+            data: { strikeCount: { increment: 1 }, mutedUntil: new Date(Date.now() + TIMEOUT_MS) }
+        });
+      } else if (penaltyType === "STRIKE_2_SUSPENSION") {
+        await tx.user.update({
+            where: { id: offenderId },
+            data: { strikeCount: { increment: 1 }, bannedUntil: new Date(Date.now() + SUSPENSION_MS) }
         });
       }
+      clearAccountStatusCache(offenderId);
       
       // C. If Content Removal is part of penalty, delete the content
       if (penaltyType === "CONTENT_REMOVAL") {

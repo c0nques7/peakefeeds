@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db"
 import { createNotification } from "@/lib/notifications"
 import { addMessageAction } from "@/actions/support" // Reuse existing support logic
 import { revalidatePath } from "next/cache"
+import { getPostingBlockReason } from "@/lib/penalties"
 import { SupportStatus } from "@prisma/client"
 
 // Only these user fields may leave the server (never passwordHash, twoFactorSecret, email)
@@ -263,7 +264,10 @@ export async function sendMessage(id: string, content: string) {
        return { success: true }
     }
 
-    // B. Send DM (Standard)
+    // B. Send DM (Standard). Muted users can still reply on their own support tickets above.
+    const blocked = await getPostingBlockReason(session.user.id)
+    if (blocked) return { error: blocked }
+
     const conversation = await prisma.conversation.findUnique({
       where: { id },
       include: { participants: { select: PUBLIC_PARTICIPANT } }
@@ -365,6 +369,9 @@ export async function deleteMessage(messageId: string, type: 'DM' | 'TICKET_MESS
 export async function startConversation(recipientId: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { error: "Unauthorized" }
+
+  const blocked = await getPostingBlockReason(session.user.id)
+  if (blocked) return { error: blocked }
 
   // Check for blocks (either way)
   const block = await prisma.block.findFirst({

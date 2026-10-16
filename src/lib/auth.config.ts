@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import * as argon2 from "argon2";
 import { authenticator } from "otplib";
+import { getSessionAccountStatus, isBanned } from "@/lib/penalties";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -32,13 +33,23 @@ export const authOptions: NextAuthOptions = {
             role: true, 
             walletAddress: true,
             twoFactorEnabled: true,
-            twoFactorSecret: true
+            twoFactorSecret: true,
+            isBanned: true,
+            bannedUntil: true,
+            mutedUntil: true
           }
         });
 
         if (!user || !user.passwordHash) return null;
         const isValid = await argon2.verify(user.passwordHash, credentials.password);
         if (!isValid) return null;
+
+        // Checked after the password so the error doesn't reveal ban status to strangers
+        if (isBanned(user)) {
+          throw new Error(user.bannedUntil && !user.isBanned
+            ? `ACCOUNT_SUSPENDED:${user.bannedUntil.toISOString()}`
+            : "ACCOUNT_SUSPENDED");
+        }
 
         if (user.twoFactorEnabled) {
           if (!credentials.twoFactorCode || credentials.twoFactorCode === "undefined" || credentials.twoFactorCode === "") {
@@ -77,6 +88,14 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.walletAddress = user.walletAddress;
         token.username = user.username;
+      }
+
+      // End sessions of banned or deleted users (throwing makes next-auth clear the session),
+      // and pick up role changes. Cached for up to a minute per server instance.
+      if (token.id) {
+        const status = await getSessionAccountStatus(token.id as string);
+        if (!status || isBanned(status)) throw new Error("ACCOUNT_SUSPENDED");
+        token.role = status.role;
       }
       return token;
     },

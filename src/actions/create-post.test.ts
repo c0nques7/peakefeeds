@@ -27,6 +27,10 @@ vi.mock('@/lib/metadata', () => ({
   fetchLinkMetadata: vi.fn().mockResolvedValue({ title: null, url: null }),
 }));
 
+vi.mock('@/lib/penalties', () => ({
+  getPostingBlockReason: vi.fn().mockResolvedValue(null),
+}));
+
 describe('createPost Action', () => {
   beforeEach(() => {
     vi.clearAllMocks();

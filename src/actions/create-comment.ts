@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { createNotification } from "@/lib/notifications"; 
+import { getPostingBlockReason } from "@/lib/penalties";
 
 const CreateCommentSchema = z.object({
   content: z.string().min(1).max(500),
@@ -16,6 +17,9 @@ const CreateCommentSchema = z.object({
 export async function createComment(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized" };
+
+  const blocked = await getPostingBlockReason(session.user.id);
+  if (blocked) return { error: blocked };
 
   const validated = CreateCommentSchema.safeParse({
     content: formData.get('content'),

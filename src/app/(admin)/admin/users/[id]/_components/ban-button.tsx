@@ -3,6 +3,7 @@
 import { toggleBan } from "@/actions/admin-user-detail";
 import { useTransition } from "react";
 import { Gavel, Undo2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function BanButton({ userId, isBanned }: { userId: string; isBanned: boolean }) {
   const [isPending, startTransition] = useTransition();
@@ -10,7 +11,10 @@ export function BanButton({ userId, isBanned }: { userId: string; isBanned: bool
   const handleToggle = () => {
     const willBan = !isBanned;
     if (willBan && !confirm("Are you sure you want to BAN this user?")) return;
-    startTransition(async () => { await toggleBan(userId, willBan); });
+    startTransition(async () => {
+      const res = await toggleBan(userId, willBan);
+      if (!res.success) toast.error(res.error);
+    });
   };
 
   if (isBanned) {

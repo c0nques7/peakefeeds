@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { UserRole, ChannelRole } from '@prisma/client';
+import { getPostingBlockReason } from "@/lib/penalties";
 
 const EditPostSchema = z.object({
   postId: z.string(),
@@ -18,6 +19,9 @@ export async function editPost(formData: FormData) {
   if (!session?.user?.id) {
     return { error: "Unauthorized" };
   }
+
+  const blocked = await getPostingBlockReason(session.user.id);
+  if (blocked) return { error: blocked };
 
   const validatedFields = EditPostSchema.safeParse({
     postId: formData.get('postId'),
