@@ -137,8 +137,8 @@ export default function HelpBot() {
         className={clsx(styles.triggerButton, { [styles.hidden]: isOpen })} 
         onClick={() => setIsOpen(true)}
       >
-        <HelpCircle size={20} />
-        <span className="font-bold">Help</span>
+        <HelpCircle size={20} aria-hidden="true" />
+        <span className={clsx("font-bold", styles.triggerLabel)}>Help</span>
       </button>
 
       <div className={clsx(styles.chatWindow, { [styles.open]: isOpen })}>
@@ -150,7 +150,7 @@ export default function HelpBot() {
                 <div className={styles.headerText}>
                   <span className={styles.botName}>Help Bot</span>
                   <span className={styles.status}>
-                    {ticketData ? <span className="text-green-400">● Ticket Active</span> : 'Online'}
+                    {ticketData ? <span className="text-[var(--status-success)]">● Ticket Active</span> : 'Online'}
                   </span>
                 </div>
             </div>
@@ -159,28 +159,28 @@ export default function HelpBot() {
         
         {/* 🟢 CONDITIONAL BODY: If Ticket exists, show Redirect Card */}
         {ticketData ? (
-             <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-gray-50/50">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm animate-in zoom-in duration-300">
+             <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[var(--bg-app)]">
+                <div className="w-16 h-16 bg-[var(--status-success-bg)] text-[var(--status-success)] rounded-full flex items-center justify-center mb-4 shadow-sm animate-in zoom-in duration-300">
                     <Ticket size={32} />
                 </div>
                 
-                <h3 className="font-bold text-lg text-gray-800 mb-2">Ticket #{ticketData.id.slice(-4)} Created</h3>
+                <h3 className="font-bold text-lg text-[var(--text-primary)] mb-2">Ticket #{ticketData.id.slice(-4)} Created</h3>
                 
-                <p className="text-sm text-gray-500 mb-6 leading-relaxed max-w-[240px]">
+                <p className="text-sm text-[var(--text-muted)] mb-6 leading-relaxed max-w-[240px]">
                     An agent has been notified. Please continue this conversation in your unified inbox.
                 </p>
 
                 <Link 
                     href="/messages" 
                     onClick={() => setIsOpen(false)}
-                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                    className="w-full py-3 px-4 bg-[var(--btn-primary)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-[var(--radius-control)] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
                 >
                     <span>Go to Messages</span>
                     <ExternalLink size={16} />
                 </Link>
 
-                <div className="mt-6 pt-4 border-t border-gray-100 w-full text-xs text-gray-400">
-                     Status: <span className="font-mono text-emerald-600 font-bold uppercase">{ticketData.status}</span>
+                <div className="mt-6 pt-4 border-t border-[var(--glass-border)] w-full text-xs text-[var(--text-muted)]">
+                     Status: <span className="font-mono text-[var(--status-success)] font-bold uppercase">{ticketData.status}</span>
                 </div>
             </div>
         ) : (

@@ -13,7 +13,7 @@ import ReportUserButton from "@/components/profile/ReportUserButton";
 import LockedOverlay from "@/components/moderation/LockedOverlay";
 
 // Shared Layout Styles
-import styles from "../../(dashboard)/dashboard.module.css"; 
+import styles from "../../dashboard.module.css"; 
 
 interface ProfilePageProps {
     params: Promise<{ username: string }>;

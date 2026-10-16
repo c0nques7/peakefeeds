@@ -44,6 +44,21 @@
   --btn-primary: var(--accent-primary);
   --btn-primary-hover: #1e40af;
   --btn-primary-text: #ffffff;
+
+  /* Form fields and raised surfaces */
+  --input-bg: #ffffff;
+  --surface-elevated: #ffffff;
+  --shadow-card: var(--glass-shadow);
+  --glass-hover: var(--glass-card-hover);
+  --glass-panel-hover: var(--glass-card-hover);
+
+  /* Shape: one radius per role */
+  --radius-control: 10px;  /* buttons, inputs */
+  --radius-card: 16px;     /* cards, panels */
+  --radius-pill: 9999px;   /* chips, badges, avatars */
+
+  /* Feed */
+  --feed-gap: 1.5rem;
 }
 
 /* 🌙 DARK MODE (Bloomberg/Financial Terminal) */
@@ -87,6 +102,10 @@
   --btn-primary: var(--accent-primary);
   --btn-primary-hover: #93c5fd;
   --btn-primary-text: #0f1115;
+
+  /* Form fields and raised surfaces (Dark) */
+  --input-bg: #12151b;
+  --surface-elevated: #1f242d;
 }
 
 /* --- 🧱 GLOBAL LAYOUT --- */

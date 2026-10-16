@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Compass, User, Home, LogIn, LogOut, Bell, X, MessageCircle } from 'lucide-react'; 
-import { useSession, signIn, signOut } from 'next-auth/react'; 
+import { Compass, User, Home, LogIn, Bell, X, MessageCircle } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { NotificationFeed } from '@/components/notifications/NotificationFeed'; // Ensure this component exists
 import clsx from 'clsx';
 import styles from './MobileBottomNav.module.css';
@@ -85,24 +85,19 @@ export default function MobileBottomNav() {
 
           {/* 5. PROFILE */}
           <Link 
-              href={session?.user?.username ? `/profile/${session.user.username}` : '/api/auth/signin'} 
+              href={session?.user?.username ? `/profile/${session.user.username}` : '/login'} 
               className={clsx(styles.navItem, isActive('/profile') && styles.navItemActive)}
           >
               <User size={22} strokeWidth={isActive('/profile') ? 2.5 : 2} />
               <span className={styles.navLabel}>Profile</span>
           </Link>
 
-          {/* 6. AUTH ACTION */}
-          {session ? (
-              <button onClick={() => signOut({ callbackUrl: '/' })} className={styles.navItem}>
-                  <LogOut size={22} />
-                  <span className={styles.navLabel}>Out</span>
-              </button>
-          ) : (
-              <button onClick={() => signIn()} className={styles.navItem}>
+          {/* Log out lives in Settings, so it can't be hit by accident from the tab bar */}
+          {!session && (
+              <Link href="/login" className={styles.navItem}>
                   <LogIn size={22} />
-                  <span className={styles.navLabel}>In</span>
-              </button>
+                  <span className={styles.navLabel}>Log in</span>
+              </Link>
           )}
 
       </nav>

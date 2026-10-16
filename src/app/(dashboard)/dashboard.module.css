@@ -1,55 +1,63 @@
 /* src/app/(dashboard)/dashboard.module.css */
 
-/* --- 📐 MAIN LAYOUT GRID --- */
+/* --- MAIN LAYOUT GRID ---
+   Phones: one column, 16px gutters, room at the bottom for the tab bar.
+   Desktop: left rail | main | right rail (feeds) or left rail | main (task pages). */
 .layoutContainer {
   display: grid;
   min-height: 100vh;
   width: 100%;
-  overflow-x: hidden; 
+  overflow-x: hidden;
   position: relative;
-
-  /* Mobile: Single Column */
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas: "main";
-  
-  /* Side padding */
-  padding: 0 1rem 80px 1rem; 
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(80px + 1.5rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* --- 💻 DESKTOP GRID --- */
 @media (min-width: 1024px) {
   .layoutContainer {
-    grid-template-columns: 260px 1fr 320px;
+    grid-template-columns: 240px minmax(0, 1fr) 320px;
     grid-template-areas: "sidebar main right";
-    padding: 0 2rem;
-    width: 100%;
-    gap: 2rem; 
-    overflow-x: visible; 
+    column-gap: 2rem;
+    padding: 0 2rem 0 0;
+    overflow-x: visible;
+  }
+  .layoutContainer.noRightRail {
+    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-areas: "sidebar main";
   }
 }
 
 /* --- COLUMNS --- */
 .desktopSidebar {
   grid-area: sidebar;
-  display: none; 
+  display: none;
 }
 
 .mainContent {
   grid-area: main;
   width: 100%;
-  max-width: 700px; 
+  max-width: 680px;
   margin: 0 auto;
-  min-width: 0; 
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  padding-top: 1.5rem;
 }
+
+.noRightRail .mainContent { max-width: 820px; }
 
 .rightSidebar {
   grid-area: right;
   display: none;
   position: sticky;
   top: 1.5rem;
-  padding-right: 1rem;
+  align-self: start;
+  padding-top: 1.5rem;
+  /* Leave room so the Help button never covers the footer links */
+  padding-bottom: 5.5rem;
 }
 
 @media (min-width: 1024px) {

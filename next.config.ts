@@ -64,7 +64,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            // ⚡️ UPDATED: Added 'https://open.spotify.com' explicitly
+            // Wallet connection (AppKit/WalletConnect, Coinbase) needs its hosts in connect-src, font-src and frame-src
             value: `
               frame-ancestors 'self' https://www.youtube.com https://youtu.be https://vercel.live; 
               frame-src 
@@ -82,12 +82,20 @@ const nextConfig: NextConfig = {
                 https://www.reddit.com 
                 https://embed.reddit.com 
                 https://apnews.com 
-                https://www.eporner.com; 
+                https://verify.walletconnect.com 
+                https://verify.walletconnect.org 
+                https://secure.walletconnect.org 
+                https://secure.walletconnect.com 
+                https://*.reown.com; 
               script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://va.vercel-scripts.com https://www.youtube.com https://s.ytimg.com;
               style-src 'self' 'unsafe-inline';
               img-src 'self' data: blob: https:;
-              font-src 'self' data:;
-              connect-src 'self' https://vitals.vercel-insights.com https://*.backblazeb2.com https://www.youtube.com https://*.googlevideo.com;
+              font-src 'self' data: https://fonts.reown.com;
+              connect-src 'self' https://vitals.vercel-insights.com https://*.backblazeb2.com https://www.youtube.com https://*.googlevideo.com
+                https://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.com wss://*.walletconnect.org
+                https://*.web3modal.org https://*.web3modal.com https://*.reown.com wss://*.reown.com
+                https://cca-lite.coinbase.com
+                https://sepolia.optimism.io https://eth.merkle.io https://sepolia.drpc.org;
               media-src 'self' data: blob: https://www.youtube.com https://youtu.be https://*.backblazeb2.com https://*.googlevideo.com;
             `.replace(/\s{2,}/g, ' ').trim() 
           },

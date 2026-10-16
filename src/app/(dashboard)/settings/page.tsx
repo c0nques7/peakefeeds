@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import TwoFactorSettings from "@/components/profile/TwoFactorSettings";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import styles from "../(dashboard)/dashboard.module.css"; 
+import styles from "../dashboard.module.css"; 
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
