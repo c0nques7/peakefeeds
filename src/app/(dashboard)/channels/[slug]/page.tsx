@@ -1,4 +1,3 @@
-// Trivial change to force recompilation after Prisma generate
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { getServerSession } from "next-auth";
@@ -10,18 +9,35 @@ import { SubscribeButton } from "@/components/SubscribeButton";
 import { SearchBar } from "@/components/SearchBar"; 
 import ReportChannelButton from "@/components/channels/ReportChannelButton";
 import LockedOverlay from "@/components/moderation/LockedOverlay";
-import { Settings } from "lucide-react";
-import Link from "next/link";
+import { Settings, Users, ChevronDown } from "lucide-react";
+import { ButtonLink, EmptyState } from "@/components/ui";
+import styles from "../../dashboard.module.css";
 
-// ⚡️ SHARED LAYOUT STYLES
-import styles from "../../../(dashboard)/dashboard.module.css"; 
+// Posts are shown 20 at a time; "Show more" asks for the next 20.
+const PAGE_SIZE = 20;
+const MAX_SHOWN = 500;
 
 interface ChannelPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ show?: string; highlight?: string }>;
 }
 
-export default async function ChannelPage({ params }: ChannelPageProps) {
-  const { slug } = await params; 
+export default async function ChannelPage({ params, searchParams }: ChannelPageProps) {
+  const { slug } = await params;
+  const { show: showParam, highlight } = await searchParams;
+  let show = Math.min(Math.max(Number(showParam) || PAGE_SIZE, PAGE_SIZE), MAX_SHOWN);
+
+  // A link to one post (e.g. from Trending) must include it: show enough posts to reach it
+  if (highlight) {
+    const target = await prisma.post.findFirst({
+      where: { id: highlight, channel: { slug } },
+      select: { createdAt: true },
+    });
+    if (target) {
+      const newer = await prisma.post.count({ where: { channel: { slug }, createdAt: { gt: target.createdAt } } });
+      show = Math.min(Math.max(show, newer + 1), MAX_SHOWN);
+    }
+  }
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id || '';
   const isGlobalAdmin = session?.user?.role === 'ADMIN';
@@ -56,6 +72,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
 
       posts: {
         orderBy: { createdAt: 'desc' },
+        // One extra tells us whether there are more to show
+        take: show + 1,
         select: {
             id: true, title: true, content: true, createdAt: true, isVerified: true, isLocked: true,
             contentHash: true, signature: true, embedUrl: true, mediaUrl: true, type: true,
@@ -117,7 +135,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
   const isCreator = channel.creatorId === currentUserId;
   const isSubscribedInitial = channel.subscribers.length > 0;
   
-  const formattedPosts = channel.posts.map((post) => {
+  const hasMore = channel.posts.length > show;
+  const formattedPosts = channel.posts.slice(0, show).map((post) => {
       // @ts-ignore
       const userReaction = post.likes?.[0]?.type || null;
 
@@ -173,77 +192,85 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
         <SearchBar />
       </div>
       {/* CHANNEL HEADER */}
-      <div className="mb-10 relative z-10"> 
-        <div className="relative backdrop-blur-xl rounded-[2rem] p-8 text-center shadow-xl border border-[var(--glass-border)] bg-[var(--glass-card)] w-full overflow-hidden">
-          {channel.isLocked && <LockedOverlay message="This Channel is Under Review by PeakeFeeds Admins. You can still view its content, but new posts and interactions are disabled." />}
-          
-          <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-[var(--text-primary)]">
-            {channel.name}
-          </h1>
-          <p className="text-lg max-w-2xl mx-auto text-[var(--text-secondary)]">
-            {channel.description}
-          </p>
+      <header className="relative mb-6 overflow-hidden rounded-[var(--radius-card)] border border-[var(--glass-border)] bg-[var(--glass-card)] p-6 sm:p-8 text-center shadow-[var(--glass-shadow)]">
+        {channel.isLocked && <LockedOverlay message="This Channel is Under Review by PeakeFeeds Admins. You can still view its content, but new posts and interactions are disabled." />}
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-             <div className="px-4 py-1.5 rounded-full border border-[var(--accent-secondary)] text-[var(--accent-secondary)] bg-teal-500/10 text-sm font-semibold">
-                {channel._count.subscribers} Verifiers
-             </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] [text-wrap:balance]">
+          {channel.name}
+        </h1>
+        {channel.description && (
+          <p className="mx-auto mt-2 max-w-prose text-base text-[var(--text-secondary)]">{channel.description}</p>
+        )}
 
-             {currentUserId && !isCreator && (
-                <>
-                  <SubscribeButton
-                      channelId={channel.id}
-                      channelSlug={channel.slug}
-                      isSubscribedInitial={isSubscribedInitial}
-                  />
-                  <ReportChannelButton channelId={channel.id} />
-                </>
-             )}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex h-10 items-center gap-2 px-3 text-sm font-medium text-[var(--text-muted)]">
+            <Users size={16} aria-hidden="true" />
+            {channel._count.subscribers.toLocaleString('en-US')} {channel._count.subscribers === 1 ? 'Verifier' : 'Verifiers'}
+          </span>
 
-             {(isCreator || isGlobalAdmin) && (
-                <Link 
-                  href={`/channels/${channel.slug}/settings`}
-                  className="px-4 py-1.5 rounded-full border border-purple-500 text-purple-500 bg-purple-500/10 text-sm font-bold flex items-center gap-2 hover:bg-purple-500/20 transition-all"
-                >
-                    <Settings size={14} /> Manage Channel
-                </Link>
-             )}
-          </div>
-        </div>
-      </div>
-
-      {/* CREATE POST FORM */}
-      {currentUserId && (
-          <div className="relative mb-8 rounded-2xl p-4 shadow-lg border border-[var(--glass-border)] bg-[var(--glass-panel)] overflow-hidden">
-              {channel.isLocked && <LockedOverlay message="New posts are disabled while this channel is under review." />}
-              <CreatePostForm 
-                  channelId={channel.id} 
-                  userImage={session?.user?.image}
-                  username={session?.user?.username || 'user'} 
-                  linkedWallet={session?.user?.walletAddress}
+          {currentUserId && !isCreator && (
+            <>
+              <SubscribeButton
+                channelId={channel.id}
+                channelSlug={channel.slug}
+                isSubscribedInitial={isSubscribedInitial}
               />
-          </div>
+              <ReportChannelButton channelId={channel.id} />
+            </>
+          )}
+
+          {(isCreator || isGlobalAdmin) && (
+            <ButtonLink href={`/channels/${channel.slug}/settings`} variant="secondary" icon={<Settings size={16} aria-hidden="true" />}>
+              Manage channel
+            </ButtonLink>
+          )}
+        </div>
+      </header>
+
+      {/* NEW POST: posting happens right here in the channel */}
+      {currentUserId && (
+        <section aria-label="New post" className="relative mb-6 overflow-hidden rounded-[var(--radius-card)] border border-[var(--glass-border)] bg-[var(--glass-card)] p-4 shadow-[var(--glass-shadow)]">
+          {channel.isLocked && <LockedOverlay message="New posts are disabled while this channel is under review." />}
+          <CreatePostForm
+            channelId={channel.id}
+            userImage={session?.user?.image}
+            username={session?.user?.username || 'user'}
+            linkedWallet={session?.user?.walletAddress}
+          />
+        </section>
       )}
 
       {/* FEED STREAM */}
       <div className={styles.feedStream}>
-          {formattedPosts.length === 0 ? (
-            <div className="col-span-full p-16 border border-dashed border-[var(--glass-border)] rounded-3xl text-center text-[var(--text-muted)] bg-[var(--glass-card)]">
-              <p className="text-lg font-medium">No verified truth here yet.</p>
-              <p className="text-sm opacity-70">Be the first to post.</p>
-            </div>
-          ) : (
-            formattedPosts.map(post => (
-                <PostCard 
-                    key={post.id} 
-                    post={post} 
-                    initialReaction={post.currentUserReaction}
-                    currentUserId={currentUserId}
-                />
-            ))
-          )}
+        {formattedPosts.length === 0 ? (
+          <EmptyState
+            title="No posts yet"
+            description={currentUserId ? "Be the first to post in this channel." : "Log in to start the conversation."}
+          />
+        ) : (
+          formattedPosts.map(post => (
+            <PostCard
+              key={post.id}
+              post={post}
+              initialReaction={post.currentUserReaction}
+              currentUserId={currentUserId}
+            />
+          ))
+        )}
+
+        {hasMore && show < MAX_SHOWN && (
+          <div className="flex justify-center">
+            <ButtonLink
+              href={`/channels/${channel.slug}?show=${show + PAGE_SIZE}`}
+              scroll={false}
+              variant="secondary"
+              icon={<ChevronDown size={16} aria-hidden="true" />}
+            >
+              Show more posts
+            </ButtonLink>
+          </div>
+        )}
       </div>
-      
     </div>
   );
 }

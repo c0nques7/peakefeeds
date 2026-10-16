@@ -311,7 +311,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
       id={`post-${post.id}`}
       className={clsx(
         styles.cardContainer, 
-        isDemo ? "w-full h-full" : "w-full max-w-[550px] mx-auto",
+        isDemo ? "w-full h-full" : "w-full",
         isDeleting && "opacity-50 pointer-events-none",
         isHighlighted && styles.highlighted,
         showComments && styles.expanded,

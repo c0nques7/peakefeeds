@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { MessageCircle, Loader2 } from 'lucide-react'
 import { startConversation } from '@/actions/messaging'
 import { toast } from 'sonner' // Optional feedback
+import { buttonClasses } from '@/components/ui';
 
 export default function MessageButton({ recipientId }: { recipientId: string }) {
   const router = useRouter()
@@ -31,10 +32,10 @@ export default function MessageButton({ recipientId }: { recipientId: string }) 
     <button 
       onClick={handleMessageClick}
       disabled={isLoading}
-      className="p-3 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] hover:bg-[var(--glass-card-hover)] text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-all disabled:opacity-50"
-      title="Send Message"
+      className={buttonClasses({ variant: 'secondary' })}
     >
-      {isLoading ? <Loader2 size={20} className="animate-spin" /> : <MessageCircle size={20} />}
+      {isLoading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <MessageCircle size={16} aria-hidden="true" />}
+      Message
     </button>
   )
 }

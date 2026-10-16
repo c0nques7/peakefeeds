@@ -24,6 +24,9 @@ import { useLinkPreview } from '@/hooks/useLinkPreview';
 // Components
 import { AdPlayerOverlay } from '@/components/ads/AdPlayerOverlay';
 import PostPreview from './PostPreview'; 
+import { Button } from '@/components/ui';
+
+const POST_LABEL: Record<string, string> = { WALLET: 'Post verified', AD: 'Post sponsored', SKIP: 'Post unverified' };
 
 interface CreatePostFormProps {
     channelId: string;
@@ -323,37 +326,29 @@ export default function CreatePostForm({
       {/* Verification Warning Modal */}
       {showVerifyWarning && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-md bg-zinc-900 border border-amber-500/30 rounded-3xl shadow-2xl p-6 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-orange-600" />
-            
+          <div role="dialog" aria-modal="true" aria-labelledby="finality-title" className="relative w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-[var(--radius-card)] shadow-2xl p-6 overflow-hidden">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-amber-500/20 rounded-full text-amber-500">
+              <div className="p-3 bg-[var(--status-warning-bg)] rounded-full text-[var(--status-warning)]">
                 <ShieldCheck size={32} />
               </div>
             </div>
 
-            <h3 className="text-xl font-bold text-white text-center mb-2">Blockchain Finality Notice</h3>
-            <p className="text-zinc-300 text-sm text-center leading-relaxed mb-6">
+            <h3 id="finality-title" className="text-xl font-bold text-[var(--text-primary)] text-center mb-2">Verified posts are permanent</h3>
+            <p className="text-[var(--text-secondary)] text-sm text-center leading-relaxed mb-6">
               Verified posts are cryptographically signed and anchored to the blockchain. 
-              <span className="text-amber-400 font-bold block mt-2">
+              <span className="text-[var(--status-warning)] font-bold block mt-2">
                 Once published, this content cannot be edited or deleted.
               </span>
               Please ensure you have reviewed your content thoroughly.
             </p>
 
             <div className="flex flex-col gap-3">
-              <button 
-                onClick={confirmVerification}
-                className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-all shadow-lg"
-              >
-                I Understand, Proceed
-              </button>
-              <button 
-                onClick={() => { setShowVerifyWarning(false); setPendingVerifyChoice(null); }}
-                className="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-all"
-              >
-                Cancel & Review
-              </button>
+              <Button onClick={confirmVerification} size="lg" fullWidth>
+                Continue and sign
+              </Button>
+              <Button onClick={() => { setShowVerifyWarning(false); setPendingVerifyChoice(null); }} variant="secondary" size="lg" fullWidth>
+                Go back and review
+              </Button>
             </div>
           </div>
         </div>
@@ -361,26 +356,26 @@ export default function CreatePostForm({
       
       <div className="mb-2">
         <div className="flex justify-between items-end mb-3">
-            <h2 className="text-xl font-bold text-[var(--text-primary)]">New Truth Submission</h2>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">New Truth Submission</h2>
             
             {mounted && isConnected ? (
-                <div className="flex items-center gap-2 text-[10px] text-emerald-400 bg-emerald-900/20 px-2 py-1 rounded-lg border border-emerald-800/50">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--status-success)] bg-[var(--status-success-bg)] px-2 py-1 rounded-[var(--radius-pill)]">
+                    <div className="w-1.5 h-1.5 bg-[var(--status-success)] rounded-full" />
                     {address?.slice(0,6)}...{address?.slice(-4)}
                 </div>
             ) : mounted && linkedWallet && (
-                 <div className="text-[10px] text-zinc-500 font-mono">Linked: {linkedWallet.slice(0,6)}...</div>
+                 <div className="text-[11px] text-[var(--text-muted)] font-mono">Linked: {linkedWallet.slice(0,6)}…</div>
             )}
         </div>
 
         {mounted && !isConnected && (
-             <div onClick={redirectToProfile} className="mb-4 p-3 rounded-xl bg-indigo-900/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-between gap-3 cursor-pointer hover:bg-indigo-900/20 transition-colors">
-                 <div className="flex items-center gap-3">
-                    <Wallet size={16} /> 
-                    <span className="text-sm font-medium">Connect Wallet to Post Verified Content</span>
-                 </div>
-                 <ArrowRight size={16} />
-             </div>
+             <button type="button" onClick={redirectToProfile} className="mb-4 w-full p-3 rounded-[var(--radius-control)] bg-[var(--status-info-bg)] text-[var(--accent-primary)] flex items-center justify-between gap-3 text-left hover:brightness-110 transition">
+                 <span className="flex items-center gap-3">
+                    <Wallet size={16} aria-hidden="true" />
+                    <span className="text-sm font-medium">Connect a wallet to post verified content</span>
+                 </span>
+                 <ArrowRight size={16} aria-hidden="true" />
+             </button>
         )}
 
         <form action={formAction}
@@ -394,8 +389,7 @@ export default function CreatePostForm({
                   return;
               }
           }}
-          className={`relative rounded-2xl p-4 backdrop-blur-md transition-all duration-300 ${isDragging ? 'ring-2 ring-teal-500/50 bg-teal-500/5' : ''}`}
-          style={{ background: 'var(--glass-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-card)' }}
+          className={`relative rounded-[var(--radius-control)] transition-all duration-300 ${isDragging ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--status-info-bg)]' : ''}`}
         >
           
           <div className="flex gap-4">
@@ -439,7 +433,7 @@ export default function CreatePostForm({
                            <div className="text-center">
                               <Loader2 className="animate-spin text-white mb-2 mx-auto" size={24} />
                               <div className="w-32 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                                 <div className="h-full bg-teal-500 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                                 <div className="h-full bg-[var(--accent-primary)] transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
                               </div>
                            </div>
                         </div>
@@ -487,7 +481,7 @@ export default function CreatePostForm({
                           type="button" 
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploading}
-                          className="text-[var(--text-muted)] hover:text-teal-400 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                          className="text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors flex items-center gap-1.5 text-xs font-medium"
                         >
                           <ImageIcon size={18} />
                           <span>Photo</span>
@@ -496,7 +490,7 @@ export default function CreatePostForm({
                           type="button" 
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploading}
-                          className="text-[var(--text-muted)] hover:text-teal-400 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                          className="text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors flex items-center gap-1.5 text-xs font-medium"
                         >
                           <VideoIcon size={18} />
                           <span>Video</span>
@@ -514,7 +508,7 @@ export default function CreatePostForm({
                         <button 
                           type="button" 
                           onClick={() => setShowPreview(!showPreview)}
-                          className="text-[10px] flex items-center gap-1 text-[var(--text-muted)] hover:text-white transition-colors"
+                          className="text-[10px] flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                         >
                           <Eye size={12} /> {showPreview ? 'Hide Preview' : 'Show Preview'}
                         </button>
@@ -531,10 +525,10 @@ export default function CreatePostForm({
                     
                     {/* OPTION 1: WALLET */}
                     <button type="button" onClick={() => handleVerifyClick('WALLET')} disabled={isPreparing || method === 'SKIP'}
-                      className={`p-3 rounded-xl transition-all border text-xs flex flex-col items-center group ${method === 'WALLET' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
+                      className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group ${method === 'WALLET' ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
                       <Wallet size={18} />
                       <span className="mt-1">Pay Gas</span>
-                      {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-green-500' /> : null}
+                      {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null}
                     </button>
 
                     {/* OPTION 2: SPONSOR (Disabled in Prod) */}
@@ -542,11 +536,11 @@ export default function CreatePostForm({
                       type="button" 
                       onClick={() => isDev && handleVerifyClick('AD')} 
                       disabled={!isDev || isPreparing || method === 'SKIP'}
-                      className={`p-3 rounded-xl transition-all border text-xs flex flex-col items-center group relative
+                      className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group relative
                         ${!isDev 
-                            ? 'bg-zinc-800/30 border-zinc-700/50 text-zinc-600 cursor-not-allowed opacity-70' // Prod
+                            ? 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] cursor-not-allowed opacity-60' // Prod
                             : method === 'AD' 
-                                ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' // Dev Active
+                                ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' // Dev Active
                                 : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]' // Dev Inactive
                         }`}
                     >
@@ -554,12 +548,12 @@ export default function CreatePostForm({
                       <span className="mt-1">{!isDev ? 'Coming Soon' : 'Sponsor Gas'}</span>
 
                       {/* Status Indicators (Dev Only) */}
-                      {mounted && isDev && method === 'AD' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : (mounted && isDev && signature && method === 'AD' ? <ShieldCheck size={12} className='mt-1 text-green-500' /> : null)}
+                      {mounted && isDev && method === 'AD' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : (mounted && isDev && signature && method === 'AD' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null)}
                     </button>
 
                     {/* OPTION 3: SKIP */}
                     <button type="button" onClick={() => { setMethod('SKIP'); setSignature(null); setAdProofToken(null); }} disabled={isPreparing}
-                      className={`p-3 rounded-xl transition-all border text-xs flex flex-col items-center group ${method === 'SKIP' ? 'bg-zinc-700/20 border-zinc-600 text-zinc-400' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
+                      className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group ${method === 'SKIP' ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
                       <ShieldOff size={18} />
                       <span className="mt-1">Unverified</span>
                     </button>
@@ -567,11 +561,9 @@ export default function CreatePostForm({
                 </div>
 
                 <div className="flex justify-end items-center mt-3 pt-3">
-                  <button type="submit" disabled={isButtonDisabled}
-                      className="px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(13,148,136,0.3)] hover:shadow-[0_0_25px_rgba(13,148,136,0.5)]"
-                      style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', color: 'white' }}>
-                      {isPending ? (<Loader2 className="animate-spin" size={16} />) : (`Post ${isPostReady ? `(${method})` : ''}`)}
-                  </button>
+                  <Button type="submit" disabled={isButtonDisabled}>
+                      {isPending ? (<Loader2 className="animate-spin" size={16} aria-label="Posting" />) : (isPostReady ? POST_LABEL[method] ?? 'Post' : 'Post')}
+                  </Button>
                 </div>
               </>
           )}

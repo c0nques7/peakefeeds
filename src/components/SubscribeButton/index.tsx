@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { toggleSubscription, SubscribeState } from '@/actions/subscribe'; 
 import { Check, Plus } from 'lucide-react';
+import { Button } from '@/components/ui';
 
 interface SubscribeButtonProps {
     channelId: string;
@@ -24,33 +25,24 @@ export function SubscribeButton({ channelId, channelSlug, isSubscribedInitial, s
                        : isSubscribedInitial;
 
         const buttonText = isSubscribed ? 'Subscribed' : 'Subscribe';
-        const iconSize = small ? 14 : 18;
-        const buttonIcon = isSubscribed ? <Check size={iconSize} /> : <Plus size={iconSize} />;
-
-        // compact styles when small=true
-        const compactClasses = small
-            ? 'px-3 py-1 text-xs gap-1 rounded-full'
-            : 'px-4 py-2 text-sm gap-2 rounded-full';
+        const iconSize = small ? 14 : 16;
+        const buttonIcon = isSubscribed ? <Check size={iconSize} aria-hidden="true" /> : <Plus size={iconSize} aria-hidden="true" />;
 
     return (
         <form action={action}>
             <input type="hidden" name="channelId" value={channelId} />
             <input type="hidden" name="channelSlug" value={channelSlug} />
 
-            <button 
+            <Button
                 type="submit"
                 disabled={isPending}
-                className={`
-                    flex items-center ${compactClasses} font-bold transition-all duration-200
-                    ${isSubscribed 
-                        ? 'bg-gray-700 text-white border border-gray-600 hover:bg-gray-600'
-                        : 'bg-indigo-600 text-white border border-indigo-600 hover:bg-indigo-500'
-                    }
-                    disabled:opacity-50
-                `}
+                size={small ? 'sm' : 'md'}
+                variant={isSubscribed ? 'secondary' : 'primary'}
+                icon={isPending ? null : buttonIcon}
+                aria-pressed={isSubscribed}
             >
-                {isPending ? (small ? '...' : 'Updating...') : <>{buttonIcon} {buttonText}</>}
-            </button>
+                {isPending ? 'Saving…' : buttonText}
+            </Button>
         </form>
     );
 }

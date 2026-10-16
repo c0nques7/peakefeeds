@@ -7,6 +7,7 @@ import { ShieldCheck, Wallet, Loader2, LogOut } from 'lucide-react'
 import { useLinkWallet } from '@/hooks/useLinkWallet'
 import { toast } from 'sonner'
 import { useRouter, usePathname } from 'next/navigation'
+import { Button } from '@/components/ui';
 
 export function ConnectWalletButton() {
   const [mounted, setMounted] = useState(false);
@@ -61,35 +62,29 @@ export function ConnectWalletButton() {
 
   if (!mounted) {
     return (
-      <button disabled className="flex items-center gap-2 px-6 py-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-card)] opacity-50">
-         <Wallet size={16} /><span>Loading...</span>
-      </button>
+      <Button disabled variant="secondary" icon={<Wallet size={16} aria-hidden="true" />}>Wallet</Button>
     );
   }
 
   // --- CONNECTED STATE ---
   if (isConnected && address) {
     return (
-      <div className="group relative flex items-center gap-2 cursor-pointer">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 text-sm font-bold shadow-sm">
-          <ShieldCheck size={16} className="group-hover:hidden" />
-          <LogOut size={16} className="hidden group-hover:block" />
-          <span>{address.slice(0, 6)}...{address.slice(-4)}</span>
-        </div>
-        {/* 🟢 FIX: Use the async handler */}
-        <button onClick={handleDisconnect} className="absolute inset-0 w-full h-full z-10" aria-label="Disconnect" />
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex h-10 items-center gap-2 px-3 rounded-[var(--radius-control)] bg-[var(--status-success-bg)] text-[var(--status-success)] text-sm font-semibold font-mono">
+          <ShieldCheck size={16} aria-hidden="true" />
+          {address.slice(0, 6)}…{address.slice(-4)}
+        </span>
+        <Button variant="ghost" onClick={handleDisconnect} icon={<LogOut size={16} aria-hidden="true" />}>
+          Disconnect
+        </Button>
       </div>
     );
   }
 
   // --- DISCONNECTED STATE ---
   return (
-    <button
-      onClick={() => open()} 
-      className="flex items-center gap-2 px-6 py-2 rounded-full bg-[var(--accent-primary)] text-white font-bold hover:shadow-lg transition-all"
-    >
-      <Wallet size={16} />
-      <span>Connect Wallet</span>
-    </button>
+    <Button onClick={() => open()} icon={<Wallet size={16} aria-hidden="true" />}>
+      Connect wallet
+    </Button>
   );
 }

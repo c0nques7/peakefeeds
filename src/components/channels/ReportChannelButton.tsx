@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Flag } from 'lucide-react';
 import ReportModal from '../moderation/ReportModal';
 import { ReportTargetType } from '@prisma/client';
+import { buttonClasses } from '@/components/ui';
 
 interface ReportChannelButtonProps {
   channelId: string;
@@ -16,7 +17,7 @@ export default function ReportChannelButton({ channelId }: ReportChannelButtonPr
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-red-500 text-red-500 bg-red-500/10 text-sm font-bold hover:bg-red-500/20 transition-all"
+        className={buttonClasses({ variant: 'danger' })}
         title="Report Channel"
       >
         <Flag size={14} />

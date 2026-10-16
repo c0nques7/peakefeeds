@@ -49,11 +49,10 @@
 
 .noRightRail .mainContent { max-width: 820px; }
 
+/* Scrolls with the page: it's taller than most screens, so sticky would hide its bottom */
 .rightSidebar {
   grid-area: right;
   display: none;
-  position: sticky;
-  top: 1.5rem;
   align-self: start;
   padding-top: 1.5rem;
   /* Leave room so the Help button never covers the footer links */

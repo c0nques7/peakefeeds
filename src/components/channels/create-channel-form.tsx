@@ -1,9 +1,8 @@
 'use client'
 
-import { useActionState } from 'react'; // React 19 Hook
+import { useActionState } from 'react';
 import { createChannel, CreateChannelState } from '@/actions/create-channel';
-// Assuming you have a Button component, if not use standard <button>
-// import { Button } from '@/components/ui/button'; 
+import { Button, Card, TextField, TextAreaField } from '@/components/ui';
 
 const initialState: CreateChannelState = {
   message: null,
@@ -14,69 +13,45 @@ export default function CreateChannelForm() {
   const [state, action, isPending] = useActionState(createChannel, initialState);
 
   return (
-    <form action={action} className="max-w-md mx-auto space-y-6 p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-md">
-      <h2 className="text-xl font-bold text-white mb-4">Create a Community</h2>
-
-      {/* Name Input */}
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-          Channel Name
-        </label>
-        <input
+    <Card>
+      <form action={action} className="flex flex-col gap-5">
+        <TextField
           id="name"
           name="name"
-          type="text"
+          label="Channel name"
           placeholder="e.g. Crypto News"
-          className="mt-1 block w-full rounded-md bg-gray-900 border-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+          hint="3 to 30 characters: letters, numbers and spaces."
+          error={state.errors?.name?.[0]}
+          required
         />
-        {state.errors?.name && (
-          <p className="text-red-400 text-xs mt-1">{state.errors.name[0]}</p>
-        )}
-      </div>
 
-      {/* Description Input */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-300">
-          Description
-        </label>
-        <textarea
+        <TextAreaField
           id="description"
           name="description"
+          label="Description"
           rows={3}
-          className="mt-1 block w-full rounded-md bg-gray-900 border-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+          hint="What the channel is for. Shown at the top of the channel."
+          error={state.errors?.description?.[0]}
         />
-      </div>
 
-      {/* Tags Input */}
-      <div>
-        <label htmlFor="tags" className="block text-sm font-medium text-gray-300">
-          Tags (comma separated)
-        </label>
-        <input
+        <TextField
           id="tags"
           name="tags"
-          type="text"
+          label="Tags"
           placeholder="tech, web3, verification"
-          className="mt-1 block w-full rounded-md bg-gray-900 border-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+          hint="Separate tags with commas."
         />
-      </div>
 
-      {/* Error Message Global */}
-      {state.message && (
-        <div className="p-3 rounded bg-red-900/50 text-red-200 text-sm">
-          {state.message}
-        </div>
-      )}
+        {state.message && (
+          <p role="alert" className="rounded-[var(--radius-control)] bg-[var(--status-error-bg)] p-3 text-sm text-[var(--status-error)]">
+            {state.message}
+          </p>
+        )}
 
-      {/* Submit */}
-      <button
-        type="submit"
-        disabled={isPending}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isPending ? 'Creating...' : 'Create Channel'}
-      </button>
-    </form>
+        <Button type="submit" disabled={isPending} fullWidth size="lg">
+          {isPending ? 'Creating…' : 'Create channel'}
+        </Button>
+      </form>
+    </Card>
   );
 }
-

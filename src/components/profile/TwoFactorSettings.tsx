@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { generateTwoFactorSecret, verifyAndEnableTwoFactor, disableTwoFactor, getTwoFactorStatus } from "@/actions/two-factor";
 import { Loader2, ShieldCheck, ShieldAlert, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { Button, inputClasses } from '@/components/ui';
 
 interface TwoFactorSettingsProps {
     userId: string;
@@ -85,15 +86,15 @@ export default function TwoFactorSettings({ userId }: TwoFactorSettingsProps) {
   if (isLoading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-[var(--accent-primary)]" /></div>;
 
   return (
-    <div className="bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-2xl p-6">
-      <div className="flex items-start justify-between mb-6">
+    <div className="bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-[var(--radius-card)] shadow-[var(--glass-shadow)] p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div className="flex gap-4">
-            <div className={`p-3 rounded-xl ${isEnabled ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[var(--bg-app)] text-[var(--text-muted)]'}`}>
+            <div className={`p-3 rounded-[var(--radius-control)] ${isEnabled ? 'bg-[var(--status-success-bg)] text-[var(--status-success)]' : 'bg-[var(--glass-card-hover)] text-[var(--text-muted)]'}`}>
                 {isEnabled ? <ShieldCheck size={24} /> : <ShieldAlert size={24} />}
             </div>
             <div>
-                <h3 className="text-xl font-bold text-[var(--text-primary)]">Two-Factor Authentication</h3>
-                <p className="text-sm text-[var(--text-muted)] mt-1">
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">Two-factor authentication</h3>
+                <p className="text-sm text-[var(--text-muted)] mt-0.5">
                     {isEnabled 
                         ? "Your account is secured with 2FA." 
                         : "Add an extra layer of security to your account."}
@@ -102,25 +103,16 @@ export default function TwoFactorSettings({ userId }: TwoFactorSettingsProps) {
         </div>
         
         {isEnabled && (
-             <button 
-                onClick={disable}
-                disabled={isSetupLoading}
-                className="px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-             >
-                {isSetupLoading ? "Disabling..." : "Disable"}
-             </button>
+             <Button variant="danger" size="sm" onClick={disable} disabled={isSetupLoading}>
+                {isSetupLoading ? "Turning off…" : "Turn off"}
+             </Button>
         )}
       </div>
 
       {!isEnabled && setupStep === "idle" && (
-          <button 
-            onClick={startSetup}
-            disabled={isSetupLoading}
-            className="w-full py-3 rounded-xl bg-[var(--accent-primary)] text-white font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2"
-          >
-            {isSetupLoading && <Loader2 className="animate-spin" size={18} />}
-            Setup 2FA
-          </button>
+          <Button onClick={startSetup} disabled={isSetupLoading} icon={isSetupLoading ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : undefined}>
+            Set up two-factor authentication
+          </Button>
       )}
 
       {!isEnabled && setupStep === "qr" && (
@@ -151,15 +143,11 @@ export default function TwoFactorSettings({ userId }: TwoFactorSettingsProps) {
                             placeholder="000000"
                             value={token}
                             onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                            className="flex-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--glass-border)] text-[var(--text-primary)] font-mono text-lg tracking-widest focus:outline-none focus:border-[var(--accent-primary)]"
+                            className={`${inputClasses} flex-1 font-mono text-lg tracking-widest`}
                         />
-                        <button 
-                            onClick={verifyAndEnable}
-                            disabled={token.length !== 6 || isSetupLoading}
-                            className="px-6 py-3 rounded-lg bg-[var(--accent-primary)] text-white font-bold hover:opacity-90 disabled:opacity-50 transition-all"
-                        >
-                            {isSetupLoading ? <Loader2 className="animate-spin" /> : "Verify"}
-                        </button>
+                        <Button size="lg" onClick={verifyAndEnable} disabled={token.length !== 6 || isSetupLoading}>
+                            {isSetupLoading ? <Loader2 className="animate-spin" size={18} aria-label="Verifying" /> : "Verify"}
+                        </Button>
                     </div>
                 </div>
              </div>

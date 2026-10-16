@@ -4,9 +4,6 @@
 .cardContainer {
     perspective: 1200px;
     width: 100%;
-    /* ⚡️ FIX: Let content dictate height, remove strict 100% */
-    max-width: 550px; 
-    margin: 0 auto; 
     position: relative;
     isolation: isolate; 
 }

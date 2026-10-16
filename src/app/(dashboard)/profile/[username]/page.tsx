@@ -14,6 +14,8 @@ import LockedOverlay from "@/components/moderation/LockedOverlay";
 
 // Shared Layout Styles
 import styles from "../../dashboard.module.css"; 
+import { ButtonLink, EmptyState } from "@/components/ui";
+import { prisma } from "@/lib/db";
 
 interface ProfilePageProps {
     params: Promise<{ username: string }>;
@@ -34,7 +36,7 @@ const ProfileTabs = ({ activeTab, username, postCount, channelCount }:
     { activeTab: ActiveTabType, username: string, postCount: number, channelCount: number }) => {
     
     const baseClass = "flex items-center gap-2 px-6 py-3 border-b-2 transition-all text-sm font-medium";
-    const activeClass = "border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold bg-[var(--accent-primary)]/5";
+    const activeClass = "border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold";
     const inactiveClass = "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)]";
 
     return (
@@ -72,6 +74,13 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
     if (!profile) {
         notFound();
     }
+
+    // Profile stats: verified ("signed") posts, and reactions their posts have received
+    const [signedCount, reactionTotals] = await Promise.all([
+        prisma.post.count({ where: { authorId: profile.id, isVerified: true } }),
+        prisma.post.aggregate({ where: { authorId: profile.id }, _sum: { likesCount: true, dislikesCount: true } }),
+    ]);
+    const reactionCount = (reactionTotals._sum.likesCount ?? 0) + (reactionTotals._sum.dislikesCount ?? 0);
 
     const isOwnProfile = currentUserId === profile.id;
 
@@ -121,20 +130,18 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
     return (
         <div className={styles.feedWrapper}>
             
-            {/* 🔍 SEARCH BAR */}
-            <div className="mb-6 w-full pt-4 relative z-20">
+            {/* SEARCH BAR */}
+            <div className={styles.searchWrapper}>
                 <SearchBar />
             </div>
 
             {/* PROFILE HEADER */}
-            <header className="mb-8 rounded-[2rem] p-8 text-center relative overflow-hidden bg-[var(--glass-card)] border border-[var(--glass-border)] shadow-xl">
+            <header className="mb-6 rounded-[var(--radius-card)] p-6 sm:p-8 text-center relative overflow-hidden bg-[var(--glass-card)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
                 
                 {profile.isLocked && <LockedOverlay message="This Account is Under Review by PeakeFeeds Admins. Interaction with this user is temporarily disabled." />}
                 
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[var(--accent-primary)]/10 to-transparent pointer-events-none" />
-
                 <div className="relative z-10">
-                    <div className="w-28 h-28 mx-auto rounded-full mb-4 flex items-center justify-center text-4xl font-bold bg-[var(--accent-secondary)] text-white shadow-lg ring-4 ring-[var(--bg-app)] overflow-hidden">
+                    <div className="w-24 h-24 mx-auto rounded-full mb-4 flex items-center justify-center text-4xl font-bold bg-[var(--accent-secondary)] text-white ring-4 ring-[var(--bg-app)] overflow-hidden">
                         {profile.image ? (
                             <img src={profile.image} alt={profile.username || 'User'} className="w-full h-full object-cover" />
                         ) : (
@@ -142,36 +149,30 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                         )}
                     </div>
 
-                    <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-[var(--text-primary)]">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1 text-[var(--text-primary)] break-all">
                         @{profile.username}
                     </h1>
                     
                     <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)] mb-6">
-                        <Calendar size={14} />
-                        <span>Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
+                        <Calendar size={14} aria-hidden="true" />
+                        <span>Joined {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                     </div>
                     
                     {/* ACTION AREA (Wallet + Message) */}
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                         {isOwnProfile ? (
                             <>
                                 <ConnectWalletButton />
-                                <Link 
-                                    href="/settings" 
-                                    className="p-3 rounded-xl bg-[var(--glass-panel)] hover:bg-[var(--glass-hover)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors" 
-                                    title="Settings"
-                                >
-                                    <Settings size={20} />
-                                </Link>
+                                <ButtonLink href="/settings" variant="secondary" icon={<Settings size={16} aria-hidden="true" />}>
+                                    Settings
+                                </ButtonLink>
                             </>
                         ) : (
                             <>
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] text-sm font-medium">
-                                    <ShieldCheck size={16} className={profile.walletAddress ? "text-emerald-400" : "text-gray-500"} />
-                                    <span className={profile.walletAddress ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"} >
-                                        {profile.walletAddress ? `Verified` : 'Unlinked'}
-                                    </span>
-                                </div>
+                                <span className="inline-flex h-10 items-center gap-2 px-3 text-sm font-medium text-[var(--text-muted)]">
+                                    <ShieldCheck size={16} aria-hidden="true" className={profile.walletAddress ? "text-[var(--status-success)]" : ""} />
+                                    {profile.walletAddress ? 'Wallet verified' : 'No wallet linked'}
+                                </span>
                                 
                                 <MessageButton recipientId={profile.id} />
                                 <BlockUserButton userId={profile.id} />
@@ -187,12 +188,12 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
             <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatBadge count={profile._count.posts} label="Posts" />
                 <StatBadge count={profile._count.channelsCreated} label="Channels" />
-                <StatBadge count={0} label="Reactions" />
-                <StatBadge count={0} label="Signed" />
+                <StatBadge count={reactionCount} label="Reactions" />
+                <StatBadge count={signedCount} label="Signed" />
             </section>
 
             {/* CONTENT */}
-            <section className="relative overflow-hidden rounded-3xl">
+            <section className="relative">
                 {profile.isLocked && <LockedOverlay className="z-20" message="Interacting with this user's content is disabled during review." />}
                 
                 <ProfileTabs 
@@ -209,9 +210,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                                 <PostCard key={post.id} post={post} initialReaction={post.currentUserReaction} />
                             ))
                         ) : (
-                            <div className="col-span-full py-16 text-center border border-dashed border-[var(--glass-border)] rounded-3xl bg-[var(--glass-card)]">
-                                <p className="text-[var(--text-muted)]">No posts yet.</p>
-                            </div>
+                            <EmptyState title="No posts yet" description={isOwnProfile ? "Post in a channel and it will show up here." : undefined} />
                         )}
                     </div>
                 )}
@@ -223,22 +222,23 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                                 <Link 
                                     key={channel.id} 
                                     href={`/channels/${channel.slug}`} 
-                                    className="group block p-6 rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] hover:border-[var(--accent-primary)] transition-all hover:-translate-y-1"
+                                    className="group block p-5 rounded-[var(--radius-card)] bg-[var(--glass-card)] border border-[var(--glass-border)] hover:border-[var(--accent-primary)] transition-colors"
                                 >
                                     <div className="flex justify-between items-start mb-2">
-                                        <h4 className="font-bold text-lg text-[var(--accent-primary)]">#{channel.slug}</h4>
+                                        <h4 className="font-bold text-lg text-[var(--text-primary)]">{channel.name}</h4>
                                         <Users size={18} className="text-[var(--text-muted)]" />
                                     </div>
-                                    <p className="text-sm text-[var(--text-primary)] line-clamp-2 mb-4">{channel.name}</p>
-                                    <div className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--glass-panel)] w-fit text-[var(--text-muted)] group-hover:bg-[var(--accent-primary)] group-hover:text-white transition-colors">
-                                        {channel._count.subscribers} Subscribers
+                                    <p className="text-sm text-[var(--text-muted)] mb-4">/c/{channel.slug}</p>
+                                    <div className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--glass-panel)] w-fit text-[var(--text-muted)] transition-colors">
+                                        {channel._count.subscribers} {channel._count.subscribers === 1 ? 'Verifier' : 'Verifiers'}
                                     </div>
                                 </Link>
                             ))
                         ) : (
-                            <div className="col-span-full py-16 text-center border border-dashed border-[var(--glass-border)] rounded-3xl bg-[var(--glass-card)]">
-                                <p className="text-[var(--text-muted)]">No channels created.</p>
-                            </div>
+                            <EmptyState
+                                title="No channels yet"
+                                action={isOwnProfile ? <ButtonLink href="/channels/create">New channel</ButtonLink> : undefined}
+                            />
                         )}
                     </div>
                 )}

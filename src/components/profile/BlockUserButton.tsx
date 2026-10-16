@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Ban, Loader2 } from 'lucide-react';
 import { blockUser } from '@/actions/block-user';
 import { toast } from 'sonner';
+import { buttonClasses } from '@/components/ui';
 
 interface BlockUserButtonProps {
     userId: string;
@@ -39,7 +40,7 @@ export default function BlockUserButton({ userId }: BlockUserButtonProps) {
         <button 
             onClick={handleBlock}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/30 text-sm font-medium text-red-400 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+            className={buttonClasses({ variant: 'danger' })}
             title="Block User"
         >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Ban size={16} />}

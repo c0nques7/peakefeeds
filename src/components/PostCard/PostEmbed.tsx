@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image'
 import { ExternalLink, Loader2, Music, Video, MessageCircle } from 'lucide-react'
 import clsx from 'clsx'
@@ -89,17 +89,24 @@ const VideoEmbed = ({ url }: { url: string }) => {
 };
 
 // --- 2.6 YOUTUBE RENDERER ---
+// The page's origin is only known in the browser. Reading it through useSyncExternalStore gives the
+// server-rendered HTML and the first client render the same (empty) value, so hydration matches;
+// the iframe is added right after.
+const noopSubscribe = () => () => {};
+const useOrigin = () => useSyncExternalStore(noopSubscribe, () => window.location.origin, () => '');
+
 const YouTubeEmbed = ({ id, url, fallbackData }: { id: string, url: string, fallbackData?: any }) => {
+    const origin = useOrigin();
     return (
         <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video group">
-            <iframe
-                src={`https://www.youtube.com/embed/${id}?origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+            {origin && <iframe
+                src={`https://www.youtube.com/embed/${id}?origin=${origin}`}
                 title="YouTube video player"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 className="absolute inset-0 w-full h-full z-10"
-            />
+            />}
             {/* Fallback/Overlay Link (visible if iframe fails or behind it) */}
             <a 
                 href={url}

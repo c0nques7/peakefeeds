@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Flag } from 'lucide-react';
 import ReportModal from '../moderation/ReportModal';
 import { ReportTargetType } from '@prisma/client';
+import { buttonClasses } from '@/components/ui';
 
 interface ReportUserButtonProps {
   userId: string;
@@ -16,7 +17,7 @@ export default function ReportUserButton({ userId }: ReportUserButtonProps) {
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all text-sm font-medium"
+        className={buttonClasses({ variant: 'danger' })}
         title="Report User"
       >
         <Flag size={16} />

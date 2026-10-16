@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TrendingUp, Users, ArrowRight, ShieldCheck } from "lucide-react";
+import { TrendingUp, Users, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { unstable_cache } from "next/cache";
 import { getServerSession } from "next-auth";
@@ -83,10 +83,10 @@ export async function RightSidebar() {
 
     // 2. RENDER UI -----------------------------------------
     return (
-        <div className="flex flex-col gap-6 w-full max-w-[320px] pb-20">
+        <div className="flex flex-col gap-6 w-full max-w-[320px]">
             
             {/* --- CARD 1: TRENDING POSTS --- */}
-            <div className="flex flex-col rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-sm">
+            <div className="flex flex-col rounded-[var(--radius-card)] bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-[var(--glass-shadow)]">
                 <div className="p-4 border-b border-[var(--glass-border)] flex items-center gap-2">
                     <TrendingUp size={18} className="text-[var(--accent-secondary)]" />
                     <span className="font-bold text-sm text-[var(--text-primary)]">Trending Now</span>
@@ -96,17 +96,18 @@ export async function RightSidebar() {
                     {trendingPosts.length > 0 ? trendingPosts.map((post) => (
                         <Link 
                             key={post.id} 
-                            href={`/posts/${post.id}`}
+                            // Opens the channel scrolled to this post (there's no separate post page)
+                            href={post.channelSlug ? `/channels/${post.channelSlug}?highlight=${post.id}` : '/discover'}
                             className="group flex items-center justify-between px-4 py-3 hover:bg-[var(--glass-card-hover)] transition-colors border-b border-[var(--glass-border)] last:border-0"
                         >
                             <div className="flex flex-col min-w-0 pr-2">
                                 <span className="font-bold text-sm text-[var(--text-primary)] truncate">
-                                    {post.title || post.content.slice(0, 30)}
+                                    {post.title || post.content}
                                 </span>
                                 <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
                                     {post.channelSlug && <span className="opacity-70">#{post.channelSlug}</span>}
                                     <span>•</span>
-                                    <span>{post.likesCount} likes</span>
+                                    <span>{post.likesCount} {post.likesCount === 1 ? 'like' : 'likes'}</span>
                                 </span>
                             </div>
                             <ArrowRight size={14} className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -117,11 +118,11 @@ export async function RightSidebar() {
                 </div>
             </div>
 
-            {/* --- CARD 2: WHO TO FOLLOW (SUGGESTED) --- */ }
-            <div className="flex flex-col rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-sm">
+            {/* --- CARD 2: CHANNELS TO FOLLOW --- */}
+            <div className="flex flex-col rounded-[var(--radius-card)] bg-[var(--glass-card)] border border-[var(--glass-border)] overflow-hidden shadow-[var(--glass-shadow)]">
                 <div className="p-4 border-b border-[var(--glass-border)] flex items-center gap-2">
                     <Users size={18} className="text-[var(--accent-primary)]" />
-                    <span className="font-bold text-sm text-[var(--text-primary)]">Who to Follow</span>
+                    <span className="font-bold text-sm text-[var(--text-primary)]">Channels to follow</span>
                 </div>
 
                 <div className="flex flex-col">
@@ -130,15 +131,13 @@ export async function RightSidebar() {
                             
                             {/* Top Row: Channel Info + Subscribe */}
                             <div className="flex items-center gap-3 mb-2">
-                                <Link href={`/channels/${channel.slug}`} className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500/10 to-teal-500/10 border border-[var(--glass-border)] flex items-center justify-center font-bold text-xs text-[var(--text-primary)] flex-shrink-0">
+                                <Link href={`/channels/${channel.slug}`} className="w-8 h-8 rounded-full bg-[var(--glass-card-hover)] border border-[var(--glass-border)] flex items-center justify-center font-bold text-xs text-[var(--text-primary)] flex-shrink-0">
                                     {channel.name[0].toUpperCase()}
                                 </Link>
                                 
                                 <div className="flex-1 min-w-0">
-                                    <Link href={`/channels/${channel.slug}`} className="flex items-center gap-1 hover:underline">
-                                        <span className="font-bold text-xs text-[var(--text-primary)] truncate">{channel.name}</span>
-                                        {/* Assuming these are top channels, we give them a 'verified' check visually */}
-                                        <ShieldCheck size={10} className="text-emerald-500" />
+                                    <Link href={`/channels/${channel.slug}`} className="block hover:underline">
+                                        <span className="block font-bold text-xs text-[var(--text-primary)] truncate">{channel.name}</span>
                                     </Link>
                                     <div className="text-[10px] text-[var(--text-muted)] truncate">@{channel.slug}</div>
                                 </div>
@@ -153,8 +152,8 @@ export async function RightSidebar() {
 
                             {/* Bottom Row: Context (Latest Post) */}
                             {latest && (
-                                <div className="pl-11 text-[10px] text-[var(--text-secondary)] italic truncate opacity-80">
-                                    "{latest.title || latest.content.slice(0, 40)}..."
+                                <div className="pl-11 text-[11px] text-[var(--text-muted)] truncate">
+                                    {latest.title || latest.content}
                                 </div>
                             )}
                         </div>
@@ -163,14 +162,14 @@ export async function RightSidebar() {
 
                 <div className="p-3 text-center">
                     <Link href="/discover" className="text-xs text-[var(--accent-primary)] font-bold hover:underline">
-                        View More
+                        Discover more
                     </Link>
                 </div>
             </div>
 
             {/* --- FOOTER --- */}
             <div className="px-4 text-[10px] text-[var(--text-muted)] text-center leading-relaxed">
-                 © 2025 PeakeFeeds. Built on Optimism.
+                 © {new Date().getFullYear()} PeakeFeeds. Built on Optimism.
                  <div className="flex gap-2 justify-center mt-1">
                      <Link href="/privacy" className="hover:text-[var(--text-primary)]">Privacy</Link>
                      <span>•</span>

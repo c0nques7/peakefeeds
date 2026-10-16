@@ -55,7 +55,7 @@
 }
 
 .navItemActive {
-  color: var(--accent-secondary); 
+  color: var(--accent-primary);
 }
 
 .navItemDisabled {
