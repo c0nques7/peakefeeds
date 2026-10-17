@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { formatDistanceToNow } from 'date-fns'
 import { 
   MessageCircle, Heart, HeartCrack, Share2, MoreHorizontal, 
@@ -80,6 +81,9 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   const searchParams = useSearchParams()
   const highlightId = searchParams.get('highlight')
   const isHighlighted = highlightId === post.id
+  // Site staff can take down verified posts, which nobody else can delete
+  const viewerRole = useSession().data?.user?.role
+  const isSiteStaff = viewerRole === 'ADMIN' || viewerRole === 'MODERATOR'
 
   const [reaction, setReactionState] = useState(initialReaction)
   const [likesCount, setLikesCount] = useState(post._count?.likes || post.likesCount || 0)
@@ -274,7 +278,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
 
       // If staff deletion and no reason yet, show modal
       const isAuthor = currentUserId === post.author.id;
-      if (!isAuthor && !reason) {
+      if ((!isAuthor || post.isVerified) && !reason) {
           setShowDeleteModal(true);
           return;
       }
@@ -391,6 +395,11 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                             <div className="px-4 py-2 text-[10px] text-[var(--text-muted)] italic border-b border-[var(--glass-border)] bg-amber-500/5">
                                 Verified content cannot be edited or deleted.
                             </div>
+                        )}
+                        {post.isVerified && isSiteStaff && (
+                            <button onClick={() => { handleDeletePost(); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-[var(--glass-border)]">
+                                <Trash2 size={12} /> Remove (staff)
+                            </button>
                         )}
                         {(currentUserId !== post.author.id) && (
                             <button onClick={() => { setReportModalOpen(true); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2">

@@ -41,7 +41,7 @@ const CommentEmbed = ({ url }: { url: string }) => {
     return (
       <div className="mt-3 w-full max-w-[400px] overflow-hidden rounded-xl border border-[var(--glass-border)] bg-black aspect-video shadow-sm">
         <iframe 
-          src={`https://www.youtube.com/embed/${videoId}`} 
+          src={`https://www.youtube-nocookie.com/embed/${videoId}`} 
           className="w-full h-full" 
           allowFullScreen 
           allow="autoplay; encrypted-media" 

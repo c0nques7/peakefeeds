@@ -29,12 +29,19 @@ export async function deletePost(postId: string, reason?: string, comments?: str
     return { error: "Post not found" };
   }
 
-  // Blockchain Finality Check
-  if (post.isVerified) {
-    return { error: "Verified posts cannot be deleted as they are anchored to the blockchain." };
-  }
-
   const userId = session.user.id;
+
+  // Verified posts are final for their author and channel owners, but site staff can still take
+  // one down (illegal content, copyright, personal details). The on-chain fingerprint stays either way.
+  if (post.isVerified) {
+    const isStaff = session.user.role === UserRole.ADMIN || session.user.role === UserRole.MODERATOR;
+    if (!isStaff) {
+      return { error: "Verified posts cannot be deleted as they are anchored to the blockchain." };
+    }
+    if (!reason) {
+      return { error: "A reason is required for administrative deletions." };
+    }
+  }
   
   // 2. Fetch current user's role in the channel
   const subscription = await prisma.subscription.findUnique({
@@ -53,7 +60,8 @@ export async function deletePost(postId: string, reason?: string, comments?: str
   const hasModDeletePermission = subscription?.canDeletePosts === true;
   const isGlobalAdmin = (session.user as any).role === UserRole.ADMIN;
 
-  if (!isAuthor && !isChannelOwner && !isGlobalAdmin && !(isChannelMod && hasModDeletePermission)) {
+  // (Verified posts were already limited to site staff above)
+  if (!post.isVerified && !isAuthor && !isChannelOwner && !isGlobalAdmin && !(isChannelMod && hasModDeletePermission)) {
     return { error: "You do not have permission to delete this post." };
   }
 

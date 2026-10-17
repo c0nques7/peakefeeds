@@ -100,7 +100,7 @@ const YouTubeEmbed = ({ id, url, fallbackData }: { id: string, url: string, fall
     return (
         <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video group">
             {origin && <iframe
-                src={`https://www.youtube.com/embed/${id}?origin=${origin}`}
+                src={`https://www.youtube-nocookie.com/embed/${id}?origin=${origin}`}
                 title="YouTube video player"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
