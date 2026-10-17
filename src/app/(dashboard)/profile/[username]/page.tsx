@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProfileData } from '@/lib/profile-service';
-import { ShieldCheck, Calendar, Users, LayoutGrid, Settings } from 'lucide-react';
+import { ShieldCheck, Calendar, Users, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { PostCard } from "@/components/PostCard";
 import { getServerSession } from "next-auth"; 
@@ -14,7 +14,7 @@ import LockedOverlay from "@/components/moderation/LockedOverlay";
 
 // Shared Layout Styles
 import styles from "../../dashboard.module.css"; 
-import { ButtonLink, EmptyState } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { prisma } from "@/lib/db";
 
 interface ProfilePageProps {
@@ -161,12 +161,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                     {/* ACTION AREA (Wallet + Message) */}
                     <div className="flex flex-wrap items-center justify-center gap-2">
                         {isOwnProfile ? (
-                            <>
-                                <ConnectWalletButton />
-                                <ButtonLink href="/settings" variant="secondary" icon={<Settings size={16} aria-hidden="true" />}>
-                                    Settings
-                                </ButtonLink>
-                            </>
+                            <ConnectWalletButton />
                         ) : (
                             <>
                                 <span className="inline-flex h-10 items-center gap-2 px-3 text-sm font-medium text-[var(--text-muted)]">

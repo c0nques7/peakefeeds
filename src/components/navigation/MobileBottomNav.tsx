@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Compass, User, Home, LogIn, Bell, X, MessageCircle } from 'lucide-react';
+import { Compass, User, Home, LogIn, Bell, X, MessageCircle, Settings } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { NotificationFeed } from '@/components/notifications/NotificationFeed'; // Ensure this component exists
 import clsx from 'clsx';
@@ -92,7 +92,14 @@ export default function MobileBottomNav() {
               <span className={styles.navLabel}>Profile</span>
           </Link>
 
-          {/* Log out lives in Settings, so it can't be hit by accident from the tab bar */}
+          {/* 6. SETTINGS (Log out lives there, so it can't be hit by accident from the tab bar) */}
+          {session && (
+              <Link href="/settings" className={clsx(styles.navItem, isActive('/settings') && styles.navItemActive)}>
+                  <Settings size={22} strokeWidth={isActive('/settings') ? 2.5 : 2} />
+                  <span className={styles.navLabel}>Settings</span>
+              </Link>
+          )}
+
           {!session && (
               <Link href="/login" className={styles.navItem}>
                   <LogIn size={22} />
