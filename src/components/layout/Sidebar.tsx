@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import {
-  Compass, User, Home, Mountain, LogOut, LogIn, Bell, MessageCircle, Settings, Plus, ShieldCheck,
+  Compass, User, Home, Mountain, LogOut, LogIn, Bell, MessageCircle, Settings, ShieldCheck,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -70,12 +70,6 @@ export function Sidebar({ user }: SidebarProps) {
           </>
         )}
       </nav>
-
-      {user && (
-        <ButtonLink href="/channels/create" icon={<Plus size={16} aria-hidden="true" />} fullWidth className="mt-2">
-          New channel
-        </ButtonLink>
-      )}
 
       <div className={styles.footer}>
         {user ? (

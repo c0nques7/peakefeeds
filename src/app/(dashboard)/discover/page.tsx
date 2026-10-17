@@ -1,4 +1,5 @@
 import GlobalFeed from "./feed";
+import { ChannelsToFollow } from "./ChannelsToFollow";
 import { Suspense } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { PostCardSkeleton } from "@/components/SkeletonLoader/PostCardSkeleton";
@@ -12,7 +13,11 @@ export default function DiscoverPage() {
         <SearchBar />
       </div>
 
-      <PageHeader title="Discover" description="The latest posts from every channel." />
+      <PageHeader title="Discover" description="Find channels to follow and the latest posts from every channel." />
+
+      <Suspense fallback={null}>
+        <ChannelsToFollow />
+      </Suspense>
 
       <div className={styles.feedStream}>
         <Suspense fallback={<PostCardSkeleton count={6} />}>

@@ -182,7 +182,7 @@ export function SearchBar() {
                 <Search size={20} className={styles.searchIcon} />
                 <input
                     type="text"
-                    placeholder="Search people, channels, topics..."
+                    placeholder="Search people, channels, tags..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown} 

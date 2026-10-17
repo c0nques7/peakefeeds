@@ -47,7 +47,7 @@ export default async function PersonalFeed() {
           <EmptyState
             icon={<Radio size={22} aria-hidden="true" />}
             title="Your feed is empty"
-            description="Subscribe to channels and their posts will show up here."
+            description="Follow channels and their posts will show up here. Find some on Discover, or search for a topic or tag above."
             action={<ButtonLink href="/discover">Explore channels</ButtonLink>}
           />
         ) : (

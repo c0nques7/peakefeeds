@@ -237,7 +237,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                         ) : (
                             <EmptyState
                                 title="No channels yet"
-                                action={isOwnProfile ? <ButtonLink href="/channels/create">New channel</ButtonLink> : undefined}
+                                description={isOwnProfile ? "To start a channel, search for its name and choose Create." : undefined}
                             />
                         )}
                     </div>
