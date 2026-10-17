@@ -12,6 +12,7 @@ declare module "next-auth" {
       username?: string | null
       role: UserRole
       walletAddress?: string | null
+      ageConfirmed?: boolean
     } & DefaultSession["user"]
   }
 
@@ -36,5 +37,6 @@ declare module "next-auth/jwt" {
     username?: string | null
     role: UserRole
     walletAddress?: string | null
+    ageConfirmed?: boolean
   }
 }

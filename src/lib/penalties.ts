@@ -12,10 +12,17 @@ export type AccountStatus = {
   mutedUntil: Date | null;
   walletAddress: string | null;
   username: string | null;
+  ageConfirmedAt: Date | null;
+  ageRejectedAt: Date | null;
 };
 
-export function isBanned(status: AccountStatus, now = new Date()): boolean {
+export function isBanned(status: Pick<AccountStatus, 'isBanned' | 'bannedUntil'>, now = new Date()): boolean {
   return status.isBanned || (!!status.bannedUntil && status.bannedUntil > now);
+}
+
+/** Closed because the age check showed the person is under the minimum age (see lib/age.ts). */
+export function isUnderage(status: Pick<AccountStatus, 'ageRejectedAt'>): boolean {
+  return !!status.ageRejectedAt;
 }
 
 export function isMuted(status: AccountStatus, now = new Date()): boolean {
@@ -25,7 +32,7 @@ export function isMuted(status: AccountStatus, now = new Date()): boolean {
 async function loadStatus(userId: string): Promise<AccountStatus | null> {
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true, isBanned: true, bannedUntil: true, mutedUntil: true, walletAddress: true, username: true },
+    select: { role: true, isBanned: true, bannedUntil: true, mutedUntil: true, walletAddress: true, username: true, ageConfirmedAt: true, ageRejectedAt: true },
   });
 }
 
@@ -55,6 +62,8 @@ export async function getPostingBlockReason(userId: string): Promise<string | nu
   const status = await loadStatus(userId);
   if (!status) return 'Account not found.';
   if (isBanned(status)) return 'Your account is suspended.';
+  if (isUnderage(status)) return 'This account has been closed.';
+  if (!status.ageConfirmedAt) return 'Confirm your date of birth before posting.';
   if (isMuted(status)) {
     return `You're muted until ${status.mutedUntil!.toUTCString()} and can't post, comment, react or send messages until then.`;
   }

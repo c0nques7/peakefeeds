@@ -17,11 +17,12 @@ import { createComment } from '@/actions/create-comment';
 import { startConversation, sendMessage } from '@/actions/messaging';
 import { resolveReport } from '@/actions/admin-moderation';
 import { toggleBan } from '@/actions/admin-user-detail';
+import { confirmAge } from '@/actions/confirm-age';
 
 const tag = `pen${Date.now()}`;
 const PASSWORD = 'correct horse';
 type U = { id: string; email: string; role: UserRole; username: string };
-const users = {} as Record<'ok' | 'banned' | 'suspended' | 'muted' | 'mod' | 'admin', U>;
+const users = {} as Record<'ok' | 'banned' | 'suspended' | 'muted' | 'mod' | 'admin' | 'unconfirmed' | 'adult' | 'teen' | 'underage', U>;
 let ticketId: string;
 
 const loginAs = (u: U) =>
@@ -43,10 +44,14 @@ beforeAll(async () => {
     muted: { mutedUntil: new Date(Date.now() + hour) },
     mod: { role: UserRole.MODERATOR },
     admin: { role: UserRole.ADMIN },
+    unconfirmed: { ageConfirmedAt: null },
+    adult: { ageConfirmedAt: null },
+    teen: { ageConfirmedAt: null },
+    underage: { ageConfirmedAt: null, ageRejectedAt: new Date() },
   };
   for (const [name, extra] of Object.entries(setup)) {
     users[name as keyof typeof users] = (await prisma.user.create({
-      data: { email: `${name}-${tag}@example.com`, username: `${name}_${tag}`, passwordHash, ...extra },
+      data: { email: `${name}-${tag}@example.com`, username: `${name}_${tag}`, passwordHash, ageConfirmedAt: new Date(), ...extra },
       select: { id: true, email: true, role: true, username: true },
     })) as U;
   }
@@ -153,5 +158,50 @@ describe('moderation penalties', () => {
     loginAs(users.mod);
     expect(await toggleBan(users.admin.id, true)).toEqual({ success: false, error: 'Only admins can ban staff accounts.' });
     expect((await prisma.user.findUnique({ where: { id: users.admin.id } }))!.isBanned).toBe(false);
+  });
+});
+
+describe('age check', () => {
+  const yearsAgo = (years: number) => {
+    const d = new Date();
+    d.setUTCFullYear(d.getUTCFullYear() - years);
+    return d.toISOString().slice(0, 10);
+  };
+
+  it('refuses login for an account closed by the age check, without telling strangers', async () => {
+    await expect(authorize(users.underage.email)).rejects.toThrow(/^ACCOUNT_UNDERAGE$/);
+    expect(await authorize(users.underage.email, 'wrong')).toBeNull();
+  });
+
+  it('ends sessions of closed accounts and tells the app who still has to confirm', async () => {
+    await expect(jwt(users.underage.id)).rejects.toThrow('ACCOUNT_UNDERAGE');
+    expect(await jwt(users.unconfirmed.id)).toMatchObject({ ageConfirmed: false });
+    expect(await jwt(users.ok.id)).toMatchObject({ ageConfirmed: true });
+  });
+
+  it('blocks posting until the age is confirmed, and for closed accounts', async () => {
+    expect(await getPostingBlockReason(users.unconfirmed.id)).toMatch(/date of birth/);
+    expect(await getPostingBlockReason(users.underage.id)).toMatch(/closed/);
+    expect(await getPostingBlockReason(users.ok.id)).toBeNull();
+  });
+
+  it('confirms an adult and keeps no date of birth', async () => {
+    loginAs(users.adult);
+    expect(await confirmAge('not a date')).toEqual({ error: expect.any(String) });
+    expect(await confirmAge(yearsAgo(30))).toEqual({ ok: true });
+    const row = await prisma.user.findUnique({ where: { id: users.adult.id } });
+    expect(row?.ageConfirmedAt).toBeInstanceOf(Date);
+    expect(row?.ageRejectedAt).toBeNull();
+    expect(await getPostingBlockReason(users.adult.id)).toBeNull();
+  });
+
+  it('closes an under-18 account, and a second answer cannot reopen it', async () => {
+    loginAs(users.teen);
+    expect(await confirmAge(yearsAgo(17))).toEqual({ closed: true });
+    expect(await confirmAge(yearsAgo(30))).toEqual({ closed: true });
+    const row = await prisma.user.findUnique({ where: { id: users.teen.id } });
+    expect(row?.ageRejectedAt).toBeInstanceOf(Date);
+    expect(row?.ageConfirmedAt).toBeNull();
+    await expect(authorize(users.teen.email)).rejects.toThrow(/^ACCOUNT_UNDERAGE$/);
   });
 });

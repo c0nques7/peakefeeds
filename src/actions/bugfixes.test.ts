@@ -28,8 +28,8 @@ const form = (fields: Record<string, string>) => {
 };
 
 beforeAll(async () => {
-  alice = await prisma.user.create({ data: { email: `alice-${tag}@example.com`, username: `alice_${tag}` }, select: { id: true, username: true } }) as U;
-  bob = await prisma.user.create({ data: { email: `bob-${tag}@example.com`, username: `bob_${tag}` }, select: { id: true, username: true } }) as U;
+  alice = await prisma.user.create({ data: { email: `alice-${tag}@example.com`, username: `alice_${tag}`, ageConfirmedAt: new Date() }, select: { id: true, username: true } }) as U;
+  bob = await prisma.user.create({ data: { email: `bob-${tag}@example.com`, username: `bob_${tag}`, ageConfirmedAt: new Date() }, select: { id: true, username: true } }) as U;
 });
 
 afterAll(async () => {

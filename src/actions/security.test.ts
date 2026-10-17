@@ -40,6 +40,7 @@ beforeAll(async () => {
         role,
         passwordHash: 'secret-hash',
         twoFactorSecret: 'secret-2fa',
+        ageConfirmedAt: new Date(),
       },
       select: { id: true, email: true, role: true, username: true },
     }) as U;

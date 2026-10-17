@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import TwoFactorSettings from "@/components/profile/TwoFactorSettings";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SignOutButton } from "@/components/settings/SignOutButton";
+import { DeleteAccountCard } from "@/components/settings/DeleteAccountCard";
+import { getDeletionBlocker } from "@/lib/account-deletion";
+import { prisma } from "@/lib/db";
 import { Card, CardHeader, PageHeader } from "@/components/ui";
 
 export default async function SettingsPage() {
@@ -12,6 +15,11 @@ export default async function SettingsPage() {
   if (!session?.user?.id) {
     redirect("/login");
   }
+
+  const [account, deletionBlocker] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { passwordHash: true } }),
+    getDeletionBlocker(session.user.id),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -42,6 +50,11 @@ export default async function SettingsPage() {
               actions={<SignOutButton />}
             />
           </Card>
+        </section>
+
+        <section aria-labelledby="data-heading">
+          <h2 id="data-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Your data</h2>
+          <DeleteAccountCard hasPassword={!!account?.passwordHash} blocker={deletionBlocker} />
         </section>
       </div>
     </div>

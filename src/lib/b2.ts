@@ -114,3 +114,32 @@ export const getBucketAuthToken = unstable_cache(
   { revalidate: 3500 } // Cache for slightly less than 1 hour
 );
 
+
+/** The file name inside our bucket for a stored media URL (https://<host>/file/<bucket>/<name>), or null for other URLs. */
+export function fileNameFromUrl(url: string | null | undefined): string | null {
+  const bucketName = process.env.B2_BUCKET_NAME;
+  if (!url || !bucketName) return null;
+  try {
+    const { hostname, pathname } = new URL(url);
+    const prefix = `/file/${bucketName}/`;
+    if (!hostname.endsWith('backblazeb2.com') || !pathname.startsWith(prefix)) return null;
+    return decodeURIComponent(pathname.slice(prefix.length)) || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Deletes every stored version of a file by name (we keep URLs, not B2 file IDs). */
+export async function deleteFileByName(fileName: string) {
+  await authorize();
+  const response = await b2.listFileVersions({
+    bucketId: process.env.B2_BUCKET_ID || '',
+    startFileName: fileName,
+    maxFileCount: 100,
+  } as Parameters<typeof b2.listFileVersions>[0]); // the typings wrongly require startFileId
+  const versions = (response.data.files as { fileId: string; fileName: string }[]).filter(f => f.fileName === fileName);
+  for (const version of versions) {
+    await b2.deleteFileVersion({ fileId: version.fileId, fileName: version.fileName });
+  }
+  return versions.length;
+}

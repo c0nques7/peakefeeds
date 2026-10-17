@@ -105,6 +105,11 @@ describe('decideGoogleSignIn', () => {
     await makeUser({ email: `banned-${tag}@example.com`, username: `banned_${tag}`, isBanned: true });
     expect(await google(`banned-${tag}@example.com`)).toBe('/login?error=ACCOUNT_SUSPENDED');
   });
+
+  it('refuses an account closed by the age check', async () => {
+    await makeUser({ email: `minor-${tag}@example.com`, username: `minor_${tag}`, ageRejectedAt: new Date() });
+    expect(await google(`minor-${tag}@example.com`)).toBe('/login?error=ACCOUNT_UNDERAGE');
+  });
 });
 
 describe('claimInviteForNewGoogleUser', () => {

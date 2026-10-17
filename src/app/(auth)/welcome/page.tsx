@@ -9,11 +9,12 @@ export default async function WelcomePage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect('/login');
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true, email: true } });
-  if (user?.username) redirect('/home');
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true, email: true, ageConfirmedAt: true } });
+  if (!user?.ageConfirmedAt) redirect('/confirm-age');
+  if (user.username) redirect('/home');
 
   // Suggest a username from the email address, e.g. jane-doe@gmail.com -> jane_doe
-  const suggestion = (user?.email?.split('@')[0] ?? '').replace(/-/g, '_').replace(/[^a-zA-Z0-9._]/g, '').slice(0, 30);
+  const suggestion = (user.email?.split('@')[0] ?? '').replace(/-/g, '_').replace(/[^a-zA-Z0-9._]/g, '').slice(0, 30);
 
   return (
     <>

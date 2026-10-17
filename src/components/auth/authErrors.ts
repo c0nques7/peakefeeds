@@ -9,6 +9,8 @@ export function describeAuthError(code: string | null): string {
       : 'This account has been suspended.';
   }
   switch (code) {
+    case 'ACCOUNT_UNDERAGE':
+      return 'This account has been closed because it doesn\'t meet our minimum age. If that\'s a mistake, open Help and ask for a person.';
     case 'InviteRequired':
       return "There's no PeakeFeeds account for that Google account yet. Enter an invite code to create one.";
     case 'GoogleEmailUnverified':

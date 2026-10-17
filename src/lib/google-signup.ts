@@ -1,13 +1,13 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
-import { isBanned } from '@/lib/penalties';
+import { isBanned, isUnderage } from '@/lib/penalties';
 import { claimInvite, decodeInviteCookie, findUsableInvite, INVITE_COOKIE } from '@/lib/invites';
 
 // Rules for signing in with Google. PeakeFeeds is invite-only, so Google can sign in existing
 // members (and link to an existing email account), but a new account needs an invite code that
 // the register page put in a signed cookie (see actions/oauth-invite.ts).
 
-const STATUS_SELECT = { id: true, role: true, isBanned: true, bannedUntil: true, mutedUntil: true, walletAddress: true, username: true } as const;
+const STATUS_SELECT = { id: true, role: true, isBanned: true, bannedUntil: true, mutedUntil: true, walletAddress: true, username: true, ageConfirmedAt: true, ageRejectedAt: true } as const;
 
 async function inviteCodeFromCookie(): Promise<string | null> {
   return decodeInviteCookie((await cookies()).get(INVITE_COOKIE)?.value);
@@ -33,6 +33,7 @@ export async function decideGoogleSignIn({ providerAccountId, email, emailVerifi
   const existing = linked?.user ?? await prisma.user.findUnique({ where: { email: email.toLowerCase() }, select: STATUS_SELECT });
 
   if (existing) {
+    if (isUnderage(existing)) return '/login?error=ACCOUNT_UNDERAGE';
     return isBanned(existing) ? '/login?error=ACCOUNT_SUSPENDED' : true;
   }
 

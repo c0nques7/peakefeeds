@@ -61,6 +61,8 @@ export default function LoginPage() {
           setError(until
             ? `This account is suspended until ${new Date(until).toLocaleString()}.`
             : "This account has been banned.");
+        } else if (result.error === "ACCOUNT_UNDERAGE") {
+          setError(describeAuthError(result.error));
         } else if (result.error.toLowerCase().includes("invalid_2fa_code")) {
           setError("Invalid authentication code");
         } else {

@@ -9,7 +9,10 @@ import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
 
-  // New Google sign-ups pick a username before using the app
+  // Every account confirms its age once (lib/age.ts), then new Google sign-ups pick a username
+  if (session?.user && !session.user.ageConfirmed) {
+    redirect("/confirm-age");
+  }
   if (session?.user && !session.user.username) {
     redirect("/welcome");
   }

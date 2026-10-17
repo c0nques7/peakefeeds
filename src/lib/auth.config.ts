@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import * as argon2 from "argon2";
 import { authenticator } from "otplib";
-import { getSessionAccountStatus, isBanned } from "@/lib/penalties";
+import { getSessionAccountStatus, isBanned, isUnderage } from "@/lib/penalties";
 import { claimInviteForNewGoogleUser, decideGoogleSignIn } from "@/lib/google-signup";
 
 // Google sign-in is only offered when its credentials are configured
@@ -42,7 +42,8 @@ export const authOptions: NextAuthOptions = {
             twoFactorSecret: true,
             isBanned: true,
             bannedUntil: true,
-            mutedUntil: true
+            mutedUntil: true,
+            ageRejectedAt: true
           }
         });
 
@@ -51,6 +52,7 @@ export const authOptions: NextAuthOptions = {
         if (!isValid) return null;
 
         // Checked after the password so the error doesn't reveal ban status to strangers
+        if (isUnderage(user)) throw new Error("ACCOUNT_UNDERAGE");
         if (isBanned(user)) {
           throw new Error(user.bannedUntil && !user.isBanned
             ? `ACCOUNT_SUSPENDED:${user.bannedUntil.toISOString()}`
@@ -122,7 +124,9 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const status = await getSessionAccountStatus(token.id as string);
         if (!status || isBanned(status)) throw new Error("ACCOUNT_SUSPENDED");
+        if (isUnderage(status)) throw new Error("ACCOUNT_UNDERAGE");
         token.role = status.role;
+        token.ageConfirmed = !!status.ageConfirmedAt;
         token.walletAddress = status.walletAddress;
         token.username = status.username;
       }
@@ -134,6 +138,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.walletAddress = token.walletAddress;
         session.user.username = token.username;
+        session.user.ageConfirmed = token.ageConfirmed;
       }
       return session;
     }
