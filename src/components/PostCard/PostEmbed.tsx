@@ -95,10 +95,10 @@ const VideoEmbed = ({ url }: { url: string }) => {
 const noopSubscribe = () => () => {};
 const useOrigin = () => useSyncExternalStore(noopSubscribe, () => window.location.origin, () => '');
 
-const YouTubeEmbed = ({ id, url, fallbackData }: { id: string, url: string, fallbackData?: any }) => {
+const YouTubeEmbed = ({ id }: { id: string }) => {
     const origin = useOrigin();
     return (
-        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video group">
+        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video">
             {origin && <iframe
                 src={`https://www.youtube-nocookie.com/embed/${id}?origin=${origin}`}
                 title="YouTube video player"
@@ -107,18 +107,6 @@ const YouTubeEmbed = ({ id, url, fallbackData }: { id: string, url: string, fall
                 allowFullScreen
                 className="absolute inset-0 w-full h-full z-10"
             />}
-            {/* Fallback/Overlay Link (visible if iframe fails or behind it) */}
-            <a 
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none"
-            >
-                <div className="flex items-center gap-2 bg-black/70 px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto">
-                    <ExternalLink size={16} />
-                    <span className="text-xs font-bold">Open in YouTube</span>
-                </div>
-            </a>
         </div>
     );
 };
@@ -147,7 +135,7 @@ export const PostEmbed = ({ url, fallbackData, forcedType }: { url: string, fall
 
     // CASE A.6: YouTube
     if (type === 'youtube' && id) {
-        return <YouTubeEmbed id={id} url={url} fallbackData={fallbackData} />;
+        return <YouTubeEmbed id={id} />;
     }
 
     // CASE B: Rich Media (Delegate to OEmbed Proxy)
