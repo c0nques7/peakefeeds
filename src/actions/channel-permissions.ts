@@ -26,7 +26,7 @@ async function requireChannelMod(channelId: string) {
 
   const channel = await prisma.channel.findUnique({
     where: { id: channelId },
-    select: { creatorId: true }
+    select: { creatorId: true, slug: true }
   });
 
   // Global Admins can also manage permissions
@@ -44,7 +44,7 @@ async function requireChannelMod(channelId: string) {
   }
 
   const isOwner = isGlobalAdmin || isCreator || subscription?.role === ChannelRole.OWNER;
-  return { user: session.user, isOwner, creatorId: channel.creatorId };
+  return { user: session.user, isOwner, creatorId: channel.creatorId, slug: channel.slug };
 }
 
 const STAFF_ROLES: ChannelRole[] = [ChannelRole.MODERATOR, ChannelRole.OWNER];
@@ -136,7 +136,7 @@ export async function updateChannelPermissions({
     details: { action: "UPDATE_PERMISSIONS", role, permissions }
   });
 
-  revalidatePath(`/channels/${channelId}/settings`); // Assuming a settings page
+  revalidatePath(`/channels/${actor.slug}/settings`);
   return { success: true as const, data: updated };
 }
 
@@ -161,6 +161,6 @@ export async function removeChannelUser(channelId: string, userId: string) {
     details: { action: "REMOVE_USER" }
   });
 
-  revalidatePath(`/channels/${channelId}/settings`);
+  revalidatePath(`/channels/${actor.slug}/settings`);
   return { success: true as const };
 }

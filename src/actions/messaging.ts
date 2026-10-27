@@ -8,10 +8,13 @@ import { addMessageAction } from "@/actions/support" // Reuse existing support l
 import { revalidatePath } from "next/cache"
 import { getPostingBlockReason } from "@/lib/penalties"
 import { SupportStatus } from "@prisma/client"
+import { z } from "zod"
+import { findOrCreateDirectConversation } from "@/lib/conversations"
 
 // Only these user fields may leave the server (never passwordHash, twoFactorSecret, email)
 const PUBLIC_PARTICIPANT = { id: true, username: true, name: true, image: true } as const
 const MESSAGE_PAGE_SIZE = 50
+const MessageContentSchema = z.string().trim().min(1, "Message can't be empty.").max(2000, "Messages are limited to 2000 characters.")
 
 // --- TYPES ---
 // A unified type so the UI doesn't know the difference
@@ -146,7 +149,7 @@ export async function getMessages(conversationId: string) {
       where: { id: conversationId },
       include: { 
         messages: { 
-          where: { sender: { not: 'admin' } }, // 🔒 FILTER INTERNAL NOTES
+          where: { isInternal: false }, // 🔒 FILTER INTERNAL NOTES (staff replies stay visible)
           orderBy: { createdAt: 'asc' } 
         },
         directMessages: { 
@@ -168,9 +171,9 @@ export async function getMessages(conversationId: string) {
         senderId: m.sender === 'user' ? session.user.id : 'support-system',
         sender: { 
            id: m.sender === 'user' ? session.user.id : 'support-system',
-           username: m.sender === 'user' ? 'Me' : 'Help Bot', // Admin notes are filtered, so only Bot remains
+           username: m.sender === 'user' ? 'Me' : m.sender === 'admin' ? 'Peake Support' : 'Help Bot',
            image: null,
-           role: 'BOT'
+           role: m.sender === 'admin' ? 'ADMIN' : 'BOT'
         },
         type: 'TICKET_MESSAGE',
         isInternal: false
@@ -250,9 +253,13 @@ export async function getMessages(conversationId: string) {
 }
 
 // 3. SEND MESSAGE (Router)
-export async function sendMessage(id: string, content: string) {
+export async function sendMessage(id: string, rawContent: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { error: "Unauthorized" }
+
+  const parsed = MessageContentSchema.safeParse(rawContent)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  const content = parsed.data
 
   try {
     // A. Try sending to Ticket (using existing support action)
@@ -262,8 +269,9 @@ export async function sendMessage(id: string, content: string) {
     if (ticketCount > 0) {
        // Reuse the logic from actions/support.ts to ensure consistency
        // This handles the timestamp update and sender tagging
-       await addMessageAction(id, content, 'user')
-       revalidatePath(`/messages/${id}`)
+       const res = await addMessageAction(id, content, 'user')
+       if (!res.success) return { error: res.error || "Failed to send message" }
+       revalidatePath('/messages')
        return { success: true }
     }
 
@@ -320,7 +328,7 @@ export async function sendMessage(id: string, content: string) {
       })
     }
 
-    revalidatePath(`/messages/${id}`)
+    revalidatePath('/messages')
     return { success: true, message }
 
   } catch (error) {
@@ -390,29 +398,11 @@ export async function startConversation(recipientId: string) {
     return { error: "You cannot message this user." }
   }
 
-  const existing = await prisma.conversation.findFirst({
-    where: {
-      AND: [
-        { participants: { some: { id: session.user.id } } },
-        { participants: { some: { id: recipientId } } }
-      ]
-    }
-  })
+  if (recipientId === session.user.id) return { error: "You can't message yourself." }
 
-  if (existing) {
-    return { success: true, conversationId: existing.id }
-  }
+  const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: { id: true } })
+  if (!recipient) return { error: "User not found." }
 
-  const newConvo = await prisma.conversation.create({
-    data: {
-      participants: {
-        connect: [
-          { id: session.user.id },
-          { id: recipientId }
-        ]
-      }
-    }
-  })
-
-  return { success: true, conversationId: newConvo.id }
+  const conversation = await findOrCreateDirectConversation(session.user.id, recipientId)
+  return { success: true, conversationId: conversation.id }
 }

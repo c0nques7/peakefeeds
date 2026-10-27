@@ -7,11 +7,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { ReactionType } from '@prisma/client';
 import { createNotification } from "@/lib/notifications"; // 1. Import
-import { getPostingBlockReason } from "@/lib/penalties";
+import { getInteractionBlockReason } from "@/lib/interaction-guard";
 
 const ReactionSchema = z.object({
   postId: z.string(),
-  channelSlug: z.string(), 
   reactionType: z.enum(['LIKE', 'DISLIKE']), 
 });
 
@@ -19,26 +18,25 @@ export async function setReaction(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const blocked = await getPostingBlockReason(session.user.id);
-  if (blocked) return { error: blocked };
-
   const validated = ReactionSchema.safeParse({
     postId: formData.get('postId'),
-    channelSlug: formData.get('channelSlug'),
     reactionType: formData.get('reactionType'), 
   });
 
   if (!validated.success) return { error: "Invalid input" };
 
-  const { postId, channelSlug, reactionType } = validated.data;
+  const { postId, reactionType } = validated.data;
   const userId = session.user.id;
   const newType = reactionType as ReactionType; 
+
+  const blocked = await getInteractionBlockReason({ userId, action: 'react', postId });
+  if (blocked) return { error: blocked };
 
   try {
     // 2. Fetch Post to get Author ID (Needed for notification)
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { authorId: true }
+      select: { authorId: true, channel: { select: { slug: true } } }
     });
 
     if (!post) return { error: "Post not found" };
@@ -95,7 +93,7 @@ export async function setReaction(formData: FormData) {
     }
 
     // 🛑 5. AGGRESSIVE REVALIDATION
-    revalidatePath(`/channels/${channelSlug}`);
+    revalidatePath(`/channels/${post.channel.slug}`);
     revalidatePath('/home');
     revalidatePath('/discover');
     revalidatePath('/my-feed');

@@ -17,7 +17,7 @@ export async function getPendingWaitlist(limit = 100) {
   return await prisma.waitlist.findMany({
     where: { status: "PENDING" },
     orderBy: { joinedAt: "asc" },
-    take: limit,
+    take: Math.min(Math.max(Math.trunc(limit) || 100, 1), 500),
   });
 }
 

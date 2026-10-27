@@ -8,6 +8,7 @@ import { Ticket } from "@/context/SupportContext"
 import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType } from "@prisma/client"
 import { createAdminLog } from "@/lib/admin-logger"
 import { requireStaff } from "@/lib/rbac"
+import { findOrCreateDirectConversation } from "@/lib/conversations"
 
 const isStaffRole = (role?: string | null) => role === UserRole.ADMIN || role === UserRole.MODERATOR
 const TICKET_LIST_LIMIT = 200
@@ -111,8 +112,9 @@ export async function getAllTicketsAction() {
     });
 
     return { success: true, data: mappedTickets };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to load tickets" }
+  } catch (error) {
+    console.error("getAllTicketsAction:", error)
+    return { success: false, error: "Failed to load tickets" }
   }
 }
 
@@ -182,11 +184,36 @@ export async function getTicketAction(ticketId: string) {
 
 // --- 2. MUTATION ACTIONS ---
 
+// Ticket text limits, and creation caps checked against the database (works across instances).
+// Anonymous Help Bot tickets share one site-wide cap since we can't tell visitors apart.
+const TICKET_TEXT_MAX = 2000
+const TICKETS_PER_USER_PER_HOUR = 5
+const ANONYMOUS_TICKETS_PER_HOUR = 30
+const HOUR_MS = 60 * 60 * 1000
+
+function cleanTicketText(text: unknown): string | null {
+  if (typeof text !== 'string') return null
+  const trimmed = text.trim()
+  return trimmed.length > 0 && trimmed.length <= TICKET_TEXT_MAX ? trimmed : null
+}
+
 export async function createTicketAction(initialMsg: string) {
   const session = await getServerSession(authOptions)
   const userId = session?.user?.id || null 
 
+  const text = cleanTicketText(initialMsg)
+  if (!text) return { success: false, error: `Please describe the issue in 1-${TICKET_TEXT_MAX} characters.` }
+
   try {
+    const recent = await prisma.supportTicket.count({
+      where: { userId, createdAt: { gt: new Date(Date.now() - HOUR_MS) } }
+    })
+    if (recent >= (userId ? TICKETS_PER_USER_PER_HOUR : ANONYMOUS_TICKETS_PER_HOUR)) {
+      return { success: false, error: userId
+        ? "You've opened several tickets recently. Please add to an existing one in Messages."
+        : "Support is busy right now. Please sign in or try again later." }
+    }
+
     const ticket = await prisma.supportTicket.create({
       data: {
         status: SupportStatus.OPEN,
@@ -195,7 +222,7 @@ export async function createTicketAction(initialMsg: string) {
         userId: userId,
         messages: {
           create: {
-            text: initialMsg,
+            text,
             sender: 'user',
             isInternal: false
           }
@@ -207,13 +234,17 @@ export async function createTicketAction(initialMsg: string) {
     revalidatePath('/admin/support')
 
     return { success: true, ticketId: ticket.id }
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to create ticket" }
+  } catch (error) {
+    console.error("createTicketAction:", error)
+    return { success: false, error: "Failed to create ticket" }
   }
 }
 
-export async function addMessageAction(ticketId: string, text: string, sender: 'user' | 'admin' | 'bot', isInternal: boolean = false) {
+export async function addMessageAction(ticketId: string, rawText: string, sender: 'user' | 'admin' | 'bot', isInternal: boolean = false) {
   const session = await getServerSession(authOptions);
+
+  const text = cleanTicketText(rawText)
+  if (!text) return { success: false, error: `Messages must be 1-${TICKET_TEXT_MAX} characters.` }
 
   if (sender === 'admin' || sender === 'bot') {
     await requireStaff();
@@ -268,13 +299,13 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
       })
     }
 
-    revalidatePath(`/messages/${ticketId}`)
     revalidatePath('/messages')
     revalidatePath('/admin/support')
 
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("addMessageAction:", error)
+    return { success: false, error: "Failed to send message" }
   }
 }
 
@@ -288,7 +319,8 @@ export async function updateSeverityAction(ticketId: string, severity: number) {
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateSeverityAction:", error)
+    return { success: false, error: "Failed to update severity" }
   }
 }
 
@@ -326,7 +358,8 @@ export async function resolveTicketAction(ticketId: string) {
 
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("resolveTicketAction:", error)
+    return { success: false, error: "Failed to resolve ticket" }
   }
 }
 
@@ -362,7 +395,8 @@ export async function updateTicketStatusAction(ticketId: string, status: Support
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateTicketStatusAction:", error)
+    return { success: false, error: "Failed to update status" }
   }
 }
 
@@ -387,7 +421,8 @@ export async function updateTicketPriorityAction(ticketId: string, priority: Sup
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateTicketPriorityAction:", error)
+    return { success: false, error: "Failed to update priority" }
   }
 }
 
@@ -412,7 +447,8 @@ export async function updateTicketAssigneeAction(ticketId: string, assigneeId: s
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateTicketAssigneeAction:", error)
+    return { success: false, error: "Failed to update assignee" }
   }
 }
 
@@ -437,7 +473,8 @@ export async function updateInternalNotesAction(ticketId: string, internalNotes:
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateInternalNotesAction:", error)
+    return { success: false, error: "Failed to save notes" }
   }
 }
 
@@ -456,25 +493,7 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
     if (!ticket || !ticket.userId) return { success: false, error: "User not found for this ticket" }
     if (!ticket.assigneeId) return { success: false, error: "Ticket must be assigned before messaging" }
 
-    let conversation = await prisma.conversation.findFirst({
-      where: {
-        participants: {
-          every: {
-            id: { in: [session.user.id, ticket.userId] }
-          }
-        }
-      }
-    })
-
-    if (!conversation) {
-      conversation = await prisma.conversation.create({
-        data: {
-          participants: {
-            connect: [{ id: session.user.id }, { id: ticket.userId }]
-          }
-        }
-      })
-    }
+    const conversation = await findOrCreateDirectConversation(session.user.id, ticket.userId)
 
     await prisma.directMessage.create({
       data: {
@@ -507,6 +526,7 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("sendMessageToUserAction:", error)
+    return { success: false, error: "Failed to send message" }
   }
 }

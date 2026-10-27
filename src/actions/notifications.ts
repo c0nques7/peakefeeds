@@ -12,7 +12,7 @@ export async function getNotifications(limit = 20) {
   try {
     const notifications = await prisma.notification.findMany({
       where: { userId: session.user.id },
-      take: limit,
+      take: Math.min(Math.max(Math.trunc(limit) || 20, 1), 50),
       orderBy: { createdAt: 'desc' },
       include: {
         actor: { select: { username: true, image: true } },

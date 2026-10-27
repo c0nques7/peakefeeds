@@ -106,6 +106,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
         })),
 
         // 🟢 PASS MODERATION FLAGS
+        viewerCanEdit: post.viewerCanEdit,
         viewerCanDelete: post.viewerCanDelete,
         viewerChannelRole: post.viewerChannelRole,
         

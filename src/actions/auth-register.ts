@@ -3,19 +3,28 @@
 import { prisma } from "@/lib/db";
 import { hash } from "argon2";
 import { claimInvite, findUsableInvite } from "@/lib/invites";
+import { z } from "zod";
+import { EmailSchema, PasswordSchema, UsernameSchema, firstError } from "@/lib/credentials";
 
 class InviteAlreadyClaimed extends Error {}
 
-export async function registerUser(formData: FormData) {
-  const username = formData.get("username") as string;
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const inviteCode = formData.get("inviteCode") as string;
+const RegisterSchema = z.object({
+  username: UsernameSchema,
+  email: EmailSchema,
+  password: PasswordSchema,
+  inviteCode: z.string().trim().min(1, "All fields are required."),
+});
 
+export async function registerUser(formData: FormData) {
   // 1. Basic Validation
-  if (!email || !password || !username || !inviteCode) {
-    return { error: "All fields are required." };
-  }
+  const parsed = RegisterSchema.safeParse({
+    username: formData.get("username") ?? "",
+    email: formData.get("email") ?? "",
+    password: formData.get("password") ?? "",
+    inviteCode: formData.get("inviteCode") ?? "",
+  });
+  if (!parsed.success) return { error: firstError(parsed.error) };
+  const { username, email: normalizedEmail, password, inviteCode } = parsed.data;
 
   // 2. Validate the invite code (it is claimed atomically below)
   const validInvite = await findUsableInvite(inviteCode);
@@ -23,13 +32,12 @@ export async function registerUser(formData: FormData) {
     return { error: "That invite code isn't valid or has already been used." };
   }
 
-  // 3. Check for existing users
-  const normalizedEmail = email.toLowerCase();
+  // 3. Check for existing users (usernames are unique regardless of case)
   const existingUser = await prisma.user.findFirst({
     where: {
       OR: [
-        { email: normalizedEmail },
-        { username: username }
+        { email: { equals: normalizedEmail, mode: 'insensitive' } },
+        { username: { equals: username, mode: 'insensitive' } }
       ]
     }
   });

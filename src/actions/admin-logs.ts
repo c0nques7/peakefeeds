@@ -18,6 +18,9 @@ export async function getAdminLogs({
   pageSize?: number;
 }) {
   await requireRole(["ADMIN"]);
+  // Client-supplied paging: keep it to sane numbers
+  const size = Math.min(Math.max(Math.trunc(pageSize) || 50, 1), 100);
+  const current = Math.max(Math.trunc(page) || 1, 1);
 
   const where: Prisma.AdminLogWhereInput = {};
 
@@ -50,8 +53,8 @@ export async function getAdminLogs({
       orderBy: {
         createdAt: "desc",
       },
-      take: pageSize,
-      skip: (page - 1) * pageSize,
+      take: size,
+      skip: (current - 1) * size,
     }),
     prisma.adminLog.count({ where }),
   ]);
@@ -59,6 +62,6 @@ export async function getAdminLogs({
   return {
     logs,
     totalCount,
-    totalPages: Math.ceil(totalCount / pageSize),
+    totalPages: Math.ceil(totalCount / size),
   };
 }

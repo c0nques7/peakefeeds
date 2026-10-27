@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, Prisma } from '@prisma/client';
 import { signMediaUrl } from '@/lib/b2';
+import { getPostPermissions } from '@/lib/permissions';
 
 // 1. Define FeedPost Type
 export type FeedPost = {
@@ -57,6 +58,7 @@ export type FeedPost = {
   };
   
   currentUserReaction?: ReactionType | null;
+  viewerCanEdit?: boolean;
   viewerCanDelete?: boolean;
   viewerChannelRole?: string | null;
 };
@@ -101,7 +103,7 @@ export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]>
     }),
     currentUserId ? prisma.user.findUnique({
       where: { id: currentUserId },
-      select: { role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
+      select: { id: true, role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
     }) : null
   ]);
 
@@ -128,7 +130,7 @@ export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
     }),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
+      select: { id: true, role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
     })
   ]);
 
@@ -141,18 +143,13 @@ export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
 
 async function transformPosts(posts: any[], user?: any): Promise<FeedPost[]> {
 
-  const isGlobalAdmin = user?.role === 'ADMIN';
-
   return Promise.all(posts.map(async post => {
 
     const userReaction = post.likes?.[0]?.type || null;
 
-    // Find subscription for this specific post's channel
-    const sub = user?.subscriptions?.find((s: any) => s.channelId === post.channelId);
-    const isCreator = post.channel.creatorId === user?.id;
-
-    const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
-    const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
+    // The viewer's subscription to this post's channel
+    const sub = user?.subscriptions?.find((s: any) => s.channelId === post.channel.id);
+    const perms = getPostPermissions(user, { authorId: post.author.id, isVerified: post.isVerified, channel: post.channel }, sub);
 
     const finalMediaUrl = await signMediaUrl(post.mediaUrl);
 
@@ -220,9 +217,11 @@ async function transformPosts(posts: any[], user?: any): Promise<FeedPost[]> {
 
       currentUserReaction: userReaction as ReactionType | null,
 
-      viewerCanDelete,
+      viewerCanEdit: perms.canEdit,
 
-      viewerChannelRole
+      viewerCanDelete: perms.canDelete,
+
+      viewerChannelRole: perms.channelRole
 
     };
 

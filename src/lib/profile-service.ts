@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, UserRole } from '@prisma/client';
 import { signMediaUrl } from '@/lib/b2';
+import { getPostPermissions } from '@/lib/permissions';
 
 // 1. UPDATED TYPE DEFINITION
 export type ProfileData = {
@@ -67,6 +68,7 @@ export type ProfileData = {
         }[];
 
         currentUserReaction?: ReactionType | null;
+        viewerCanEdit?: boolean;
         viewerCanDelete?: boolean;
         viewerChannelRole?: string | null;
     }[];
@@ -172,8 +174,6 @@ export async function getProfileData(username: string, currentUserId?: string): 
 
     if (!user) return null;
 
-    const isGlobalAdmin = currentUserContext?.role === 'ADMIN';
-
     // TRANSFORM DATA
     const formattedPosts = await Promise.all(user.posts.map(async post => {
         // @ts-ignore 
@@ -181,10 +181,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
 
         // Find subscription for this specific post's channel
         const sub = currentUserContext?.subscriptions?.find((s: any) => s.channelId === post.channel.id);
-        const isCreator = post.channel.creatorId === currentUserContext?.id;
-
-        const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
-        const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
+        const perms = getPostPermissions(currentUserContext, { authorId: user.id, isVerified: post.isVerified, channel: post.channel }, sub);
 
         const finalMediaUrl = await signMediaUrl(post.mediaUrl);
 
@@ -201,8 +198,9 @@ export async function getProfileData(username: string, currentUserId?: string): 
                 dislikes: post.dislikesCount ?? 0
             },
             currentUserReaction: userReaction,
-            viewerCanDelete,
-            viewerChannelRole
+            viewerCanEdit: perms.canEdit,
+            viewerCanDelete: perms.canDelete,
+            viewerChannelRole: perms.channelRole
         };
     }));
 

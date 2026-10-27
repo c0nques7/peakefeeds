@@ -28,8 +28,8 @@ vi.mock('@/lib/metadata', () => ({
   fetchLinkMetadata: vi.fn().mockResolvedValue({ title: null, url: null }),
 }));
 
-vi.mock('@/lib/penalties', () => ({
-  getPostingBlockReason: vi.fn().mockResolvedValue(null),
+vi.mock('@/lib/interaction-guard', () => ({
+  getInteractionBlockReason: vi.fn().mockResolvedValue(null),
 }));
 
 describe('createPost Action', () => {

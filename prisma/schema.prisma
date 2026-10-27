@@ -139,6 +139,9 @@ model User {
   twoFactorEnabled Boolean   @default(false)
   twoFactorSecret  String?
 
+  // Sessions signed in before this are ended (set on password reset)
+  passwordChangedAt DateTime?
+
   // Age check: only the outcome and when it happened are kept, never the date of birth
   ageConfirmedAt   DateTime?
   ageRejectedAt    DateTime?

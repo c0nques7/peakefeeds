@@ -61,8 +61,12 @@ export default function MessagingUI() {
     const tempText = inputText
     setInputText("") // Optimistic clear
 
-    // Optimistic UI Update (Optional, but makes it snappy)
-    await sendMessage(selectedConvoId, tempText)
+    const res = await sendMessage(selectedConvoId, tempText)
+    if (res.error) {
+      setInputText(tempText) // Give the text back so it isn't lost
+      toast.error(res.error)
+      return
+    }
     mutateChat() // Refresh messages
     mutateInbox() // Refresh inbox (to move thread to top)
   }

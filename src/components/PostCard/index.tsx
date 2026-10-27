@@ -126,6 +126,10 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   // Derived State
   const commentTree = useMemo(() => buildCommentTree(localComments), [localComments]);
   const channelSlug = post.channel?.slug || 'home';
+  // Computed on the server by getPostPermissions; callers without it only get the author's own rights
+  const isOwnUnverified = !!currentUserId && currentUserId === post.author.id && !post.isVerified;
+  const canEdit: boolean = post.viewerCanEdit ?? isOwnUnverified;
+  const canDelete: boolean = post.viewerCanDelete ?? (isOwnUnverified || (post.isVerified && isSiteStaff));
 
   // --- HANDLERS ---
   
@@ -134,6 +138,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
         toast.error("This post is locked for review.");
         return;
     }
+    const previous = { reaction, likesCount, dislikesCount };
     if (reaction === type) {
         // Toggle OFF current reaction
         if (type === 'LIKE') {
@@ -166,8 +171,14 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
     const formData = new FormData()
     formData.append('postId', post.id)
     formData.append('reactionType', type)
-    formData.append('channelSlug', channelSlug) 
-    await setReaction(formData)
+    const res = await setReaction(formData)
+    if (res.error) {
+        // The server refused (muted, locked, ...): undo the optimistic update
+        setReactionState(previous.reaction)
+        setLikesCount(previous.likesCount)
+        setDislikesCount(previous.dislikesCount)
+        toast.error(res.error)
+    }
   }
 
   // 1. CREATE Handler
@@ -379,24 +390,22 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                 </button>
                 {showMenu && !isDemo && (
                      <div className="absolute right-0 top-8 w-40 bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
-                        {!post.isVerified && (currentUserId === post.author.id || currentUserId === post.channel?.creatorId || post.viewerCanDelete) && (
-                            <>
-                                {(currentUserId === post.author.id || currentUserId === post.channel?.creatorId || (post.viewerChannelRole === 'MODERATOR' || post.viewerChannelRole === 'OWNER' || post.viewerChannelRole === 'ADMIN')) && (
-                                    <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-[var(--accent-primary)]/10 text-[var(--text-primary)] flex items-center gap-2 border-b border-[var(--glass-border)]">
-                                        <Edit2 size={12} /> Edit Post
-                                    </button>
-                                )}
-                                <button onClick={() => handleDeletePost()} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-[var(--glass-border)]">
-                                    <Trash2 size={12} /> Delete Post
-                                </button>
-                            </>
+                        {canEdit && (
+                            <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-[var(--accent-primary)]/10 text-[var(--text-primary)] flex items-center gap-2 border-b border-[var(--glass-border)]">
+                                <Edit2 size={12} /> Edit Post
+                            </button>
+                        )}
+                        {!post.isVerified && canDelete && (
+                            <button onClick={() => handleDeletePost()} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-[var(--glass-border)]">
+                                <Trash2 size={12} /> Delete Post
+                            </button>
                         )}
                         {post.isVerified && (
                             <div className="px-4 py-2 text-[10px] text-[var(--text-muted)] italic border-b border-[var(--glass-border)] bg-amber-500/5">
                                 Verified content cannot be edited or deleted.
                             </div>
                         )}
-                        {post.isVerified && isSiteStaff && (
+                        {post.isVerified && canDelete && (
                             <button onClick={() => { handleDeletePost(); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-[var(--glass-border)]">
                                 <Trash2 size={12} /> Remove (staff)
                             </button>

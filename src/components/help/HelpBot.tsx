@@ -87,13 +87,13 @@ export default function HelpBot() {
 
     // SCENARIO A: Creating the ticket (User confirmed "Yes I need a human")
     if (isTicketMode) {
-      const newTicketId = await createTicket(userText)
+      const { ticketId: newTicketId, error } = await createTicket(userText)
       
       if (newTicketId) {
         setActiveTicketId(newTicketId) // 🟢 Triggers SWR and "Active" State
         setIsTicketMode(false) 
       } else {
-        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: "❌ Error. Please try again later." }])
+        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: `❌ ${error || "Error. Please try again later."}` }])
       }
     
     } else {

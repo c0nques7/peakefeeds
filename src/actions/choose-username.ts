@@ -4,19 +4,17 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
 import { prisma } from '@/lib/db';
 import { clearAccountStatusCache } from '@/lib/penalties';
+import { UsernameSchema, firstError } from '@/lib/credentials';
 
-// Same characters existing usernames use: letters, numbers, dots and underscores
-const USERNAME_PATTERN = /^[a-zA-Z0-9._]{3,30}$/;
 
 /** Sets the username for an account that doesn't have one yet (new Google sign-ups). */
 export async function chooseUsername(username: string): Promise<{ ok: true } | { error: string }> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: 'Log in first.' };
 
-  const name = username.trim();
-  if (!USERNAME_PATTERN.test(name)) {
-    return { error: 'Use 3 to 30 letters, numbers, dots or underscores.' };
-  }
+  const parsed = UsernameSchema.safeParse(username);
+  if (!parsed.success) return { error: firstError(parsed.error) };
+  const name = parsed.data;
 
   const taken = await prisma.user.findFirst({
     where: { username: { equals: name, mode: 'insensitive' }, NOT: { id: session.user.id } },

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { signMediaUrl } from "@/lib/b2";
+import { getPostPermissions } from "@/lib/permissions";
+import { UserRole } from "@prisma/client";
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm"; 
 import { SubscribeButton } from "@/components/SubscribeButton";
@@ -126,6 +128,7 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
   // 2. Transform Data (Fix Dates & Nulls)
   const viewerSubscription = channel.subscribers[0];
   const isCreator = channel.creatorId === currentUserId;
+  const viewer = session?.user?.id ? { id: session.user.id, role: session.user.role as UserRole } : null;
   const isSubscribedInitial = channel.subscribers.length > 0;
   
   const hasMore = channel.posts.length > show;
@@ -134,6 +137,7 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
       const userReaction = post.likes?.[0]?.type || null;
 
       const finalMediaUrl = await signMediaUrl(post.mediaUrl);
+      const perms = getPostPermissions(viewer, { authorId: post.author.id, isVerified: post.isVerified, channel }, viewerSubscription);
       
       return {
           ...post,
@@ -144,8 +148,9 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
           contentHash: post.contentHash ?? null,
           
           // 🟢 ADDED: Viewer context for permissions
-          viewerChannelRole: isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (viewerSubscription?.role || null)),
-          viewerCanDelete: isGlobalAdmin || isCreator || viewerSubscription?.canDeletePosts || false,
+          viewerChannelRole: perms.channelRole,
+          viewerCanEdit: perms.canEdit,
+          viewerCanDelete: perms.canDelete,
           
           author: {
              ...post.author,

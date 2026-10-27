@@ -32,6 +32,10 @@ export async function verifyAndEnableTwoFactor(userId: string, token: string, se
     const isValid = authenticator.verify({ token, secret });
     if (!isValid) return { success: false, error: "Invalid token" };
 
+    // Replacing an active secret would let a hijacked session take over 2FA; turn it off first
+    const current = await prisma.user.findUnique({ where: { id: userId }, select: { twoFactorEnabled: true } });
+    if (current?.twoFactorEnabled) return { success: false, error: "Two-factor authentication is already on." };
+
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -47,10 +51,21 @@ export async function verifyAndEnableTwoFactor(userId: string, token: string, se
   }
 }
 
-export async function disableTwoFactor(userId: string) {
+/** Turning 2FA off needs a current code, so a stolen session alone can't remove it. */
+export async function disableTwoFactor(userId: string, token: string) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.id !== userId) {
     throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { twoFactorEnabled: true, twoFactorSecret: true },
+  });
+  if (!user?.twoFactorEnabled || !user.twoFactorSecret) return { success: true };
+
+  if (!token || !authenticator.verify({ token, secret: user.twoFactorSecret })) {
+    return { success: false, error: "Enter the current 6-digit code from your authenticator app." };
   }
 
   await prisma.user.update({

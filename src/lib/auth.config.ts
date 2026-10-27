@@ -113,6 +113,7 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
+        token.signedInAt = Date.now();
         token.id = user.id;
         token.role = user.role;
         token.walletAddress = user.walletAddress;
@@ -125,6 +126,12 @@ export const authOptions: NextAuthOptions = {
         const status = await getSessionAccountStatus(token.id as string);
         if (!status || isBanned(status)) throw new Error("ACCOUNT_SUSPENDED");
         if (isUnderage(status)) throw new Error("ACCOUNT_UNDERAGE");
+        // A password reset ends sessions that signed in before it. Tokens from before signedInAt
+        // existed fall back to their issue time (iat, in seconds).
+        const signedInAt = token.signedInAt ?? ((token.iat as number | undefined) ?? 0) * 1000;
+        if (status.passwordChangedAt && status.passwordChangedAt.getTime() > signedInAt) {
+          throw new Error("SESSION_EXPIRED");
+        }
         token.role = status.role;
         token.ageConfirmed = !!status.ageConfirmedAt;
         token.walletAddress = status.walletAddress;

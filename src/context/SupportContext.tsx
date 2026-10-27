@@ -57,7 +57,7 @@ export type Ticket = {
 // ⚠️ Note: 'tickets' and 'isLoading' are removed. 
 // Components will fetch their own data via SWR.
 interface SupportContextType {
-  createTicket: (initialMsg: string) => Promise<string | null>;
+  createTicket: (initialMsg: string) => Promise<{ ticketId: string | null; error?: string }>;
   addMessageToTicket: (ticketId: string, msg: ChatMessage, isInternal?: boolean) => Promise<{success: boolean, error?: any}>;
   resolveTicket: (ticketId: string) => Promise<void>;
   setTicketSeverity: (ticketId: string, level: number) => Promise<void>;
@@ -78,7 +78,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
 
   const createTicket = async (initialMsg: string) => {
     const res = await createTicketAction(initialMsg)
-    return res.success && res.ticketId ? res.ticketId : null
+    return res.success && res.ticketId ? { ticketId: res.ticketId } : { ticketId: null, error: res.error }
   }
 
   const addMessageToTicket = async (ticketId: string, msg: ChatMessage, isInternal: boolean = false) => {

@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateContentHash, recoverSignerAddress } from "@/lib/verification"; 
 import { fetchLinkMetadata } from "@/lib/metadata"; 
-import { getPostingBlockReason } from "@/lib/penalties";
+import { getInteractionBlockReason } from "@/lib/interaction-guard";
 import { fileNameFromUrl } from "@/lib/b2";
 
 // 1. UPDATE SCHEMA
@@ -48,9 +48,6 @@ export async function createPost(
     return { message: "You must be signed in to post." };
   }
 
-  const blocked = await getPostingBlockReason(session.user.id);
-  if (blocked) return { message: blocked };
-
   // 2. PARSE DATA
   // Helper to convert empty strings to null
   const getString = (key: string) => {
@@ -78,6 +75,9 @@ export async function createPost(
   }
 
   const { content, channelId, verificationMethod, contentHash, salt, signature, mediaUrl, mediaType } = validatedFields.data;
+
+  const blocked = await getInteractionBlockReason({ userId: session.user.id, action: 'post', channelId });
+  if (blocked) return { message: blocked };
 
   // Case: SKIP (Unverified)
   if (verificationMethod === 'SKIP') {

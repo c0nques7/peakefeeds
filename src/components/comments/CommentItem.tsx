@@ -276,7 +276,6 @@ export function CommentItem({
     const formData = new FormData();
     formData.append('content', editText);
     formData.append('commentId', comment.id);
-    formData.append('channelSlug', channelSlug);
 
     const res = await updateComment(formData);
 
@@ -298,7 +297,7 @@ export function CommentItem({
         return;
     }
     setIsSubmitting(true);
-    const res = await deleteComment(comment.id, channelSlug);
+    const res = await deleteComment(comment.id);
     
     if (res?.success) {
         // 🟢 Update Parent State
