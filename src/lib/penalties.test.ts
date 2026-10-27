@@ -159,6 +159,24 @@ describe('moderation penalties', () => {
     expect(await toggleBan(users.admin.id, true)).toEqual({ success: false, error: 'Only admins can ban staff accounts.' });
     expect((await prisma.user.findUnique({ where: { id: users.admin.id } }))!.isBanned).toBe(false);
   });
+
+  it("moderators can't penalize staff through a report", async () => {
+    loginAs(users.mod);
+    const reportId = await reportAgainst(users.admin);
+    expect(await resolveReport({ reportId, verdict: 'PENALIZE', penaltyType: 'PERMANENT_BAN' }))
+      .toEqual({ success: false, error: 'Only admins can penalize staff accounts.' });
+    expect((await prisma.user.findUnique({ where: { id: users.admin.id } }))!.isBanned).toBe(false);
+    expect((await prisma.report.findUnique({ where: { id: reportId } }))!.status).toBe('PENDING');
+  });
+
+  it('a report can only be resolved once', async () => {
+    loginAs(users.mod);
+    const reportId = await reportAgainst(users.ok);
+    expect(await resolveReport({ reportId, verdict: 'PENALIZE', penaltyType: 'WARNING' })).toEqual({ success: true });
+    expect(await resolveReport({ reportId, verdict: 'PENALIZE', penaltyType: 'WARNING' }))
+      .toEqual({ success: false, error: 'This report has already been handled.' });
+    expect(await prisma.penalty.count({ where: { reportId } })).toBe(1);
+  });
 });
 
 describe('age check', () => {

@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import B2 from 'backblaze-b2';
-import { uploadFile, deleteFile } from '@/lib/b2';
+import { uploadFile, deleteFile, signMediaUrl, fileNameFromUrl } from '@/lib/b2';
+
+const { getDownloadAuthorization } = vi.hoisted(() => ({ getDownloadAuthorization: vi.fn() }));
+vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 
 // Mock B2
 vi.mock('backblaze-b2', () => {
@@ -19,6 +22,7 @@ vi.mock('backblaze-b2', () => {
           fileName: 'mock-file-name',
         },
       }),
+      getDownloadAuthorization,
       deleteFileVersion: vi.fn().mockResolvedValue({
         data: {
           fileId: 'mock-file-id',
@@ -52,5 +56,34 @@ describe('B2 Utility', () => {
     
     expect(result.fileId).toBe('mock-file-id');
     expect(result.fileName).toBe('mock-file-name');
+  });
+
+  describe('signMediaUrl', () => {
+    beforeEach(() => {
+      process.env.B2_BUCKET_NAME = 'test-bucket';
+      process.env.B2_ENDPOINT = 's3.us-east-005.backblazeb2.com';
+      getDownloadAuthorization.mockResolvedValue({ data: { authorizationToken: 'file-token' } });
+    });
+
+    it('signs our own files with a token scoped to that file', async () => {
+      const signed = await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/abc.jpg');
+      expect(signed).toBe('https://f005.backblazeb2.com/file/test-bucket/abc.jpg?Authorization=file-token');
+      expect(getDownloadAuthorization).toHaveBeenCalledWith(expect.objectContaining({ fileNamePrefix: 'abc.jpg' }));
+    });
+
+    it.each([
+      'https://evil.example/?backblazeb2.com',
+      'https://evil.example/file/test-bucket/abc.jpg',
+      'https://evilbackblazeb2.com/file/test-bucket/abc.jpg',
+      'https://f005.backblazeb2.com/file/other-bucket/abc.jpg',
+    ])('never attaches a token to %s', async url => {
+      expect(await signMediaUrl(url)).toBe(url);
+      expect(getDownloadAuthorization).not.toHaveBeenCalled();
+    });
+
+    it('passes through empty values', async () => {
+      expect(await signMediaUrl(null)).toBeNull();
+      expect(fileNameFromUrl(undefined)).toBeNull();
+    });
   });
 });

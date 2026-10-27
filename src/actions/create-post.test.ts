@@ -21,6 +21,7 @@ vi.mock('next-auth', () => ({
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
+  unstable_cache: (fn: unknown) => fn,
 }));
 
 vi.mock('@/lib/metadata', () => ({
@@ -70,5 +71,47 @@ describe('createPost Action', () => {
 
     expect(state.success).toBe(true);
     expect(prisma.post.create).toHaveBeenCalled();
+  });
+
+  describe('mediaUrl', () => {
+    const post = (extra: Record<string, string>) => {
+      const formData = new FormData();
+      formData.append('content', 'hello');
+      formData.append('channelId', 'channel-1');
+      formData.append('verificationMethod', 'SKIP');
+      for (const [k, v] of Object.entries(extra)) formData.append(k, v);
+      return createPost({}, formData);
+    };
+
+    beforeEach(() => {
+      process.env.B2_BUCKET_NAME = 'test-bucket';
+      vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1' } } as never);
+      vi.mocked(prisma.channel.findUnique).mockResolvedValue({ slug: 'test' } as never);
+    });
+
+    it('rejects media that is not in our bucket', async () => {
+      const state = await post({ mediaUrl: 'https://evil.example/?backblazeb2.com', mediaType: 'IMAGE' });
+      expect(state.success).toBeFalsy();
+      expect(prisma.post.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts files uploaded to our bucket', async () => {
+      const mediaUrl = 'https://f005.backblazeb2.com/file/test-bucket/abc.png';
+      const state = await post({ mediaUrl, mediaType: 'IMAGE' });
+      expect(state.success).toBe(true);
+      expect(prisma.post.create).toHaveBeenCalledWith({ data: expect.objectContaining({ mediaUrl }) });
+    });
+  });
+
+  it('rejects the unverified AD (sponsored) method', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1', walletAddress: '0xabc' } } as never);
+    const formData = new FormData();
+    formData.append('content', 'hello');
+    formData.append('channelId', 'channel-1');
+    formData.append('verificationMethod', 'AD');
+    formData.append('adProofToken', 'anything-long-enough');
+    const state = await createPost({}, formData);
+    expect(state.success).toBeFalsy();
+    expect(prisma.post.create).not.toHaveBeenCalled();
   });
 });

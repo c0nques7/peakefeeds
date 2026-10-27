@@ -37,8 +37,9 @@ export async function markAsRead(id: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return
 
-  await prisma.notification.update({
-    where: { id },
+  // Scoped to the caller so nobody can mark someone else's notifications
+  await prisma.notification.updateMany({
+    where: { id, userId: session.user.id },
     data: { isRead: true }
   })
 }

@@ -79,7 +79,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
           toast.success("Permissions updated.");
           setPermissions(prev => prev.map(p => p.userId === userId ? { ...p, ...updates, ...newData.permissions } : p));
         } else {
-          toast.error("Failed to update.");
+          toast.error(res.error || "Failed to update.");
         }
       } catch (error) {
         toast.error("An error occurred.");
@@ -97,7 +97,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
           toast.success("User removed.");
           setPermissions(prev => prev.filter(p => p.userId !== userId));
         } else {
-          toast.error("Failed to remove user.");
+          toast.error(res.error || "Failed to remove user.");
         }
       } catch (error) {
         toast.error("An error occurred.");

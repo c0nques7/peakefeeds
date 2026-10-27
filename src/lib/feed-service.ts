@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, Prisma } from '@prisma/client';
-import { getBucketAuthToken } from '@/lib/b2'; // 🟢 Added Import
+import { signMediaUrl } from '@/lib/b2';
 
 // 1. Define FeedPost Type
 export type FeedPost = {
@@ -88,10 +88,6 @@ const feedSelect = {
 
 export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]> {
 
-  // Fetch Token
-  let bucketAuthToken = '';
-  try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
-
   const [posts, user] = await Promise.all([
     prisma.post.findMany({
       take: 20,
@@ -109,7 +105,7 @@ export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]>
     }) : null
   ]);
 
-  return transformPosts(posts, user, bucketAuthToken);
+  return transformPosts(posts, user);
 }
 
 
@@ -117,10 +113,6 @@ export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]>
 // 4. Personal Feed
 
 export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
-
-  // Fetch Token
-  let bucketAuthToken = '';
-  try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
 
   const [posts, user] = await Promise.all([
     prisma.post.findMany({
@@ -140,18 +132,18 @@ export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
     })
   ]);
 
-  return transformPosts(posts, user, bucketAuthToken);
+  return transformPosts(posts, user);
 }
 
 
 
 // --- HELPER: Transform & Serialize ---
 
-function transformPosts(posts: any[], user?: any, bucketAuthToken?: string): FeedPost[] {
+async function transformPosts(posts: any[], user?: any): Promise<FeedPost[]> {
 
   const isGlobalAdmin = user?.role === 'ADMIN';
 
-  return posts.map(post => {
+  return Promise.all(posts.map(async post => {
 
     const userReaction = post.likes?.[0]?.type || null;
 
@@ -162,14 +154,7 @@ function transformPosts(posts: any[], user?: any, bucketAuthToken?: string): Fee
     const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
     const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
 
-    // 🟢 FIX: Handle Private B2 Bucket URLs
-    let finalMediaUrl = post.mediaUrl ?? null;
-    if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
-        if (finalMediaUrl.includes('s3.us-east-005')) {
-            finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
-        }
-        finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
-    }
+    const finalMediaUrl = await signMediaUrl(post.mediaUrl);
 
     return {
       id: post.id,
@@ -241,6 +226,6 @@ function transformPosts(posts: any[], user?: any, bucketAuthToken?: string): Fee
 
     };
 
-  });
+  }));
 
 }

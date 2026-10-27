@@ -11,7 +11,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/rbac";
-import { ReportStatus, PenaltyType, AdminLogType } from "@prisma/client";
+import { ReportStatus, PenaltyType, AdminLogType, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { createAdminLog } from "@/lib/admin-logger";
 import { TIMEOUT_MS, SUSPENSION_MS, clearAccountStatusCache } from "@/lib/penalties";
@@ -97,21 +97,42 @@ export async function resolveReport({
 }) {
   const session = await requireStaff();
 
-  return await prisma.$transaction(async (tx) => {
-    // 1. Fetch report to identify the target
-    const report = await tx.report.findUnique({
-      where: { id: reportId },
-      include: { post: true, message: true, comment: true, channel: true }
+  // 1. Fetch report to identify the target
+  const report = await prisma.report.findUnique({
+    where: { id: reportId },
+    include: { post: true, message: true, comment: true, channel: true }
+  });
+
+  if (!report) return { success: false, error: "Report not found." };
+  if (report.status !== "PENDING") return { success: false, error: "This report has already been handled." };
+
+  // Determine who is being punished (Post Author OR Profile User OR Message Sender OR Comment Author OR Channel Creator)
+  const offenderId = report.reportedProfileId || report.post?.authorId || report.message?.senderId || report.comment?.authorId || report.channel?.creatorId;
+
+  if (verdict === "PENALIZE") {
+    if (!offenderId) return { success: false, error: "Target user not found." };
+
+    // Moderators can't penalize staff accounts
+    if (session.user.role !== UserRole.ADMIN) {
+      const target = await prisma.user.findUnique({ where: { id: offenderId }, select: { role: true } });
+      if (target && (target.role === UserRole.ADMIN || target.role === UserRole.MODERATOR)) {
+        return { success: false, error: "Only admins can penalize staff accounts." };
+      }
+    }
+  }
+
+  const claimed = await prisma.$transaction(async (tx) => {
+    // 2. Claim the report: only one verdict can ever apply to it
+    const claim = await tx.report.updateMany({
+      where: { id: reportId, status: "PENDING" },
+      data: {
+        status: verdict === "DISMISS" ? "DISMISSED" : "RESOLVED",
+        resolverId: session.user.id,
+      },
     });
+    if (claim.count === 0) return false;
 
-    if (!report) throw new Error("Report not found");
-
-    // Determine who is being punished (Post Author OR Profile User OR Message Sender OR Comment Author OR Channel Creator)
-    const offenderId = report.reportedProfileId || report.post?.authorId || report.message?.senderId || report.comment?.authorId || report.channel?.creatorId;
-
-    if (verdict === "PENALIZE") {
-      if (!offenderId) throw new Error("Target user not found.");
-
+    if (verdict === "PENALIZE" && offenderId) {
       // A. Create the Penalty Record (Audit Log)
       await tx.penalty.create({
         data: {
@@ -144,8 +165,7 @@ export async function resolveReport({
             data: { strikeCount: { increment: 1 }, bannedUntil: new Date(Date.now() + SUSPENSION_MS) }
         });
       }
-      clearAccountStatusCache(offenderId);
-      
+
       // C. If Content Removal is part of penalty, delete the content
       if (penaltyType === "CONTENT_REMOVAL") {
         if (report.postId) {
@@ -159,26 +179,23 @@ export async function resolveReport({
         }
       }
     }
-
-    // 2. Mark Report as Resolved
-    await tx.report.update({
-      where: { id: reportId },
-      data: {
-        status: verdict === "DISMISS" ? "DISMISSED" : "RESOLVED",
-        resolverId: session.user.id,
-      },
-    });
-
-    await createAdminLog({
-      adminId: session.user.id,
-      eventType: AdminLogType.REPORT_RESOLVE,
-      targetResource: `Report:${reportId}`,
-      details: { verdict, penaltyType, notes }
-    });
-
-    revalidatePath("/admin/moderation");
-    return { success: true };
+    return true;
   });
+
+  if (!claimed) return { success: false, error: "This report has already been handled." };
+
+  // Only after commit, so a rolled-back verdict can't leave a stale cached status
+  if (verdict === "PENALIZE" && offenderId) clearAccountStatusCache(offenderId);
+
+  await createAdminLog({
+    adminId: session.user.id,
+    eventType: AdminLogType.REPORT_RESOLVE,
+    targetResource: `Report:${reportId}`,
+    details: { verdict, penaltyType, notes }
+  });
+
+  revalidatePath("/admin/moderation");
+  return { success: true };
 }
 
 /**

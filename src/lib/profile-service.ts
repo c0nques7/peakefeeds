@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, UserRole } from '@prisma/client';
-import { getBucketAuthToken } from '@/lib/b2';
+import { signMediaUrl } from '@/lib/b2';
 
 // 1. UPDATED TYPE DEFINITION
 export type ProfileData = {
@@ -88,9 +88,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
         return null;
     }
 
-    // 1. Fetch Token & Current User Context
-    let bucketAuthToken = '';
-    try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
+    // 1. Fetch Current User Context
 
     const [user, currentUserContext] = await Promise.all([
         prisma.user.findFirst({
@@ -177,7 +175,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
     const isGlobalAdmin = currentUserContext?.role === 'ADMIN';
 
     // TRANSFORM DATA
-    const formattedPosts = user.posts.map(post => {
+    const formattedPosts = await Promise.all(user.posts.map(async post => {
         // @ts-ignore 
         const userReaction = post.likes?.[0]?.type || null;
 
@@ -188,14 +186,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
         const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
         const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
 
-        // 🟢 FIX: Handle Private B2 Bucket URLs
-        let finalMediaUrl = post.mediaUrl ?? null;
-        if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
-            if (finalMediaUrl.includes('s3.us-east-005')) {
-                finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
-            }
-            finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
-        }
+        const finalMediaUrl = await signMediaUrl(post.mediaUrl);
 
         return {
             ...post,
@@ -213,7 +204,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
             viewerCanDelete,
             viewerChannelRole
         };
-    });
+    }));
 
     // @ts-ignore 
     return { ...user, posts: formattedPosts };

@@ -43,6 +43,8 @@ export async function uploadFile(
       uploadAuthToken: uploadUrlData.authorizationToken,
       fileName: fileName,
       data: data,
+      // Without an explicit type B2 guesses from the extension
+      mime: contentType,
     });
     
     return response.data;
@@ -96,24 +98,27 @@ export async function getAuthorizedDownloadUrl(fileName: string, validDurationIn
   return `${baseUrl}?Authorization=${authToken}`;
 }
 
-/**
- * 🟢 NEW: Get a bucket-wide auth token for efficient signing of multiple images
- * Cached for 58 minutes to avoid spamming B2 API on every request
- */
-export const getBucketAuthToken = unstable_cache(
-  async (validDurationInSeconds = 3600) => {
-    await authorize();
-    const response = await b2.getDownloadAuthorization({
-      bucketId: process.env.B2_BUCKET_ID || '',
-      fileNamePrefix: "", // Empty prefix = access to all files in bucket
-      validDurationInSeconds,
-    });
-    return response.data.authorizationToken;
-  },
-  ['b2-bucket-auth-token'],
-  { revalidate: 3500 } // Cache for slightly less than 1 hour
+// One signed URL per file, reused for most of its hour of validity
+const getCachedFileUrl = unstable_cache(
+  async (fileName: string) => getAuthorizedDownloadUrl(fileName),
+  ['b2-signed-file-url'],
+  { revalidate: 3000 }
 );
 
+/**
+ * A viewable URL for stored media: files in our (private) bucket get a download token scoped to
+ * that one file; anything else is returned unchanged and never carries a token.
+ */
+export async function signMediaUrl(url: string | null | undefined): Promise<string | null> {
+  const fileName = fileNameFromUrl(url);
+  if (!fileName) return url ?? null;
+  try {
+    return await getCachedFileUrl(fileName);
+  } catch (e) {
+    console.error('Failed to sign B2 media URL', e);
+    return url ?? null;
+  }
+}
 
 /** The file name inside our bucket for a stored media URL (https://<host>/file/<bucket>/<name>), or null for other URLs. */
 export function fileNameFromUrl(url: string | null | undefined): string | null {
@@ -122,7 +127,7 @@ export function fileNameFromUrl(url: string | null | undefined): string | null {
   try {
     const { hostname, pathname } = new URL(url);
     const prefix = `/file/${bucketName}/`;
-    if (!hostname.endsWith('backblazeb2.com') || !pathname.startsWith(prefix)) return null;
+    if (!hostname.endsWith('.backblazeb2.com') || !pathname.startsWith(prefix)) return null;
     return decodeURIComponent(pathname.slice(prefix.length)) || null;
   } catch {
     return null;

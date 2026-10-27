@@ -8,17 +8,19 @@ import { revalidatePath } from 'next/cache';
 import { generateContentHash, recoverSignerAddress } from "@/lib/verification"; 
 import { fetchLinkMetadata } from "@/lib/metadata"; 
 import { getPostingBlockReason } from "@/lib/penalties";
+import { fileNameFromUrl } from "@/lib/b2";
 
 // 1. UPDATE SCHEMA
 const FinalPostSchema = z.object({
   content: z.string().min(1).max(2000),
   channelId: z.string(),
-  verificationMethod: z.enum(['WALLET', 'AD', 'SKIP']), 
+  // 'AD' (sponsored) is off until ad proofs can be verified server-side
+  verificationMethod: z.enum(['WALLET', 'SKIP']), 
   contentHash: z.string().nullable().optional(),
   salt: z.string().nullable().optional(),
   signature: z.string().nullable().optional(),
-  adProofToken: z.string().nullable().optional(),
-  mediaUrl: z.string().nullable().optional(),
+  // Only files uploaded to our bucket; link previews live in the link* fields
+  mediaUrl: z.string().refine(url => fileNameFromUrl(url) !== null, 'Media must be an uploaded file.').nullable().optional(),
   mediaType: z.enum(['IMAGE', 'VIDEO']).nullable().optional(),
 });
 
@@ -63,7 +65,6 @@ export async function createPost(
     contentHash: getString('contentHash'),
     salt: getString('salt'),
     signature: getString('signature'),
-    adProofToken: getString('adProofToken'),
     mediaUrl: getString('mediaUrl'),
     mediaType: getString('mediaType'),
   });
@@ -76,14 +77,14 @@ export async function createPost(
     };
   }
 
-  const { content, channelId, verificationMethod, contentHash, salt, signature, adProofToken, mediaUrl, mediaType } = validatedFields.data;
+  const { content, channelId, verificationMethod, contentHash, salt, signature, mediaUrl, mediaType } = validatedFields.data;
 
   // Case: SKIP (Unverified)
   if (verificationMethod === 'SKIP') {
       return await savePost({ content, channelId, authorId: session.user.id, mediaUrl, mediaType });
   }
 
-  // Case: WALLET/AD - Verification Logic
+  // Case: WALLET - Verification Logic
   if (!contentHash || !salt || !signature) {
       return { message: "Verification failed: Missing cryptographic data." };
   }
@@ -123,24 +124,6 @@ export async function createPost(
       return { message: "Verification failed: Signature wallet does not match profile wallet." };
   }
 
-  // 🆕 D. AD PROOF CHECK (The Paywall Guard)
-  if (verificationMethod === 'AD') {
-      if (!adProofToken) {
-          console.warn("⚠️ Ad exploit attempt: Method is AD but no token provided.");
-          return { message: "Ad verification failed: Missing proof of view." };
-      }
-
-      // Basic Validation Logic
-      const isDevToken = process.env.NODE_ENV === 'development' && adProofToken.startsWith('DEV_PROOF_');
-      const isProdToken = adProofToken.length > 5; // Simple length check for now
-
-      if (!isDevToken && !isProdToken) {
-          return { message: "Ad verification failed: Invalid proof token." };
-      }
-      
-      console.log(`✅ Ad Token Verified: ${adProofToken.slice(0, 15)}...`);
-  }
-
   console.log("✅ All Verification Passed. Saving to DB...", { 
       contentLength: content.length, 
       channelId, 
@@ -157,7 +140,7 @@ export async function createPost(
     contentHash,
     salt,
     signature,
-    verificationSource: verificationMethod === 'AD' ? 'HYPELAB' : 'WALLET',
+    verificationSource: 'WALLET',
     mediaUrl,
     mediaType
   });
@@ -206,7 +189,7 @@ async function savePost(data: PostData): Promise<CreatePostState> {
                 
                 // 2. SAVE DYNAMIC TYPE & METADATA
                 type: postType,
-                mediaUrl: data.mediaUrl || metadata.url,
+                mediaUrl: data.mediaUrl,
                 linkTitle: metadata.title,
                 linkDescription: metadata.description,
                 linkImage: metadata.image,
