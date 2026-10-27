@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth.config"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { Ticket } from "@/context/SupportContext"
-import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType } from "@prisma/client"
+import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType, Prisma } from "@prisma/client"
 import { createAdminLog } from "@/lib/admin-logger"
 import { requireStaff } from "@/lib/rbac"
 import { findOrCreateDirectConversation } from "@/lib/conversations"
@@ -15,106 +15,127 @@ const TICKET_LIST_LIMIT = 200
 
 // --- 1. FETCHING ACTIONS ---
 
-export async function getAllTicketsAction() {
+const staffTicketInclude = (messagesTake?: number) => ({
+  messages: {
+    orderBy: { createdAt: messagesTake ? 'desc' : 'asc' },
+    take: messagesTake,
+    include: { admin: { select: { id: true, username: true } } }
+  },
+  directMessages: {
+    orderBy: { createdAt: messagesTake ? 'desc' : 'asc' },
+    take: messagesTake,
+    select: { content: true, createdAt: true, senderId: true, sender: { select: { id: true, username: true } } }
+  },
+  user: {
+    select: { id: true, username: true, name: true, email: true, walletAddress: true, createdAt: true }
+  }
+} satisfies Prisma.SupportTicketInclude)
+
+type StaffTicketRow = Prisma.SupportTicketGetPayload<{ include: ReturnType<typeof staffTicketInclude> }>
+type StaffMember = { id: string; username: string | null; name: string | null }
+
+function toStaffTicket(t: StaffTicketRow, staffMap: Map<string, StaffMember>): Ticket {
+  const ticketMsgs = t.messages.map(m => ({
+    sender: m.sender as 'user' | 'admin' | 'bot',
+    text: m.text,
+    timestamp: m.createdAt.getTime(),
+    isDM: false,
+    isInternal: m.isInternal,
+    senderInfo: m.admin ? { username: m.admin.username, id: m.admin.id } : undefined
+  }));
+
+  const directMsgs = t.directMessages.map(m => ({
+    sender: 'admin' as const,
+    text: m.content,
+    timestamp: m.createdAt.getTime(),
+    isDM: true,
+    isInternal: false,
+    senderInfo: { username: m.sender.username, id: m.sender.id }
+  }));
+
+  return {
+    id: t.id,
+    status: t.status,
+    priority: t.priority,
+    severity: t.severity,
+    unreadAdminCount: 0, 
+    userId: t.userId,
+    user: t.user,
+    assigneeId: t.assigneeId,
+    assignee: t.assigneeId ? staffMap.get(t.assigneeId) : null,
+    internalNotes: t.internalNotes,
+    updatedAt: t.updatedAt,
+    messages: [...ticketMsgs, ...directMsgs].sort((a, b) => a.timestamp - b.timestamp)
+  };
+}
+
+const getStaffMap = async () => new Map(
+  (await prisma.user.findMany({
+    where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
+    select: { id: true, username: true, name: true }
+  })).map(s => [s.id, s])
+);
+
+/**
+ * The staff queue. Polled every 10s, so each ticket carries only its latest message (open one
+ * with getStaffTicketAction for the thread); `search` matches the ticket id or any message text.
+ */
+export async function getAllTicketsAction(search?: string) {
   const session = await getServerSession(authOptions);
   
-  if (!session?.user?.id || (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.MODERATOR)) {
+  if (!session?.user?.id || !isStaffRole(session.user.role)) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const q = search?.trim().slice(0, 200);
+  const where: Prisma.SupportTicketWhereInput = q ? {
+    OR: [
+      { id: { contains: q, mode: 'insensitive' } },
+      { messages: { some: { text: { contains: q, mode: 'insensitive' } } } },
+      { directMessages: { some: { content: { contains: q, mode: 'insensitive' } } } },
+    ]
+  } : {};
+
+  try {
+    const [tickets, staffMap] = await Promise.all([
+      prisma.supportTicket.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        take: TICKET_LIST_LIMIT,
+        include: staffTicketInclude(1),
+      }),
+      getStaffMap(),
+    ]);
+
+    // Keep only the newest of the ticket's last note/message and last DM
+    const data = tickets.map(t => {
+      const ticket = toStaffTicket(t, staffMap);
+      return { ...ticket, messages: ticket.messages.slice(-1) };
+    });
+    return { success: true, data };
+  } catch (error) {
+    console.error("getAllTicketsAction:", error)
+    return { success: false, error: "Failed to load tickets" }
+  }
+}
+
+/** One ticket with its whole thread (notes, replies and DMs), for the staff console. */
+export async function getStaffTicketAction(ticketId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id || !isStaffRole(session.user.role)) {
     return { success: false, error: "Unauthorized" };
   }
 
   try {
-    const [tickets, staff] = await Promise.all([
-      // Polled every 10s by the staff console: cap it at the most recently active tickets
-      prisma.supportTicket.findMany({
-        orderBy: { updatedAt: 'desc' },
-        take: TICKET_LIST_LIMIT,
-        include: { 
-          messages: { 
-            orderBy: { createdAt: 'asc' },
-            include: {
-              admin: {
-                select: { id: true, username: true }
-              }
-            }
-          },
-          directMessages: {
-            orderBy: { createdAt: 'asc' },
-            select: { 
-              content: true, 
-              createdAt: true, 
-              senderId: true,
-              sender: {
-                select: { id: true, username: true }
-              }
-            }
-          },
-          user: {
-            select: { 
-              id: true, 
-              username: true, 
-              name: true,
-              email: true,
-              walletAddress: true,
-              createdAt: true
-            }
-          }
-        }
-      }),
-      prisma.user.findMany({
-        where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
-        select: { id: true, username: true, name: true }
-      })
+    const [ticket, staffMap] = await Promise.all([
+      prisma.supportTicket.findUnique({ where: { id: ticketId }, include: staffTicketInclude() }),
+      getStaffMap(),
     ]);
-
-    const staffMap = new Map(staff.map(s => [s.id, s]));
-
-    const mappedTickets: Ticket[] = tickets.map(t => {
-      const ticketMsgs = t.messages.map(m => ({
-        sender: m.sender as 'user' | 'admin' | 'bot',
-        text: m.text,
-        timestamp: m.createdAt.getTime(),
-        isDM: false,
-        isInternal: m.isInternal,
-        senderInfo: m.admin ? {
-          username: m.admin.username,
-          id: m.admin.id
-        } : undefined
-      }));
-
-      const directMsgs = t.directMessages.map(m => ({
-        sender: 'admin' as const,
-        text: m.content,
-        timestamp: m.createdAt.getTime(),
-        isDM: true,
-        isInternal: false,
-        senderInfo: {
-          username: m.sender.username,
-          id: m.sender.id
-        }
-      }));
-
-      const allMessages = [...ticketMsgs, ...directMsgs].sort((a, b) => a.timestamp - b.timestamp);
-
-      return {
-        id: t.id,
-        status: t.status,
-        priority: t.priority,
-        severity: t.severity,
-        unreadAdminCount: 0, 
-        userId: t.userId,
-        user: t.user,
-        assigneeId: t.assigneeId,
-        assignee: t.assigneeId ? staffMap.get(t.assigneeId) : null,
-        internalNotes: t.internalNotes,
-        updatedAt: t.updatedAt,
-        messages: allMessages
-      };
-    });
-
-    return { success: true, data: mappedTickets };
+    if (!ticket) return { success: false, error: "Ticket not found" };
+    return { success: true, data: toStaffTicket(ticket, staffMap) };
   } catch (error) {
-    console.error("getAllTicketsAction:", error)
-    return { success: false, error: "Failed to load tickets" }
+    console.error("getStaffTicketAction:", error)
+    return { success: false, error: "Failed to load ticket" }
   }
 }
 

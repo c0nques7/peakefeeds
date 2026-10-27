@@ -79,7 +79,9 @@ const feedSelect = {
     select: { id: true, username: true, name: true, image: true, role: true } 
   },
   channel: { select: { id: true, name: true, slug: true, creatorId: true } },
+  // Same cap as the channel page: the first 50 comments per post (the count shows the total)
   comments: {
+    take: 50,
     orderBy: { createdAt: 'asc' as const },
     select: { id: true, content: true, parentId: true, author: { select: { id: true, username: true } } }
   },

@@ -14,6 +14,8 @@ import { findOrCreateDirectConversation } from "@/lib/conversations"
 // Only these user fields may leave the server (never passwordHash, twoFactorSecret, email)
 const PUBLIC_PARTICIPANT = { id: true, username: true, name: true, image: true } as const
 const MESSAGE_PAGE_SIZE = 50
+// The inbox is polled, so it lists only the most recently active threads
+const INBOX_PAGE_SIZE = 50
 const MessageContentSchema = z.string().trim().min(1, "Message can't be empty.").max(2000, "Messages are limited to 2000 characters.")
 
 // --- TYPES ---
@@ -57,6 +59,8 @@ export async function getConversations() {
           none: { id: { in: Array.from(blockedUserIds) } }
         }
       },
+      orderBy: { lastMessageAt: 'desc' },
+      take: INBOX_PAGE_SIZE,
       include: {
         participants: { select: { id: true, username: true, image: true } },
         messages: { take: 1, orderBy: { createdAt: 'desc' } }
@@ -66,8 +70,10 @@ export async function getConversations() {
     // B. Fetch Tickets
     const tickets = await prisma.supportTicket.findMany({
       where: { userId: session.user.id },
+      orderBy: { updatedAt: 'desc' },
+      take: INBOX_PAGE_SIZE,
       include: {
-        messages: { take: 1, orderBy: { createdAt: 'desc' } },
+        messages: { where: { isInternal: false }, take: 1, orderBy: { createdAt: 'desc' } },
         directMessages: { take: 1, orderBy: { createdAt: 'desc' } }
       }
     })
@@ -125,7 +131,7 @@ export async function getConversations() {
     // E. Merge & Sort by Recency
     const unifiedList = [...formattedDMs, ...formattedTickets].sort(
       (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-    )
+    ).slice(0, INBOX_PAGE_SIZE)
 
     return { success: true, data: unifiedList }
 

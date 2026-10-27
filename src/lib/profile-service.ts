@@ -137,6 +137,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
                         channel: { select: { id: true, name: true, slug: true, creatorId: true } }, 
                         
                         comments: {
+                            take: 50,
                             orderBy: { createdAt: 'asc' }, 
                             select: {
                                 id: true, content: true, parentId: true, createdAt: true,

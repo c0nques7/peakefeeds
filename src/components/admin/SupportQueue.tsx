@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useDeferredValue } from 'react'
 import useSWR from 'swr'
 import { useSupport, Ticket } from '@/context/SupportContext'
-import { getAllTicketsAction } from '@/actions/support'
+import { getAllTicketsAction, getStaffTicketAction } from '@/actions/support'
 import { getStaffUsers } from '@/actions/admin-users'
 import { 
   MessageSquare, 
@@ -50,19 +50,31 @@ export default function SupportQueue() {
   const [statusFilter, setStatusFilter] = useState<SupportStatus | 'ALL'>('ALL')
   const [assigneeFilter, setAssigneeFilter] = useState<string | 'ALL'>('ALL')
 
+  // The list carries each ticket's latest message only; search runs on the server
+  const deferredSearch = useDeferredValue(searchQuery.trim())
   const { data: tickets = [], mutate: mutateTickets } = useSWR(
-    'admin-support-tickets', 
+    ['admin-support-tickets', deferredSearch], 
     async () => {
-        const res = await getAllTicketsAction()
-        // @ts-ignore
-        if (res.success) {
-          return res.data as Ticket[];
-        } else {
-          return [];
-        }
+        const res = await getAllTicketsAction(deferredSearch || undefined)
+        return res.success ? (res.data as Ticket[]) : [];
     },
-    { refreshInterval: 10000 }
+    { refreshInterval: 10000, keepPreviousData: true }
   )
+
+  // The open ticket's full thread
+  const { data: ticketDetail, mutate: mutateTicket } = useSWR(
+    selectedTicketId ? ['admin-support-ticket', selectedTicketId] : null,
+    async () => {
+        const res = await getStaffTicketAction(selectedTicketId!)
+        return res.success ? (res.data as Ticket) : null;
+    },
+    { refreshInterval: 5000 }
+  )
+
+  const refresh = () => {
+    mutateTickets()
+    mutateTicket()
+  }
 
   const { data: staff = [] } = useSWR('admin-staff-users', async () => {
     const res = await getStaffUsers();
@@ -75,11 +87,7 @@ export default function SupportQueue() {
       const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter
       const matchesAssignee = assigneeFilter === 'ALL' || 
         (assigneeFilter === 'unassigned' ? !t.assigneeId : t.assigneeId === assigneeFilter)
-      const matchesSearch = !searchQuery || 
-        t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.messages.some(m => m.text.toLowerCase().includes(searchQuery.toLowerCase()))
-      
-      return matchesStatus && matchesAssignee && matchesSearch
+      return matchesStatus && matchesAssignee
     }).sort((a, b) => {
         // Priority sort
         const priorityMap = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 }
@@ -89,9 +97,10 @@ export default function SupportQueue() {
         return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
     })
     return filtered;
-  }, [tickets, statusFilter, assigneeFilter, searchQuery])
+  }, [tickets, statusFilter, assigneeFilter])
 
-  const currentTicket = tickets.find(t => t.id === selectedTicketId)
+  // Until the thread loads, show the list's copy (latest message only)
+  const currentTicket = ticketDetail?.id === selectedTicketId ? ticketDetail : tickets.find(t => t.id === selectedTicketId)
   
   // Logic: Check if assigned
   const isAssigned = !!currentTicket?.assigneeId;
@@ -142,7 +151,7 @@ export default function SupportQueue() {
     
     if (res?.success) {
       setReply('')
-      mutateTickets()
+      refresh()
       toast.success(isDM ? "Message sent to user" : "Note added to log")
     } else {
       toast.error(res?.error || "Failed to send")
@@ -152,20 +161,20 @@ export default function SupportQueue() {
   const handleUpdateStatus = async (status: SupportStatus) => {
     if (!currentTicket) return
     await updateTicketStatus(currentTicket.id, status)
-    mutateTickets()
+    refresh()
   }
 
   const handleUpdatePriority = async (priority: SupportPriority) => {
     if (!currentTicket) return
     await updateTicketPriority(currentTicket.id, priority)
-    mutateTickets()
+    refresh()
   }
 
   const handleAssign = async (staffId: string | null) => {
     if (!currentTicket) return
     const idToPass = staffId === "" ? null : staffId
     await updateTicketAssignee(currentTicket.id, idToPass)
-    mutateTickets()
+    refresh()
   }
 
   const getPriorityColor = (p: SupportPriority) => {

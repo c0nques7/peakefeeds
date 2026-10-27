@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import B2 from 'backblaze-b2';
 import { uploadFile, deleteFile, signMediaUrl, fileNameFromUrl } from '@/lib/b2';
 
-const { getDownloadAuthorization } = vi.hoisted(() => ({ getDownloadAuthorization: vi.fn() }));
+const { getDownloadAuthorization, authorize } = vi.hoisted(() => ({ getDownloadAuthorization: vi.fn(), authorize: vi.fn() }));
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 
 // Mock B2
 vi.mock('backblaze-b2', () => {
   const mockB2 = vi.fn().mockImplementation(function() {
     return {
-      authorize: vi.fn().mockResolvedValue({}),
+      authorize: authorize.mockResolvedValue({}),
       getUploadUrl: vi.fn().mockResolvedValue({
         data: {
           uploadUrl: 'https://mock-upload-url',
@@ -84,6 +84,44 @@ describe('B2 Utility', () => {
     it('passes through empty values', async () => {
       expect(await signMediaUrl(null)).toBeNull();
       expect(fileNameFromUrl(undefined)).toBeNull();
+    });
+  });
+
+  describe('authorization', () => {
+    beforeEach(() => {
+      process.env.B2_BUCKET_NAME = 'test-bucket';
+      authorize.mockResolvedValue({});
+    });
+
+    it('authorizes again and retries once when B2 says the token expired', async () => {
+      getDownloadAuthorization
+        .mockRejectedValueOnce({ response: { status: 401 } })
+        .mockResolvedValueOnce({ data: { authorizationToken: 'fresh' } });
+      const signed = await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/retry.jpg');
+      expect(signed).toContain('Authorization=fresh');
+      expect(getDownloadAuthorization).toHaveBeenCalledTimes(2);
+      expect(authorize).toHaveBeenCalled();
+    });
+
+    it("doesn't retry other errors", async () => {
+      getDownloadAuthorization.mockRejectedValueOnce({ response: { status: 500 } });
+      expect(await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/fail.jpg'))
+        .toBe('https://f005.backblazeb2.com/file/test-bucket/fail.jpg');
+      expect(getDownloadAuthorization).toHaveBeenCalledTimes(1);
+    });
+
+    it('authorizes again once the account token is nearly a day old', async () => {
+      getDownloadAuthorization.mockResolvedValue({ data: { authorizationToken: 't' } });
+      await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/a.jpg');
+      authorize.mockClear();
+      await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/b.jpg');
+      expect(authorize).not.toHaveBeenCalled();
+
+      const now = Date.now();
+      const clock = vi.spyOn(Date, 'now').mockReturnValue(now + 23.5 * 60 * 60 * 1000);
+      await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/c.jpg');
+      expect(authorize).toHaveBeenCalledTimes(1);
+      clock.mockRestore();
     });
   });
 });

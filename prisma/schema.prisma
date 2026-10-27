@@ -191,6 +191,7 @@ model Channel {
   reports       Report[]
 
   @@index([name])
+  @@index([creatorId])
 }
 
 model Subscription {
@@ -206,7 +207,7 @@ model Subscription {
   canPinPosts    Boolean @default(false)
 
   @@id([userId, channelId])
-  @@index([userId])
+  @@index([channelId])
 }
 
 model Post {
@@ -242,7 +243,7 @@ model Post {
   notifications   Notification[]
 
   @@index([channelId, createdAt(sort: Desc)])
-  @@index([authorId])
+  @@index([authorId, createdAt(sort: Desc)])
   @@index([createdAt])
 }
 
@@ -264,6 +265,7 @@ model Comment {
 
   @@index([postId])
   @@index([parentId])
+  @@index([authorId])
 }
 
 model Reaction {
@@ -305,8 +307,14 @@ model Report {
   penalty    Penalty?
   notifications Notification[]
 
-  @@index([status])
+  @@index([status, createdAt])
   @@index([reporterId])
+  @@index([postId])
+  @@index([reportedProfileId])
+  @@index([channelId])
+  @@index([messageId])
+  @@index([commentId])
+  @@index([resolverId])
 }
 
 model Penalty {
@@ -418,6 +426,7 @@ model SupportTicket {
   @@index([status])
   @@index([userId])
   @@index([assigneeId])
+  @@index([updatedAt])
 }
 
 
@@ -455,8 +464,13 @@ model Notification {
   report    Report?          @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
+  @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt])
   @@index([reportId])
+  @@index([actorId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([ticketId])
 }
 
 model Conversation {
@@ -484,6 +498,8 @@ model DirectMessage {
   reports   Report[]
 
   @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([ticketId])
 }
 
 model Block {
@@ -495,7 +511,7 @@ model Block {
   blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
-  @@index([blockerId])
+  @@index([blockedId])
 }
 
 enum AdminLogType {
