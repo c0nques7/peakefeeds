@@ -92,7 +92,7 @@ async function main() {
   await prisma.user.createMany({ data: userData });
   
   // Fetch users back to get IDs
-  let users = await prisma.user.findMany();
+  const users = await prisma.user.findMany();
   
   // Promote the first 5 users to ADMIN/MODERATOR so you have test accounts
   const admins = users.slice(0, 3);
@@ -149,7 +149,7 @@ async function main() {
     const postType = getRandomPostType(channelConfig.types);
     const rawMediaUrl = getMockMediaUrl(postType);
     
-    let contentBody = `${channelConfig.theme.split(',')[0].trim()}. ${faker.lorem.paragraphs(faker.number.int({ min: 1, max: 3 }), '\n')}`;
+    const contentBody = `${channelConfig.theme.split(',')[0].trim()}. ${faker.lorem.paragraphs(faker.number.int({ min: 1, max: 3 }), '\n')}`;
     const urlToInject = rawMediaUrl ? rawMediaUrl : '';
     const content = faker.datatype.boolean(0.7)
         ? `${contentBody.substring(0, 100)} ${urlToInject} ${faker.helpers.arrayElement(['#Truth', '#Optimism', '#Web3'])}`
@@ -187,9 +187,7 @@ async function main() {
         ? faker.helpers.arrayElement(posts) 
         : faker.helpers.arrayElement(viralPosts);
     const author = faker.helpers.arrayElement(users);
-    // @ts-ignore
     const parentComment = faker.datatype.boolean(0.1) && post.comments && post.comments.length > 0
-        // @ts-ignore
         ? faker.helpers.arrayElement(post.comments)
         : null;
 

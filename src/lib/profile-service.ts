@@ -177,7 +177,6 @@ export async function getProfileData(username: string, currentUserId?: string): 
 
     // TRANSFORM DATA
     const formattedPosts = await Promise.all(user.posts.map(async post => {
-        // @ts-ignore 
         const userReaction = post.likes?.[0]?.type || null;
 
         // Find subscription for this specific post's channel
@@ -205,6 +204,5 @@ export async function getProfileData(username: string, currentUserId?: string): 
         };
     }));
 
-    // @ts-ignore 
     return { ...user, posts: formattedPosts };
 }

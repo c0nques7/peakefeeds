@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { Prisma } from '@prisma/client';
 
 const UnblockUserSchema = z.object({
   userIdToUnblock: z.string().min(1),
@@ -45,11 +46,11 @@ export async function unblockUser(
       },
     });
 
-    revalidatePath(`/profile/${userIdToUnblock}`);
+    const target = await prisma.user.findUnique({ where: { id: userIdToUnblock }, select: { username: true } });
+    if (target?.username) revalidatePath(`/profile/${target.username}`);
     return { success: true, message: "User unblocked successfully." };
   } catch (error) {
-      // @ts-ignore
-      if (error.code === 'P2025') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
           return { message: "Block record not found." };
       }
     console.error("Failed to unblock user:", error);

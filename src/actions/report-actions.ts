@@ -16,7 +16,7 @@ const SubmitReportSchema = z.object({
   targetId: z.string().min(1),
   targetType: z.nativeEnum(ReportTargetType),
   reason: z.nativeEnum(ReportReason),
-  details: z.string().optional().nullable(),
+  details: z.string().max(2000, 'Keep details under 2000 characters.').optional().nullable(),
 });
 
 export type ReportState = {
@@ -62,7 +62,7 @@ export async function submitReport(
 
   try {
     let reportedUserId: string | undefined;
-    let reportData: any = {
+    const reportData: any = {
       reason,
       details: details || null,
       status: "PENDING",
@@ -131,13 +131,32 @@ export async function submitReport(
         break;
     }
 
-    // 2. Create the record in DB 
+    // 2. One open report per reporter and target: repeats would only re-notify every staff member
+    const alreadyOpen = await prisma.report.findFirst({
+      where: {
+        reporterId: session.user.id,
+        status: "PENDING",
+        targetType,
+        postId: reportData.postId ?? null,
+        commentId: reportData.commentId ?? null,
+        messageId: reportData.messageId ?? null,
+        channelId: reportData.channelId ?? null,
+        adId: reportData.adId ?? null,
+        reportedProfileId: reportData.reportedProfileId ?? null,
+      },
+      select: { id: true },
+    });
+    if (alreadyOpen) {
+      return { success: true, message: "You've already reported this. Our team will review it.", reportedUserId, reportId: alreadyOpen.id };
+    }
+
+    // 3. Create the record in DB 
     // We use the lowercase 'report' property on the prisma instance
     const newReport: PrismaReport = await prisma.report.create({
       data: reportData,
     });
 
-    // 3. Handle Notifications
+    // 4. Handle Notifications
     const adminsAndMods = await prisma.user.findMany({
       where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
       select: { id: true }
@@ -161,17 +180,10 @@ export async function submitReport(
       reportId: newReport.id
     };
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("REPORT_SUBMISSION_ERROR:", error);
     
-    // IMPORTANT: Even if the DB fails (e.g., column missing), 
-    // returning success: false allows the client-side code to 
-    // actually finish the request and close the modal.
-    return { 
-      success: false, 
-      message: error.code === 'P2022' 
-        ? "System Error: Database schema mismatch. Please run 'npx prisma db push'." 
-        : "Failed to submit report. Please try again." 
-    };
+    // Returning (not throwing) lets the client finish the request and close the modal
+    return { success: false, message: "Failed to submit report. Please try again." };
   }
 }

@@ -124,8 +124,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
             dislikes: post.dislikesCount ?? 0
         },
         
-        // @ts-ignore
-        currentUserReaction: post.likes?.[0]?.type || null
+        currentUserReaction: post.currentUserReaction ?? null
     }));
     
     return (

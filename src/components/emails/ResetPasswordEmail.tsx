@@ -18,7 +18,7 @@ export const ResetPasswordEmail: React.FC<ResetPasswordEmailProps> = ({ userEmai
       <h1 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '16px' }}>Password reset request</h1>
 
       <p style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '16px' }}>
-        We received a request to reset the password for your account ({userEmail}). If you didn't request this, you can safely ignore this email.
+        We received a request to reset the password for your account ({userEmail}). If you didn&apos;t request this, you can safely ignore this email.
       </p>
 
       <div style={{ textAlign: 'center', margin: '24px 0' }}>
@@ -39,7 +39,7 @@ export const ResetPasswordEmail: React.FC<ResetPasswordEmailProps> = ({ userEmai
       </div>
 
       <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6' }}>
-        The link will expire in 1 hour. If the button above doesn't work, copy and paste the following URL into your browser:
+        The link will expire in 1 hour. If the button above doesn&apos;t work, copy and paste the following URL into your browser:
       </p>
 
       <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '13px', background: '#f6f6fb', padding: '12px', borderRadius: '6px' }}>{resetLink}</pre>

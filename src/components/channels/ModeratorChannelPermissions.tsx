@@ -39,20 +39,19 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    fetchPermissions();
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getChannelPermissions(channelId);
+        if (!cancelled) setPermissions(data as any);
+      } catch (error) {
+        if (!cancelled) toast.error("Failed to load permissions.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [channelId]);
-
-  const fetchPermissions = async () => {
-    setIsLoading(true);
-    try {
-      const data = await getChannelPermissions(channelId);
-      setPermissions(data as any);
-    } catch (error) {
-      toast.error("Failed to load permissions.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleUpdate = async (userId: string, updates: Partial<PermissionData>) => {
     const current = permissions.find(p => p.userId === userId);

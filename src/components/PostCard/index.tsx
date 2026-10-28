@@ -55,7 +55,7 @@ function buildCommentTree(flatComments: any[]) {
 
 const RoleBadge = ({ role }: { role: string }) => {
     if (!role || role === 'STANDARD' || role === 'USER') return null;
-    let colorClass = role === 'ADMIN' ? "text-red-400 bg-red-500/10 border-red-500/20" : "text-gray-400 bg-gray-500/10 border-gray-500/20"; 
+    const colorClass = role === 'ADMIN' ? "text-red-400 bg-red-500/10 border-red-500/20" : "text-gray-400 bg-gray-500/10 border-gray-500/20"; 
     return <span className={clsx("text-[10px] font-bold px-1.5 py-0.5 rounded-md border ml-2 align-middle", colorClass)}>{role}</span>;
 };
 
@@ -117,6 +117,8 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
 
   // Edit Post State
   const [isEditing, setIsEditing] = useState(false)
+  // The shown text, updated after a successful edit (props are read-only)
+  const [content, setContent] = useState<string>(post.content)
   const [editContent, setEditContent] = useState(post.content)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
 
@@ -256,7 +258,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   }
 
   const handleEditPost = async () => {
-    if (!editContent.trim() || editContent === post.content) {
+    if (!editContent.trim() || editContent === content) {
       setIsEditing(false);
       return;
     }
@@ -269,7 +271,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
       const res = await editPost(formData);
       if (res.success) {
         toast.success("Post updated");
-        post.content = editContent; // Optimistic update
+        setContent(editContent);
         setIsEditing(false);
       } else {
         toast.error(res.error || "Failed to update post");
@@ -316,7 +318,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   }
 
   // --- RENDER ---
-  const mediaUrl = post.mediaUrl || (post.type === 'LINK' ? post.content.match(/(https?:\/\/[^\s]+)/)?.[0] : null);
+  const mediaUrl = post.mediaUrl || (post.type === 'LINK' ? content.match(/(https?:\/\/[^\s]+)/)?.[0] : null);
   const hasEmbed = !!mediaUrl;
 
   if (isDeleted) return null;
@@ -452,7 +454,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
                   </div>
               ) : (
                   <div className={clsx(styles.content, isDemo && "text-lg")}> 
-                      {formatTextWithLinks(post.content, mediaUrl)}
+                      {formatTextWithLinks(content, mediaUrl)}
                   </div>
               )}
           </div>

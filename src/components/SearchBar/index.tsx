@@ -273,7 +273,7 @@ export function SearchBar() {
                                     <PlusCircle size={20} className="text-[var(--accent-primary)]" />
                                     <div className="flex flex-col text-left">
                                         <span className="font-semibold text-[var(--text-primary)]">
-                                            Create channel "{query}"
+                                            Create channel &quot;{query}&quot;
                                         </span>
                                         <span className="text-xs text-[var(--text-muted)]">
                                             Launch a new truth channel

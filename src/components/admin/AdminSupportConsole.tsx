@@ -20,7 +20,6 @@ export default function AdminSupportConsole() {
     'admin-all-tickets', 
     async () => {
         const res = await getAllTicketsAction()
-        // @ts-ignore - Fixing serialization mismatch (Date vs String)
         return res.success ? res.data as Ticket[] : []
     },
     { 
@@ -43,15 +42,14 @@ export default function AdminSupportConsole() {
     
     const newMsg = { sender: 'admin', text: reply, timestamp: Date.now() }
 
-    // @ts-ignore
+    // @ts-expect-error -- unused console (to be deleted); its messages predate the ChatMessage type
     await mutate(current => current?.map(t => {
         if(t.id !== currentTicket.id) return t;
-        // @ts-ignore
         return { ...t, messages: [...t.messages, newMsg] }
     }), false)
     
     // API Call
-    // @ts-ignore
+    // @ts-expect-error -- unused console (to be deleted); its messages predate the ChatMessage type
     await addMessageToTicket(currentTicket.id, newMsg)
     setReply('')
     mutate() // Re-sync with DB
@@ -201,7 +199,6 @@ export default function AdminSupportConsole() {
                     )}>
                       {msg.text}
                     </div>
-                    {/* @ts-ignore */}
                     <span className="text-[10px] text-white/30 mt-1 uppercase tracking-wider">{msg.sender}</span>
                   </div>
                 ))}

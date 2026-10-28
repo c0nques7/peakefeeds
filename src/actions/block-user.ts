@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { UserRole } from '@prisma/client';
+import { UserRole, Prisma } from '@prisma/client';
 
 const BlockUserSchema = z.object({
   userIdToBlock: z.string().min(1),
@@ -44,7 +44,7 @@ export async function blockUser(
     // Check if target user is an Admin/Moderator
     const targetUser = await prisma.user.findUnique({
       where: { id: userIdToBlock },
-      select: { role: true }
+      select: { role: true, username: true }
     });
 
     if (!targetUser) {
@@ -62,13 +62,12 @@ export async function blockUser(
       },
     });
 
-    revalidatePath(`/profile/${userIdToBlock}`); // Optional: revalidate profile page if we show block status there
+    if (targetUser.username) revalidatePath(`/profile/${targetUser.username}`);
     return { success: true, message: "User blocked successfully." };
   } catch (error) {
       // Prisma error code P2002 means unique constraint failed (already blocked)
       // We can just return success or a specific message
-      // @ts-ignore
-      if (error.code === 'P2002') {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
           return { success: true, message: "User is already blocked." };
       }
     console.error("Failed to block user:", error);

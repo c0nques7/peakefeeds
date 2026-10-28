@@ -142,7 +142,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
             by @{report.reporter.username || "Anon"} • {new Date(report.createdAt).toLocaleDateString()}
           </p>
           {report.details && (
-             <p className="mt-2 text-sm text-[var(--text-primary)] italic border-l-2 border-[var(--status-error)]/30 pl-2">"{report.details}"</p>
+             <p className="mt-2 text-sm text-[var(--text-primary)] italic border-l-2 border-[var(--status-error)]/30 pl-2">&quot;{report.details}&quot;</p>
           )}
         </div>
         <ShieldAlert className="opacity-50 text-[var(--status-error)]" size={20} />

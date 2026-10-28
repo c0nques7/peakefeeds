@@ -5,14 +5,9 @@ import { keccak256, toBytes, recoverMessageAddress } from 'viem';
  * Isomorphic: Works on Client (window.crypto) and Server (node:crypto)
  */
 export function generateSalt(): string {
-  if (typeof window !== 'undefined' && window.crypto) {
-    const array = new Uint8Array(32);
-    window.crypto.getRandomValues(array);
-    return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
-  } else {
-    // Dynamic require to prevent Webpack build errors on client
-    return require('crypto').randomBytes(32).toString('hex');
-  }
+  const array = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(array);
+  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**

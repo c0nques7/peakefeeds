@@ -133,7 +133,6 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
   
   const hasMore = channel.posts.length > show;
   const formattedPosts = await Promise.all(channel.posts.slice(0, show).map(async (post) => {
-      // @ts-ignore
       const userReaction = post.likes?.[0]?.type || null;
 
       const finalMediaUrl = await signMediaUrl(post.mediaUrl);

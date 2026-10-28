@@ -75,7 +75,7 @@ export function ActivityLog({ activity }: { activity: ActivityItem[] }) {
                       </div>
                       <p className="text-sm text-[var(--text-primary)] line-clamp-2">
                         {item.type === "REACTION" ? (
-                          <>Reacted {item.content.toLowerCase()} to <span className="italic font-medium">"{item.metadata.postTitle}"</span></>
+                          <>Reacted {item.content.toLowerCase()} to <span className="italic font-medium">&quot;{item.metadata.postTitle}&quot;</span></>
                         ) : (
                           item.content
                         )}
@@ -126,7 +126,7 @@ export function ActivityLog({ activity }: { activity: ActivityItem[] }) {
                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Content</label>
                 <div className="p-4 rounded-lg bg-black/20 border border-[var(--glass-border)] text-[var(--text-primary)] text-sm whitespace-pre-wrap leading-relaxed">
                   {selectedItem.type === "REACTION" ? (
-                    <span>User reacted <strong>{selectedItem.content}</strong> to the post: "{selectedItem.metadata.postTitle}"</span>
+                    <span>User reacted <strong>{selectedItem.content}</strong> to the post: &quot;{selectedItem.metadata.postTitle}&quot;</span>
                   ) : (
                     selectedItem.content
                   )}
