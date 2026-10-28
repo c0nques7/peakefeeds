@@ -108,19 +108,20 @@ export function SearchBar() {
     const navigationItems = useMemo(() => {
         const items: any[] = [];
         
-        channelResults.forEach(r => {
-            items.push({ 
-                type: 'CHANNEL', 
-                data: r, 
-                href: `/channels/${r.slug}` 
-            });
-        });
-
+        // Same order as the dropdown renders them: People, then Channels, then Create
         userResults.forEach(r => {
             items.push({
                 type: 'USER',
                 data: r,
                 href: `/profile/${r.username}`
+            });
+        });
+
+        channelResults.forEach(r => {
+            items.push({ 
+                type: 'CHANNEL', 
+                data: r, 
+                href: `/channels/${r.slug}` 
             });
         });
         
@@ -180,7 +181,7 @@ export function SearchBar() {
             {/* Input Field */}
             <div className={styles.inputWrapper}>
                 <Search size={20} className={styles.searchIcon} />
-                <input
+                <input aria-label="Search people and channels"
                     type="text"
                     placeholder="Search people, channels, tags..."
                     value={query}
@@ -273,7 +274,7 @@ export function SearchBar() {
                                     <PlusCircle size={20} className="text-[var(--accent-primary)]" />
                                     <div className="flex flex-col text-left">
                                         <span className="font-semibold text-[var(--text-primary)]">
-                                            Create channel "{query}"
+                                            Create channel &quot;{query}&quot;
                                         </span>
                                         <span className="text-xs text-[var(--text-muted)]">
                                             Launch a new truth channel

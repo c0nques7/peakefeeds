@@ -5,12 +5,15 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 80px; 
+  /* border-box: the safe-area padding sits below the tab content, not inside it */
+  box-sizing: border-box;
+  height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px));
   z-index: 50; /* Top layer */
 
-  /* 6 Equal Columns */
+  /* Equal columns, however many tabs there are (staff get an Admin tab) */
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   align-items: center;
   justify-items: center;
 
@@ -47,7 +50,6 @@
   border: none;
   cursor: pointer;
   transition: transform 0.1s ease, color 0.2s ease;
-  padding-top: 10px; /* Center visual balance */
 }
 
 .navItem:active {
@@ -66,7 +68,6 @@
   gap: 4px;
   width: 100%;
   height: 100%;
-  padding-top: 10px;
   color: var(--text-muted);
   opacity: 0.3;
 }
@@ -89,14 +90,14 @@
   justify-content: center;
   
   /* Padding bottom equals Nav Height so drawer sits on top of nav visual */
-  padding-bottom: 80px; 
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px));
   animation: fadeIn 0.2s ease-out;
 }
 
 .notificationContent {
   width: 100%;
   max-width: 600px; /* Limit width on tablets */
-  height: 75vh;     /* Tall drawer */
+  height: 75dvh;    /* Tall drawer; dvh tracks the visible area as mobile browser bars come and go */
   
   /* Theme Aware Colors */
   background: var(--glass-panel);

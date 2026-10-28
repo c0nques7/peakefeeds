@@ -4,115 +4,141 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth.config"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
-import { Ticket } from "@/context/SupportContext"
-import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType } from "@prisma/client"
+import { headers } from "next/headers"
+import { createHash } from "node:crypto"
+import { Ticket } from "@/lib/support-types"
+import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType, Prisma } from "@prisma/client"
 import { createAdminLog } from "@/lib/admin-logger"
 import { requireStaff } from "@/lib/rbac"
+import { findOrCreateDirectConversation } from "@/lib/conversations"
+import { withAdvisoryLock } from "@/lib/advisory-lock"
 
 const isStaffRole = (role?: string | null) => role === UserRole.ADMIN || role === UserRole.MODERATOR
 const TICKET_LIST_LIMIT = 200
 
 // --- 1. FETCHING ACTIONS ---
 
-export async function getAllTicketsAction() {
+const staffTicketInclude = (messagesTake?: number) => ({
+  messages: {
+    orderBy: { createdAt: messagesTake ? 'desc' : 'asc' },
+    take: messagesTake,
+    include: { admin: { select: { id: true, username: true } } }
+  },
+  directMessages: {
+    orderBy: { createdAt: messagesTake ? 'desc' : 'asc' },
+    take: messagesTake,
+    select: { content: true, createdAt: true, senderId: true, sender: { select: { id: true, username: true } } }
+  },
+  user: {
+    select: { id: true, username: true, name: true, email: true, walletAddress: true, createdAt: true }
+  }
+} satisfies Prisma.SupportTicketInclude)
+
+type StaffTicketRow = Prisma.SupportTicketGetPayload<{ include: ReturnType<typeof staffTicketInclude> }>
+type StaffMember = { id: string; username: string | null; name: string | null }
+
+function toStaffTicket(t: StaffTicketRow, staffMap: Map<string, StaffMember>): Ticket {
+  const ticketMsgs = t.messages.map(m => ({
+    sender: m.sender as 'user' | 'admin' | 'bot',
+    text: m.text,
+    timestamp: m.createdAt.getTime(),
+    isDM: false,
+    isInternal: m.isInternal,
+    senderInfo: m.admin ? { username: m.admin.username, id: m.admin.id } : undefined
+  }));
+
+  const directMsgs = t.directMessages.map(m => ({
+    sender: 'admin' as const,
+    text: m.content,
+    timestamp: m.createdAt.getTime(),
+    isDM: true,
+    isInternal: false,
+    senderInfo: { username: m.sender.username, id: m.sender.id }
+  }));
+
+  return {
+    id: t.id,
+    status: t.status,
+    priority: t.priority,
+    severity: t.severity,
+    unreadAdminCount: 0, 
+    userId: t.userId,
+    user: t.user,
+    assigneeId: t.assigneeId,
+    assignee: t.assigneeId ? staffMap.get(t.assigneeId) : null,
+    internalNotes: t.internalNotes,
+    updatedAt: t.updatedAt,
+    messages: [...ticketMsgs, ...directMsgs].sort((a, b) => a.timestamp - b.timestamp)
+  };
+}
+
+const getStaffMap = async () => new Map(
+  (await prisma.user.findMany({
+    where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
+    select: { id: true, username: true, name: true }
+  })).map(s => [s.id, s])
+);
+
+/**
+ * The staff queue. Polled every 10s, so each ticket carries only its latest message (open one
+ * with getStaffTicketAction for the thread); `search` matches the ticket id or any message text.
+ */
+export async function getAllTicketsAction(search?: string) {
   const session = await getServerSession(authOptions);
   
-  if (!session?.user?.id || (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.MODERATOR)) {
+  if (!session?.user?.id || !isStaffRole(session.user.role)) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const q = search?.trim().slice(0, 200);
+  const where: Prisma.SupportTicketWhereInput = q ? {
+    OR: [
+      { id: { contains: q, mode: 'insensitive' } },
+      { messages: { some: { text: { contains: q, mode: 'insensitive' } } } },
+      { directMessages: { some: { content: { contains: q, mode: 'insensitive' } } } },
+    ]
+  } : {};
+
+  try {
+    const [tickets, staffMap] = await Promise.all([
+      prisma.supportTicket.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        take: TICKET_LIST_LIMIT,
+        include: staffTicketInclude(1),
+      }),
+      getStaffMap(),
+    ]);
+
+    // Keep only the newest of the ticket's last note/message and last DM
+    const data = tickets.map(t => {
+      const ticket = toStaffTicket(t, staffMap);
+      return { ...ticket, messages: ticket.messages.slice(-1) };
+    });
+    return { success: true, data };
+  } catch (error) {
+    console.error("getAllTicketsAction:", error)
+    return { success: false, error: "Failed to load tickets" }
+  }
+}
+
+/** One ticket with its whole thread (notes, replies and DMs), for the staff console. */
+export async function getStaffTicketAction(ticketId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id || !isStaffRole(session.user.role)) {
     return { success: false, error: "Unauthorized" };
   }
 
   try {
-    const [tickets, staff] = await Promise.all([
-      // Polled every 10s by the staff console: cap it at the most recently active tickets
-      prisma.supportTicket.findMany({
-        orderBy: { updatedAt: 'desc' },
-        take: TICKET_LIST_LIMIT,
-        include: { 
-          messages: { 
-            orderBy: { createdAt: 'asc' },
-            include: {
-              admin: {
-                select: { id: true, username: true }
-              }
-            }
-          },
-          directMessages: {
-            orderBy: { createdAt: 'asc' },
-            select: { 
-              content: true, 
-              createdAt: true, 
-              senderId: true,
-              sender: {
-                select: { id: true, username: true }
-              }
-            }
-          },
-          user: {
-            select: { 
-              id: true, 
-              username: true, 
-              name: true,
-              email: true,
-              walletAddress: true,
-              createdAt: true
-            }
-          }
-        }
-      }),
-      prisma.user.findMany({
-        where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
-        select: { id: true, username: true, name: true }
-      })
+    const [ticket, staffMap] = await Promise.all([
+      prisma.supportTicket.findUnique({ where: { id: ticketId }, include: staffTicketInclude() }),
+      getStaffMap(),
     ]);
-
-    const staffMap = new Map(staff.map(s => [s.id, s]));
-
-    const mappedTickets: Ticket[] = tickets.map(t => {
-      const ticketMsgs = t.messages.map(m => ({
-        sender: m.sender as 'user' | 'admin' | 'bot',
-        text: m.text,
-        timestamp: m.createdAt.getTime(),
-        isDM: false,
-        isInternal: m.isInternal,
-        senderInfo: m.admin ? {
-          username: m.admin.username,
-          id: m.admin.id
-        } : undefined
-      }));
-
-      const directMsgs = t.directMessages.map(m => ({
-        sender: 'admin' as const,
-        text: m.content,
-        timestamp: m.createdAt.getTime(),
-        isDM: true,
-        isInternal: false,
-        senderInfo: {
-          username: m.sender.username,
-          id: m.sender.id
-        }
-      }));
-
-      const allMessages = [...ticketMsgs, ...directMsgs].sort((a, b) => a.timestamp - b.timestamp);
-
-      return {
-        id: t.id,
-        status: t.status,
-        priority: t.priority,
-        severity: t.severity,
-        unreadAdminCount: 0, 
-        userId: t.userId,
-        user: t.user,
-        assigneeId: t.assigneeId,
-        assignee: t.assigneeId ? staffMap.get(t.assigneeId) : null,
-        internalNotes: t.internalNotes,
-        updatedAt: t.updatedAt,
-        messages: allMessages
-      };
-    });
-
-    return { success: true, data: mappedTickets };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to load tickets" }
+    if (!ticket) return { success: false, error: "Ticket not found" };
+    return { success: true, data: toStaffTicket(ticket, staffMap) };
+  } catch (error) {
+    console.error("getStaffTicketAction:", error)
+    return { success: false, error: "Failed to load ticket" }
   }
 }
 
@@ -182,38 +208,94 @@ export async function getTicketAction(ticketId: string) {
 
 // --- 2. MUTATION ACTIONS ---
 
+// Ticket text limits, and creation caps checked against the database (works across instances).
+// Anonymous Help Bot tickets are capped per visitor (by hashed IP), with a site-wide ceiling as a
+// backstop that takes many addresses to reach.
+const TICKET_TEXT_MAX = 2000
+const TICKETS_PER_USER_PER_HOUR = 5
+const ANONYMOUS_TICKETS_PER_CLIENT_PER_HOUR = 3
+const ANONYMOUS_TICKETS_PER_HOUR = 100
+const HOUR_MS = 60 * 60 * 1000
+
+/** A salted hash of the caller's IP (Vercel sets x-real-ip), or null when there isn't one. */
+async function anonymousClientKey(): Promise<string | null> {
+  const headersList = await headers()
+  const ip = headersList.get("x-real-ip") || headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
+  if (!ip) return null
+  return createHash("sha256").update(`${process.env.NEXTAUTH_SECRET ?? ""}|${ip}`).digest("hex")
+}
+
+function cleanTicketText(text: unknown): string | null {
+  if (typeof text !== 'string') return null
+  const trimmed = text.trim()
+  return trimmed.length > 0 && trimmed.length <= TICKET_TEXT_MAX ? trimmed : null
+}
+
 export async function createTicketAction(initialMsg: string) {
   const session = await getServerSession(authOptions)
   const userId = session?.user?.id || null 
 
+  const text = cleanTicketText(initialMsg)
+  if (!text) return { success: false, error: `Please describe the issue in 1-${TICKET_TEXT_MAX} characters.` }
+
   try {
-    const ticket = await prisma.supportTicket.create({
-      data: {
-        status: SupportStatus.OPEN,
-        priority: SupportPriority.LOW,
-        severity: 0,
-        userId: userId,
-        messages: {
-          create: {
-            text: initialMsg,
-            sender: 'user',
-            isInternal: false
-          }
+    const clientKey = userId ? null : await anonymousClientKey()
+    // Locked per caller so parallel requests can't all pass the count before any insert lands
+    const lockKey = userId ? `support-ticket:user:${userId}` : `support-ticket:anon:${clientKey ?? "unknown"}`
+    const result = await withAdvisoryLock(lockKey, async tx => {
+      const since = new Date(Date.now() - HOUR_MS)
+      if (userId) {
+        const recent = await tx.supportTicket.count({ where: { userId, createdAt: { gt: since } } })
+        if (recent >= TICKETS_PER_USER_PER_HOUR) {
+          return { error: "You've opened several tickets recently. Please add to an existing one in Messages." }
+        }
+      } else {
+        const fromClient = clientKey ? await tx.supportTicket.count({ where: { clientKey, createdAt: { gt: since } } }) : 0
+        const allAnonymous = await tx.supportTicket.count({ where: { userId: null, createdAt: { gt: since } } })
+        if (fromClient >= ANONYMOUS_TICKETS_PER_CLIENT_PER_HOUR) {
+          return { error: "You've opened several tickets recently. Please sign in or try again later." }
+        }
+        if (allAnonymous >= ANONYMOUS_TICKETS_PER_HOUR) {
+          return { error: "Support is busy right now. Please sign in or try again later." }
         }
       }
+
+      const ticket = await tx.supportTicket.create({
+        data: {
+          status: SupportStatus.OPEN,
+          priority: SupportPriority.LOW,
+          severity: 0,
+          userId: userId,
+          clientKey,
+          messages: {
+            create: {
+              text,
+              sender: 'user',
+              isInternal: false
+            }
+          }
+        }
+      })
+      return { ticket }
     })
+    if ('error' in result) return { success: false, error: result.error }
+    const { ticket } = result
 
     if (userId) { revalidatePath('/messages') }
     revalidatePath('/admin/support')
 
     return { success: true, ticketId: ticket.id }
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to create ticket" }
+  } catch (error) {
+    console.error("createTicketAction:", error)
+    return { success: false, error: "Failed to create ticket" }
   }
 }
 
-export async function addMessageAction(ticketId: string, text: string, sender: 'user' | 'admin' | 'bot', isInternal: boolean = false) {
+export async function addMessageAction(ticketId: string, rawText: string, sender: 'user' | 'admin' | 'bot', isInternal: boolean = false) {
   const session = await getServerSession(authOptions);
+
+  const text = cleanTicketText(rawText)
+  if (!text) return { success: false, error: `Messages must be 1-${TICKET_TEXT_MAX} characters.` }
 
   if (sender === 'admin' || sender === 'bot') {
     await requireStaff();
@@ -268,13 +350,13 @@ export async function addMessageAction(ticketId: string, text: string, sender: '
       })
     }
 
-    revalidatePath(`/messages/${ticketId}`)
     revalidatePath('/messages')
     revalidatePath('/admin/support')
 
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("addMessageAction:", error)
+    return { success: false, error: "Failed to send message" }
   }
 }
 
@@ -288,7 +370,8 @@ export async function updateSeverityAction(ticketId: string, severity: number) {
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateSeverityAction:", error)
+    return { success: false, error: "Failed to update severity" }
   }
 }
 
@@ -326,7 +409,8 @@ export async function resolveTicketAction(ticketId: string) {
 
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("resolveTicketAction:", error)
+    return { success: false, error: "Failed to resolve ticket" }
   }
 }
 
@@ -362,7 +446,8 @@ export async function updateTicketStatusAction(ticketId: string, status: Support
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateTicketStatusAction:", error)
+    return { success: false, error: "Failed to update status" }
   }
 }
 
@@ -387,7 +472,8 @@ export async function updateTicketPriorityAction(ticketId: string, priority: Sup
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateTicketPriorityAction:", error)
+    return { success: false, error: "Failed to update priority" }
   }
 }
 
@@ -412,7 +498,8 @@ export async function updateTicketAssigneeAction(ticketId: string, assigneeId: s
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateTicketAssigneeAction:", error)
+    return { success: false, error: "Failed to update assignee" }
   }
 }
 
@@ -437,7 +524,8 @@ export async function updateInternalNotesAction(ticketId: string, internalNotes:
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("updateInternalNotesAction:", error)
+    return { success: false, error: "Failed to save notes" }
   }
 }
 
@@ -456,25 +544,7 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
     if (!ticket || !ticket.userId) return { success: false, error: "User not found for this ticket" }
     if (!ticket.assigneeId) return { success: false, error: "Ticket must be assigned before messaging" }
 
-    let conversation = await prisma.conversation.findFirst({
-      where: {
-        participants: {
-          every: {
-            id: { in: [session.user.id, ticket.userId] }
-          }
-        }
-      }
-    })
-
-    if (!conversation) {
-      conversation = await prisma.conversation.create({
-        data: {
-          participants: {
-            connect: [{ id: session.user.id }, { id: ticket.userId }]
-          }
-        }
-      })
-    }
+    const conversation = await findOrCreateDirectConversation(session.user.id, ticket.userId)
 
     await prisma.directMessage.create({
       data: {
@@ -507,6 +577,7 @@ export async function sendMessageToUserAction(ticketId: string, text: string) {
     revalidatePath('/admin/support')
     return { success: true }
   } catch (error) {
-    return { success: false, error }
+    console.error("sendMessageToUserAction:", error)
+    return { success: false, error: "Failed to send message" }
   }
 }

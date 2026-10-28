@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, UserRole } from '@prisma/client';
-import { getBucketAuthToken } from '@/lib/b2';
+import { signMediaUrl } from '@/lib/b2';
+import { getPostPermissions } from '@/lib/permissions';
 
 // 1. UPDATED TYPE DEFINITION
 export type ProfileData = {
@@ -67,6 +68,7 @@ export type ProfileData = {
         }[];
 
         currentUserReaction?: ReactionType | null;
+        viewerCanEdit?: boolean;
         viewerCanDelete?: boolean;
         viewerChannelRole?: string | null;
     }[];
@@ -88,9 +90,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
         return null;
     }
 
-    // 1. Fetch Token & Current User Context
-    let bucketAuthToken = '';
-    try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
+    // 1. Fetch Current User Context
 
     const [user, currentUserContext] = await Promise.all([
         prisma.user.findFirst({
@@ -137,6 +137,7 @@ export async function getProfileData(username: string, currentUserId?: string): 
                         channel: { select: { id: true, name: true, slug: true, creatorId: true } }, 
                         
                         comments: {
+                            take: 50,
                             orderBy: { createdAt: 'asc' }, 
                             select: {
                                 id: true, content: true, parentId: true, createdAt: true,
@@ -174,28 +175,15 @@ export async function getProfileData(username: string, currentUserId?: string): 
 
     if (!user) return null;
 
-    const isGlobalAdmin = currentUserContext?.role === 'ADMIN';
-
     // TRANSFORM DATA
-    const formattedPosts = user.posts.map(post => {
-        // @ts-ignore 
+    const formattedPosts = await Promise.all(user.posts.map(async post => {
         const userReaction = post.likes?.[0]?.type || null;
 
         // Find subscription for this specific post's channel
         const sub = currentUserContext?.subscriptions?.find((s: any) => s.channelId === post.channel.id);
-        const isCreator = post.channel.creatorId === currentUserContext?.id;
+        const perms = getPostPermissions(currentUserContext, { authorId: user.id, isVerified: post.isVerified, channel: post.channel }, sub);
 
-        const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
-        const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
-
-        // 🟢 FIX: Handle Private B2 Bucket URLs
-        let finalMediaUrl = post.mediaUrl ?? null;
-        if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
-            if (finalMediaUrl.includes('s3.us-east-005')) {
-                finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
-            }
-            finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
-        }
+        const finalMediaUrl = await signMediaUrl(post.mediaUrl);
 
         return {
             ...post,
@@ -210,11 +198,11 @@ export async function getProfileData(username: string, currentUserId?: string): 
                 dislikes: post.dislikesCount ?? 0
             },
             currentUserReaction: userReaction,
-            viewerCanDelete,
-            viewerChannelRole
+            viewerCanEdit: perms.canEdit,
+            viewerCanDelete: perms.canDelete,
+            viewerChannelRole: perms.channelRole
         };
-    });
+    }));
 
-    // @ts-ignore 
     return { ...user, posts: formattedPosts };
 }

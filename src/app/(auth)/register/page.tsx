@@ -78,7 +78,7 @@ export default function RegisterPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Create an account</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          PeakeFeeds is in private beta, so you'll need an invite code.
+          PeakeFeeds is in private beta, so you&apos;ll need an invite code.
         </p>
       </div>
 

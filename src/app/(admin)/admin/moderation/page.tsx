@@ -30,7 +30,6 @@ export default async function ModerationPage() {
         // Grid State
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {reports.map((report) => (
-            // @ts-ignore - The Server Action includes specific relations that TS inference sometimes misses across boundaries
             <ModerationCard key={report.id} report={report} />
           ))}
         </div>

@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { createNotification } from "@/lib/notifications"; 
-import { getPostingBlockReason } from "@/lib/penalties";
+import { getInteractionBlockReason } from "@/lib/interaction-guard";
 
 const CreateCommentSchema = z.object({
   content: z.string().min(1).max(500),
@@ -18,9 +18,6 @@ export async function createComment(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const blocked = await getPostingBlockReason(session.user.id);
-  if (blocked) return { error: blocked };
-
   const validated = CreateCommentSchema.safeParse({
     content: formData.get('content'),
     postId: formData.get('postId'),
@@ -30,6 +27,10 @@ export async function createComment(formData: FormData) {
   if (!validated.success) return { error: "Invalid input." };
 
   const { content, postId, parentId } = validated.data;
+
+  // Also checks that a reply's parent belongs to this post
+  const blocked = await getInteractionBlockReason({ userId: session.user.id, action: 'comment', postId, commentId: parentId });
+  if (blocked) return { error: blocked };
 
   try {
     // 1. Create the Comment (Include Author details for the UI)

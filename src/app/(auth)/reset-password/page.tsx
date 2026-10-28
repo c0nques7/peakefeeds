@@ -2,13 +2,22 @@
 
 import { completePasswordReset } from "@/actions/auth-reset";
 import { useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { Suspense, useState, useTransition } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Button, ButtonLink, TextField } from "@/components/ui";
 
 // The auth layout provides the card; this page renders only its content.
+// useSearchParams needs a Suspense boundary for the page to be prerendered
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<Loader2 className="mx-auto animate-spin text-[var(--text-muted)]" aria-label="Loading" />}>
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
+
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");

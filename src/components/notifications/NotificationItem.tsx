@@ -20,8 +20,7 @@ const TYPE_CONFIG = {
 }
 
 export function NotificationItem({ note, mutate }: { note: any, mutate: () => void }) {
-  // @ts-ignore
-  const config = TYPE_CONFIG[note.type] || TYPE_CONFIG.SYSTEM
+  const config = TYPE_CONFIG[note.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.SYSTEM
 
   const handleClick = async () => {
     if (!note.isRead) {
@@ -56,7 +55,7 @@ export function NotificationItem({ note, mutate }: { note: any, mutate: () => vo
           
           {(note.post?.content || note.comment?.content) && (
                <p className="text-xs text-[var(--text-muted)] truncate mt-1 italic opacity-80">
-                 "{note.post?.content || note.comment?.content}"
+                 &quot;{note.post?.content || note.comment?.content}&quot;
                </p>
           )}
 

@@ -4,8 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import useSWR from 'swr' 
 import clsx from 'clsx'
 import Link from 'next/link' // 🆕 Import Link
-import { useSupport } from '@/context/SupportContext'
-import { getTicketAction } from '@/actions/support' 
+import { getTicketAction, createTicketAction } from '@/actions/support' 
 import { ExternalLink, Ticket, MessageCircle, Send, X, HelpCircle } from 'lucide-react' // 🆕 Icons
 import styles from './HelpBot.module.css'
 import { SupportStatus } from '@prisma/client'
@@ -37,7 +36,7 @@ const FAQ_DATA = [
   { q: "What's the difference between Home and Discover?", a: "Home shows posts from channels and people you follow. Discover surfaces trending channels and public posts you may like." },
   { q: "How do channels work?", a: "Channels group related posts. You can follow or subscribe to channels; channel creators can manage moderation and verification settings." },
   { q: "How do I verify my account or post?", a: "Use the Verify Wallet flow to link a wallet. Posts and users may be verified via wallet, ad providers, or manual review — verification badges appear on profiles and posts." },
-  { q: "What are ad verification badges and overlays?", a: "Ad verification shows that a piece of media was validated by a supported ad provider. Use the ad-overlay test page to preview overlays for verified media." },
+  { q: "What are ad verification badges and overlays?", a: "Ad verification shows that a piece of media was validated by a supported ad provider." },
   { q: "How do reactions and comments work?", a: "React or reply on any post using the UI buttons. You must be signed in to create reactions or comments; some demo contexts disable writes." },
   { q: "How do I message another user?", a: "Open Messages from the dashboard to send or receive direct messages. Messages are available in your unified inbox after opening a support ticket or messaging other users." },
   { q: "I see a 404 on a profile or channel page — what now?", a: "Confirm the username or channel slug. If it still 404s, the resource may be unpublished or deleted; try refreshing or contacting support via the Help Bot." },
@@ -47,7 +46,6 @@ const FAQ_DATA = [
 ]
 
 export default function HelpBot() {
-  const { createTicket } = useSupport()
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [isTicketMode, setIsTicketMode] = useState(false)
@@ -87,13 +85,14 @@ export default function HelpBot() {
 
     // SCENARIO A: Creating the ticket (User confirmed "Yes I need a human")
     if (isTicketMode) {
-      const newTicketId = await createTicket(userText)
+      const res = await createTicketAction(userText)
+      const newTicketId = res.success ? res.ticketId : null
       
       if (newTicketId) {
         setActiveTicketId(newTicketId) // 🟢 Triggers SWR and "Active" State
         setIsTicketMode(false) 
       } else {
-        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: "❌ Error. Please try again later." }])
+        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: `❌ ${res.error || "Error. Please try again later."}` }])
       }
     
     } else {
@@ -136,12 +135,16 @@ export default function HelpBot() {
       <button 
         className={clsx(styles.triggerButton, { [styles.hidden]: isOpen })} 
         onClick={() => setIsOpen(true)}
+        aria-expanded={isOpen}
+        aria-controls="help-bot-window"
+        inert={isOpen}
       >
         <HelpCircle size={20} aria-hidden="true" />
         <span className={clsx("font-bold", styles.triggerLabel)}>Help</span>
       </button>
 
-      <div className={clsx(styles.chatWindow, { [styles.open]: isOpen })}>
+      {/* Closed, the window only slides out of view, so keep it out of focus and screen readers */}
+      <div id="help-bot-window" role="dialog" aria-label="Help" className={clsx(styles.chatWindow, { [styles.open]: isOpen })} inert={!isOpen}>
         
         {/* HEADER */}
         <div className={styles.header}>
@@ -154,7 +157,7 @@ export default function HelpBot() {
                   </span>
                 </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className={styles.closeButton}><X size={18}/></button>
+            <button onClick={() => setIsOpen(false)} aria-label="Close help" className={styles.closeButton}><X size={18} aria-hidden="true" /></button>
         </div>
         
         {/* 🟢 CONDITIONAL BODY: If Ticket exists, show Redirect Card */}
@@ -199,14 +202,14 @@ export default function HelpBot() {
                 </div>
 
                 <div className={styles.inputArea}>
-                  <input 
+                  <input aria-label="Message the Help Bot" 
                     className={styles.input}
                     placeholder={isTicketMode ? "Describe issue..." : "Type 'human' for support..."}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   />
-                  <button className={styles.sendButton} onClick={handleSend} disabled={!input}><Send size={14}/></button>
+                  <button className={styles.sendButton} onClick={handleSend} disabled={!input} aria-label="Send"><Send size={14} aria-hidden="true" /></button>
                 </div>
             </>
         )}

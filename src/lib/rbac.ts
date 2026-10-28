@@ -1,22 +1,9 @@
-import { getServerAuthSession } from "@/lib/auth.config"; // Assuming standard NextAuth v5 setup
+import { getServerAuthSession } from "@/lib/auth.config";
 import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
-// Define hierarchy for simple checks (optional, but useful)
-const ROLE_HIERARCHY: Record<UserRole, number> = {
-  STANDARD: 1,
-  BUSINESS: 2,
-  INFLUENCER: 2,
-  FACT_CHECKER: 3,
-  EXPERT: 3,
-  BOT: 1,
-  GOVERNMENT: 3,
-  MODERATOR: 4,
-  ADMIN: 5,
-};
-
 /**
- * Verifies if the current user has at least the required role level.
+ * Verifies the current user has one of the given roles.
  * Returns the session if valid, or throws/redirects if not.
  */
 export async function requireRole(requiredRoles: UserRole[]) {
@@ -28,11 +15,8 @@ export async function requireRole(requiredRoles: UserRole[]) {
 
   const userRole = session.user.role as UserRole;
 
+  // Exact membership, no hierarchy: requireRole(["ADMIN"]) refuses moderators
   if (!requiredRoles.includes(userRole)) {
-    // If strict hierarchy check is needed:
-    // if (ROLE_HIERARCHY[userRole] < ROLE_HIERARCHY[requiredRole]) ...
-    
-    // For now, strict inclusion check:
     throw new Error("Unauthorized: Insufficient permissions.");
   }
 

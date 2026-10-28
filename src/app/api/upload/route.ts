@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
 import { uploadFile, getDownloadUrl } from '@/lib/b2';
-import { generateFileName, validateFile } from '@/lib/storage-utils';
+import { generateFileName, validateFile, verifiedMediaType } from '@/lib/storage-utils';
 import { getPostingBlockReason } from "@/lib/penalties";
 
 export async function POST(req: NextRequest) {
@@ -22,17 +22,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    let buffer: Buffer;
+    let contentType: string;
     try {
       validateFile(file);
+      buffer = Buffer.from(await file.arrayBuffer());
+      // Trust the bytes, not the client's name or declared type
+      contentType = verifiedMediaType(buffer, file.type);
     } catch (error: any) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const fileName = generateFileName(file.name);
+    const fileName = generateFileName(contentType);
     
     // Upload to B2
-    await uploadFile(fileName, buffer, file.type);
+    await uploadFile(fileName, buffer, contentType);
     
     // Get the public URL
     const url = await getDownloadUrl(fileName);
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       url, 
       fileName,
-      type: file.type 
+      type: contentType 
     });
   } catch (error: any) {
     console.error('Upload error:', error);

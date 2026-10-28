@@ -138,6 +138,12 @@ model User {
 
   twoFactorEnabled Boolean   @default(false)
   twoFactorSecret  String?
+  /// Wrong 2FA codes in a row, and when code checks resume after too many (see lib/two-factor-guard.ts)
+  twoFactorFailures    Int       @default(0)
+  twoFactorLockedUntil DateTime?
+
+  // Sessions signed in before this are ended (set on password reset)
+  passwordChangedAt DateTime?
 
   // Age check: only the outcome and when it happened are kept, never the date of birth
   ageConfirmedAt   DateTime?
@@ -188,6 +194,7 @@ model Channel {
   reports       Report[]
 
   @@index([name])
+  @@index([creatorId])
 }
 
 model Subscription {
@@ -203,7 +210,7 @@ model Subscription {
   canPinPosts    Boolean @default(false)
 
   @@id([userId, channelId])
-  @@index([userId])
+  @@index([channelId])
 }
 
 model Post {
@@ -239,7 +246,7 @@ model Post {
   notifications   Notification[]
 
   @@index([channelId, createdAt(sort: Desc)])
-  @@index([authorId])
+  @@index([authorId, createdAt(sort: Desc)])
   @@index([createdAt])
 }
 
@@ -261,6 +268,7 @@ model Comment {
 
   @@index([postId])
   @@index([parentId])
+  @@index([authorId])
 }
 
 model Reaction {
@@ -302,8 +310,14 @@ model Report {
   penalty    Penalty?
   notifications Notification[]
 
-  @@index([status])
+  @@index([status, createdAt])
   @@index([reporterId])
+  @@index([postId])
+  @@index([reportedProfileId])
+  @@index([channelId])
+  @@index([messageId])
+  @@index([commentId])
+  @@index([resolverId])
 }
 
 model Penalty {
@@ -411,10 +425,14 @@ model SupportTicket {
   messages        TicketMessage[]
   directMessages  DirectMessage[]
   notifications   Notification[]
+  /// Salted hash of an anonymous creator's IP, for the per-visitor ticket cap
+  clientKey       String?
 
   @@index([status])
   @@index([userId])
+  @@index([clientKey, createdAt])
   @@index([assigneeId])
+  @@index([updatedAt])
 }
 
 
@@ -452,8 +470,13 @@ model Notification {
   report    Report?          @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
+  @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt])
   @@index([reportId])
+  @@index([actorId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([ticketId])
 }
 
 model Conversation {
@@ -481,6 +504,8 @@ model DirectMessage {
   reports   Report[]
 
   @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([ticketId])
 }
 
 model Block {
@@ -492,7 +517,7 @@ model Block {
   blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
-  @@index([blockerId])
+  @@index([blockedId])
 }
 
 enum AdminLogType {

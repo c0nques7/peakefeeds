@@ -5,10 +5,10 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { ChannelRole } from '@prisma/client';
 
 const SubscribeSchema = z.object({
   channelId: z.string().cuid("Invalid Channel ID"),
-  channelSlug: z.string(), // Used for revalidation
 });
 
 export type SubscribeState = {
@@ -27,14 +27,13 @@ export async function toggleSubscription(
 
   const validatedFields = SubscribeSchema.safeParse({
     channelId: formData.get('channelId'),
-    channelSlug: formData.get('channelSlug'),
   });
 
   if (!validatedFields.success) {
     return { message: "Invalid Channel ID provided." };
   }
 
-  const { channelId, channelSlug } = validatedFields.data;
+  const { channelId } = validatedFields.data;
   const userId = session.user.id;
 
   try {
@@ -48,9 +47,17 @@ export async function toggleSubscription(
       },
     });
 
+    const channel = await prisma.channel.findUnique({ where: { id: channelId }, select: { slug: true, creatorId: true } });
+    if (!channel) return { message: "Channel not found." };
+
     let action: 'subscribed' | 'unsubscribed';
 
     if (existingSubscription) {
+      // The owner can't leave (the channel would have no one to manage it)
+      if (channel.creatorId === userId || existingSubscription.role === ChannelRole.OWNER) {
+        return { message: "Channel owners can't unsubscribe from their own channel." };
+      }
+
       // 2. Action: UNSUBSCRIBE (Delete the record)
       await prisma.subscription.delete({
         where: {
@@ -74,7 +81,7 @@ export async function toggleSubscription(
     }
 
     // 4. Revalidate paths to update UI (Channel page and My Feed)
-    revalidatePath(`/channels/${channelSlug}`);
+    revalidatePath(`/channels/${channel.slug}`);
     revalidatePath(`/my-feed`);
 
     return { message: action };

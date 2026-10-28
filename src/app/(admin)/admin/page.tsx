@@ -27,7 +27,6 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <GlassStat 
           label="Waitlist Demand" 
-          // @ts-ignore
           value={stats.waitlistCount?.toLocaleString() || "0"} 
           icon={<Ticket size={24} className="text-[var(--status-info)]" />}
           trend="Potential Users"
@@ -92,7 +91,6 @@ export default async function AdminDashboardPage() {
             <h3 className="text-lg font-bold text-[var(--text-primary)]">The Air Lock</h3>
           </div>
           <div className="p-6">
-            {/* @ts-ignore */}
             {stats.waitlistCount > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-[var(--radius-control)] bg-[var(--status-info-bg)]">
                 <div className="flex items-center gap-4">
@@ -101,7 +99,6 @@ export default async function AdminDashboardPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-[var(--text-primary)]">Admit Users</h4>
-                    {/* @ts-ignore */}
                     <p className="text-sm text-[var(--text-muted)]">{stats.waitlistCount} people waiting.</p>
                   </div>
                 </div>

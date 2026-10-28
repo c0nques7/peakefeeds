@@ -50,8 +50,8 @@ export default function CreatePostForm({
 }: CreatePostFormProps) {
   const router = useRouter(); 
   
-  // ⚡️ ENV CHECK
-  const isDev = process.env.NODE_ENV === 'development';
+  // Sponsored (ad-verified) posts stay off until the ad proof can be checked server-side
+  const sponsorEnabled = false;
 
   // 1. Web3 Hooks
   const { address, isConnected } = useAccount();
@@ -443,9 +443,11 @@ export default function CreatePostForm({
                         <button 
                           type="button" 
                           onClick={removeMedia}
-                          className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                          aria-label="Remove attachment"
+                          // Always visible on touch screens (no hover there); hover-revealed on desktop
+                          className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100"
                         >
-                          <X size={16} />
+                          <X size={16} aria-hidden="true" />
                         </button>
                       )}
                     </div>
@@ -531,24 +533,24 @@ export default function CreatePostForm({
                       {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null}
                     </button>
 
-                    {/* OPTION 2: SPONSOR (Disabled in Prod) */}
+                    {/* OPTION 2: SPONSOR (disabled until ad proofs are verified) */}
                     <button 
                       type="button" 
-                      onClick={() => isDev && handleVerifyClick('AD')} 
-                      disabled={!isDev || isPreparing || method === 'SKIP'}
+                      onClick={() => sponsorEnabled && handleVerifyClick('AD')} 
+                      disabled={!sponsorEnabled || isPreparing || method === 'SKIP'}
                       className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group relative
-                        ${!isDev 
-                            ? 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] cursor-not-allowed opacity-60' // Prod
+                        ${!sponsorEnabled 
+                            ? 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] cursor-not-allowed opacity-60' // Disabled
                             : method === 'AD' 
-                                ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' // Dev Active
-                                : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]' // Dev Inactive
+                                ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' // Active
+                                : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]' // Inactive
                         }`}
                     >
-                      {!isDev ? <Lock size={18} className="opacity-50" /> : <PlayCircle size={18} />}
-                      <span className="mt-1">{!isDev ? 'Coming Soon' : 'Sponsor Gas'}</span>
+                      {!sponsorEnabled ? <Lock size={18} className="opacity-50" /> : <PlayCircle size={18} />}
+                      <span className="mt-1">{!sponsorEnabled ? 'Coming Soon' : 'Sponsor Gas'}</span>
 
-                      {/* Status Indicators (Dev Only) */}
-                      {mounted && isDev && method === 'AD' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : (mounted && isDev && signature && method === 'AD' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null)}
+                      {/* Status Indicators */}
+                      {mounted && sponsorEnabled && method === 'AD' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : (mounted && sponsorEnabled && signature && method === 'AD' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null)}
                     </button>
 
                     {/* OPTION 3: SKIP */}

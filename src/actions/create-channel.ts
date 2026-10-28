@@ -41,6 +41,9 @@ export type CreateChannelState = {
 // ---------------------------------------------------------
 // 3. Helper: Unique Slug Generator
 // ---------------------------------------------------------
+// Slugs that are (or were) routes under /channels, so no channel may claim them
+const RESERVED_SLUGS = ['create', 'create-with-post', 'settings'];
+
 async function generateUniqueSlug(name: string): Promise<string> {
   // strict: true removes special characters, so names made only of emoji or
   // non-Latin text come out empty; fall back to "channel" for those
@@ -50,6 +53,7 @@ async function generateUniqueSlug(name: string): Promise<string> {
   const taken = new Set(
     (await prisma.channel.findMany({ where: { slug: { startsWith: slug } }, select: { slug: true } }))
       .map(c => c.slug)
+      .concat(RESERVED_SLUGS)
   );
   if (!taken.has(slug)) return slug;
 

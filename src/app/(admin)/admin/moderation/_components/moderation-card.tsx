@@ -59,7 +59,8 @@ export function ModerationCard({ report }: { report: ReportData }) {
   // ACTION: Dismiss (False Alarm)
   const handleDismiss = () => {
     startTransition(async () => {
-      await resolveReport({ reportId: report.id, verdict: "DISMISS" });
+      const res = await resolveReport({ reportId: report.id, verdict: "DISMISS" });
+      if (!res.success) toast.error(res.error);
     });
   };
 
@@ -112,11 +113,12 @@ export function ModerationCard({ report }: { report: ReportData }) {
   const handlePenalize = (type: PenaltyType) => {
     if (!confirm(`Apply penalty: ${type}?`)) return;
     startTransition(async () => {
-      await resolveReport({ 
+      const res = await resolveReport({ 
         reportId: report.id, 
         verdict: "PENALIZE", 
         penaltyType: type 
       });
+      if (!res.success) toast.error(res.error);
     });
   };
 
@@ -140,7 +142,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
             by @{report.reporter.username || "Anon"} • {new Date(report.createdAt).toLocaleDateString()}
           </p>
           {report.details && (
-             <p className="mt-2 text-sm text-[var(--text-primary)] italic border-l-2 border-[var(--status-error)]/30 pl-2">"{report.details}"</p>
+             <p className="mt-2 text-sm text-[var(--text-primary)] italic border-l-2 border-[var(--status-error)]/30 pl-2">&quot;{report.details}&quot;</p>
           )}
         </div>
         <ShieldAlert className="opacity-50 text-[var(--status-error)]" size={20} />

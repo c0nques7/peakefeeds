@@ -6,16 +6,39 @@ const b2 = new B2({
   applicationKey: process.env.B2_APPLICATION_KEY || '',
 });
 
-let authorized = false;
+// B2 account tokens last 24 hours: authorize again before then, and once more if B2 says ours expired
+const REAUTHORIZE_AFTER_MS = 23 * 60 * 60 * 1000;
+let authorizedAt = 0;
+// Concurrent callers (a feed signing every post at once, or several 401 retries) share one request
+let inFlight: Promise<void> | null = null;
 
-async function authorize() {
-  if (authorized) return;
-  await b2.authorize();
-  authorized = true;
+async function authorize(force = false) {
+  if (inFlight) return inFlight;
+  if (!force && authorizedAt && Date.now() - authorizedAt < REAUTHORIZE_AFTER_MS) return;
+  inFlight = (async () => {
+    try {
+      await b2.authorize();
+      authorizedAt = Date.now();
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
 }
 
-export async function getUploadUrl() {
+/** Runs a B2 call with a current token, retrying once with a fresh one on 401. */
+async function withB2<T>(call: () => Promise<T>): Promise<T> {
   await authorize();
+  try {
+    return await call();
+  } catch (error) {
+    if ((error as { response?: { status?: number } })?.response?.status !== 401) throw error;
+    await authorize(true);
+    return call();
+  }
+}
+
+async function requestUploadUrl() {
   try {
     const response = await b2.getUploadUrl({
       bucketId: process.env.B2_BUCKET_ID || '',
@@ -34,37 +57,39 @@ export async function uploadFile(
   data: Buffer,
   contentType: string
 ) {
-  await authorize();
-  const uploadUrlData = await getUploadUrl();
+  // A fresh upload URL per attempt: its own token can expire too
+  return withB2(async () => {
+    const uploadUrlData = await requestUploadUrl();
   
-  try {
-    const response = await b2.uploadFile({
-      uploadUrl: uploadUrlData.uploadUrl,
-      uploadAuthToken: uploadUrlData.authorizationToken,
-      fileName: fileName,
-      data: data,
-    });
+    try {
+      const response = await b2.uploadFile({
+        uploadUrl: uploadUrlData.uploadUrl,
+        uploadAuthToken: uploadUrlData.authorizationToken,
+        fileName: fileName,
+        data: data,
+        // Without an explicit type B2 guesses from the extension
+        mime: contentType,
+      });
     
-    return response.data;
-  } catch (error: any) {
-    if (error.response) {
-      console.error('B2 uploadFile Error Response:', error.response.data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        console.error('B2 uploadFile Error Response:', error.response.data);
+      }
+      throw error;
     }
-    throw error;
-  }
+  });
 }
 
 export async function deleteFile(fileId: string, fileName: string) {
-  await authorize();
-  const response = await b2.deleteFileVersion({
+  const response = await withB2(() => b2.deleteFileVersion({
     fileId: fileId,
     fileName: fileName,
-  });
+  }));
   return response.data;
 }
 
 export async function getDownloadUrl(fileName: string) {
-  await authorize();
   // B2 download URL format: https://f000.backblazeb2.com/file/bucket-name/file-name
   const bucketName = process.env.B2_BUCKET_NAME || '';
   let endpoint = process.env.B2_ENDPOINT || 'f000.backblazeb2.com';
@@ -83,12 +108,11 @@ export async function getDownloadUrl(fileName: string) {
  * Generates a pre-signed (authorized) download URL for private buckets
  */
 export async function getAuthorizedDownloadUrl(fileName: string, validDurationInSeconds = 3600) {
-  await authorize();
-  const response = await b2.getDownloadAuthorization({
+  const response = await withB2(() => b2.getDownloadAuthorization({
     bucketId: process.env.B2_BUCKET_ID || '',
     fileNamePrefix: fileName,
     validDurationInSeconds,
-  });
+  }));
   
   const authToken = response.data.authorizationToken;
   const baseUrl = await getDownloadUrl(fileName);
@@ -96,24 +120,40 @@ export async function getAuthorizedDownloadUrl(fileName: string, validDurationIn
   return `${baseUrl}?Authorization=${authToken}`;
 }
 
-/**
- * 🟢 NEW: Get a bucket-wide auth token for efficient signing of multiple images
- * Cached for 58 minutes to avoid spamming B2 API on every request
- */
-export const getBucketAuthToken = unstable_cache(
-  async (validDurationInSeconds = 3600) => {
-    await authorize();
-    const response = await b2.getDownloadAuthorization({
-      bucketId: process.env.B2_BUCKET_ID || '',
-      fileNamePrefix: "", // Empty prefix = access to all files in bucket
-      validDurationInSeconds,
-    });
-    return response.data.authorizationToken;
-  },
-  ['b2-bucket-auth-token'],
-  { revalidate: 3500 } // Cache for slightly less than 1 hour
+// One signed URL per file. unstable_cache serves a stale entry once while it refreshes in the
+// background, so the expiry travels with the URL and an expired (or nearly expired) one is re-signed.
+const SIGNED_URL_SECONDS = 24 * 60 * 60;
+const MIN_REMAINING_MS = 5 * 60 * 1000;
+
+const getCachedFileUrl = unstable_cache(
+  async (fileName: string) => ({
+    url: await getAuthorizedDownloadUrl(fileName, SIGNED_URL_SECONDS),
+    expiresAt: Date.now() + SIGNED_URL_SECONDS * 1000,
+  }),
+  ['b2-signed-file-url-v2'],
+  { revalidate: 60 * 60 }
 );
 
+async function getFileUrl(fileName: string) {
+  const cached = await getCachedFileUrl(fileName);
+  if (cached.expiresAt - Date.now() > MIN_REMAINING_MS) return cached.url;
+  return getAuthorizedDownloadUrl(fileName, SIGNED_URL_SECONDS);
+}
+
+/**
+ * A viewable URL for stored media: files in our (private) bucket get a download token scoped to
+ * that one file; anything else is returned unchanged and never carries a token.
+ */
+export async function signMediaUrl(url: string | null | undefined): Promise<string | null> {
+  const fileName = fileNameFromUrl(url);
+  if (!fileName) return url ?? null;
+  try {
+    return await getFileUrl(fileName);
+  } catch (e) {
+    console.error('Failed to sign B2 media URL', e);
+    return url ?? null;
+  }
+}
 
 /** The file name inside our bucket for a stored media URL (https://<host>/file/<bucket>/<name>), or null for other URLs. */
 export function fileNameFromUrl(url: string | null | undefined): string | null {
@@ -122,7 +162,7 @@ export function fileNameFromUrl(url: string | null | undefined): string | null {
   try {
     const { hostname, pathname } = new URL(url);
     const prefix = `/file/${bucketName}/`;
-    if (!hostname.endsWith('backblazeb2.com') || !pathname.startsWith(prefix)) return null;
+    if (!hostname.endsWith('.backblazeb2.com') || !pathname.startsWith(prefix)) return null;
     return decodeURIComponent(pathname.slice(prefix.length)) || null;
   } catch {
     return null;
@@ -131,15 +171,14 @@ export function fileNameFromUrl(url: string | null | undefined): string | null {
 
 /** Deletes every stored version of a file by name (we keep URLs, not B2 file IDs). */
 export async function deleteFileByName(fileName: string) {
-  await authorize();
-  const response = await b2.listFileVersions({
+  const response = await withB2(() => b2.listFileVersions({
     bucketId: process.env.B2_BUCKET_ID || '',
     startFileName: fileName,
     maxFileCount: 100,
-  } as Parameters<typeof b2.listFileVersions>[0]); // the typings wrongly require startFileId
+  } as Parameters<typeof b2.listFileVersions>[0])); // the typings wrongly require startFileId
   const versions = (response.data.files as { fileId: string; fileName: string }[]).filter(f => f.fileName === fileName);
   for (const version of versions) {
-    await b2.deleteFileVersion({ fileId: version.fileId, fileName: version.fileName });
+    await withB2(() => b2.deleteFileVersion({ fileId: version.fileId, fileName: version.fileName }));
   }
   return versions.length;
 }

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
+import { withAdvisoryLock } from '@/lib/advisory-lock';
 import { 
   ReportReason, 
   ReportTargetType, 
@@ -16,7 +17,7 @@ const SubmitReportSchema = z.object({
   targetId: z.string().min(1),
   targetType: z.nativeEnum(ReportTargetType),
   reason: z.nativeEnum(ReportReason),
-  details: z.string().optional().nullable(),
+  details: z.string().max(2000, 'Keep details under 2000 characters.').optional().nullable(),
 });
 
 export type ReportState = {
@@ -62,7 +63,7 @@ export async function submitReport(
 
   try {
     let reportedUserId: string | undefined;
-    let reportData: any = {
+    const reportData: any = {
       reason,
       details: details || null,
       status: "PENDING",
@@ -131,27 +132,56 @@ export async function submitReport(
         break;
     }
 
-    // 2. Create the record in DB 
-    // We use the lowercase 'report' property on the prisma instance
-    const newReport: PrismaReport = await prisma.report.create({
-      data: reportData,
-    });
-
-    // 3. Handle Notifications
-    const adminsAndMods = await prisma.user.findMany({
-      where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
-      select: { id: true }
-    });
-
-    if (adminsAndMods.length > 0) {
-      await prisma.notification.createMany({
-        data: adminsAndMods.map(admin => ({
-          userId: admin.id,
-          actorId: session.user.id,
-          type: NotificationType.REPORT,
-          reportId: newReport.id,
-        }))
+    // 2. One open report per reporter and target: repeats would only re-notify every staff member.
+    // Locked per reporter so parallel submissions can't all miss each other's report.
+    const filed = await withAdvisoryLock(`report:${session.user.id}`, async tx => {
+      const alreadyOpen = await tx.report.findFirst({
+        where: {
+          reporterId: session.user.id,
+          status: "PENDING",
+          targetType,
+          postId: reportData.postId ?? null,
+          commentId: reportData.commentId ?? null,
+          messageId: reportData.messageId ?? null,
+          channelId: reportData.channelId ?? null,
+          adId: reportData.adId ?? null,
+          reportedProfileId: reportData.reportedProfileId ?? null,
+        },
+        select: { id: true },
       });
+      if (alreadyOpen) return { existingId: alreadyOpen.id };
+
+      // 3. Create the record in DB
+      const newReport: PrismaReport = await tx.report.create({
+        data: reportData,
+      });
+      return { newReport };
+    });
+    if ('existingId' in filed) {
+      return { success: true, message: "You've already reported this. Our team will review it.", reportedUserId, reportId: filed.existingId };
+    }
+    const { newReport } = filed;
+
+    // 4. Handle Notifications. The report is already filed, so a failure here (say a staff
+    // account deleted meanwhile) is logged rather than reported back as a failed report.
+    try {
+      const adminsAndMods = await prisma.user.findMany({
+        where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
+        select: { id: true }
+      });
+
+      if (adminsAndMods.length > 0) {
+        await prisma.notification.createMany({
+          data: adminsAndMods.map(admin => ({
+            userId: admin.id,
+            actorId: session.user.id,
+            type: NotificationType.REPORT,
+            reportId: newReport.id,
+          }))
+        });
+      }
+    } catch (error) {
+      console.error("REPORT_NOTIFICATION_ERROR:", error);
     }
 
     return { 
@@ -161,17 +191,10 @@ export async function submitReport(
       reportId: newReport.id
     };
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("REPORT_SUBMISSION_ERROR:", error);
     
-    // IMPORTANT: Even if the DB fails (e.g., column missing), 
-    // returning success: false allows the client-side code to 
-    // actually finish the request and close the modal.
-    return { 
-      success: false, 
-      message: error.code === 'P2022' 
-        ? "System Error: Database schema mismatch. Please run 'npx prisma db push'." 
-        : "Failed to submit report. Please try again." 
-    };
+    // Returning (not throwing) lets the client finish the request and close the modal
+    return { success: false, message: "Failed to submit report. Please try again." };
   }
 }

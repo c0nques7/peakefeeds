@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { PostType, ReactionType, Prisma } from '@prisma/client';
-import { getBucketAuthToken } from '@/lib/b2'; // 🟢 Added Import
+import { signMediaUrl } from '@/lib/b2';
+import { getPostPermissions } from '@/lib/permissions';
 
 // 1. Define FeedPost Type
 export type FeedPost = {
@@ -57,6 +58,7 @@ export type FeedPost = {
   };
   
   currentUserReaction?: ReactionType | null;
+  viewerCanEdit?: boolean;
   viewerCanDelete?: boolean;
   viewerChannelRole?: string | null;
 };
@@ -77,7 +79,9 @@ const feedSelect = {
     select: { id: true, username: true, name: true, image: true, role: true } 
   },
   channel: { select: { id: true, name: true, slug: true, creatorId: true } },
+  // Same cap as the channel page: the first 50 comments per post (the count shows the total)
   comments: {
+    take: 50,
     orderBy: { createdAt: 'asc' as const },
     select: { id: true, content: true, parentId: true, author: { select: { id: true, username: true } } }
   },
@@ -87,10 +91,6 @@ const feedSelect = {
 // 3. Global Feed
 
 export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]> {
-
-  // Fetch Token
-  let bucketAuthToken = '';
-  try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
 
   const [posts, user] = await Promise.all([
     prisma.post.findMany({
@@ -105,11 +105,11 @@ export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]>
     }),
     currentUserId ? prisma.user.findUnique({
       where: { id: currentUserId },
-      select: { role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
+      select: { id: true, role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
     }) : null
   ]);
 
-  return transformPosts(posts, user, bucketAuthToken);
+  return transformPosts(posts, user);
 }
 
 
@@ -117,10 +117,6 @@ export async function getGlobalFeed(currentUserId?: string): Promise<FeedPost[]>
 // 4. Personal Feed
 
 export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
-
-  // Fetch Token
-  let bucketAuthToken = '';
-  try { bucketAuthToken = await getBucketAuthToken(); } catch(e) {}
 
   const [posts, user] = await Promise.all([
     prisma.post.findMany({
@@ -136,40 +132,28 @@ export async function getPersonalFeed(userId: string): Promise<FeedPost[]> {
     }),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
+      select: { id: true, role: true, subscriptions: { select: { channelId: true, role: true, canDeletePosts: true } } }
     })
   ]);
 
-  return transformPosts(posts, user, bucketAuthToken);
+  return transformPosts(posts, user);
 }
 
 
 
 // --- HELPER: Transform & Serialize ---
 
-function transformPosts(posts: any[], user?: any, bucketAuthToken?: string): FeedPost[] {
+async function transformPosts(posts: any[], user?: any): Promise<FeedPost[]> {
 
-  const isGlobalAdmin = user?.role === 'ADMIN';
-
-  return posts.map(post => {
+  return Promise.all(posts.map(async post => {
 
     const userReaction = post.likes?.[0]?.type || null;
 
-    // Find subscription for this specific post's channel
-    const sub = user?.subscriptions?.find((s: any) => s.channelId === post.channelId);
-    const isCreator = post.channel.creatorId === user?.id;
+    // The viewer's subscription to this post's channel
+    const sub = user?.subscriptions?.find((s: any) => s.channelId === post.channel.id);
+    const perms = getPostPermissions(user, { authorId: post.author.id, isVerified: post.isVerified, channel: post.channel }, sub);
 
-    const viewerCanDelete = isGlobalAdmin || isCreator || sub?.canDeletePosts === true;
-    const viewerChannelRole = isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (sub?.role || null));
-
-    // 🟢 FIX: Handle Private B2 Bucket URLs
-    let finalMediaUrl = post.mediaUrl ?? null;
-    if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
-        if (finalMediaUrl.includes('s3.us-east-005')) {
-            finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
-        }
-        finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
-    }
+    const finalMediaUrl = await signMediaUrl(post.mediaUrl);
 
     return {
       id: post.id,
@@ -235,12 +219,14 @@ function transformPosts(posts: any[], user?: any, bucketAuthToken?: string): Fee
 
       currentUserReaction: userReaction as ReactionType | null,
 
-      viewerCanDelete,
+      viewerCanEdit: perms.canEdit,
 
-      viewerChannelRole
+      viewerCanDelete: perms.canDelete,
+
+      viewerChannelRole: perms.channelRole
 
     };
 
-  });
+  }));
 
 }

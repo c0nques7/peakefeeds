@@ -4,20 +4,17 @@ import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
-import { Resend } from 'resend';
 import { render } from "@react-email/render";
 import { ActivationEmail } from "@/components/emails/ActivationEmail"; // 🟢 Ensure this matches filename
+import { resend, EMAIL_FROM } from '@/lib/email';
 
-const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY.trim()) 
-  : null;
 
 export async function getPendingWaitlist(limit = 100) {
   await requireStaff();
   return await prisma.waitlist.findMany({
     where: { status: "PENDING" },
     orderBy: { joinedAt: "asc" },
-    take: limit,
+    take: Math.min(Math.max(Math.trunc(limit) || 100, 1), 500),
   });
 }
 
@@ -51,8 +48,9 @@ export async function activateWaitlistUsers(waitlistIds: string[]) {
     }
   });
 
-  // 2. Send Emails
-  if (resend) {
+  // 2. Send Emails (a local const keeps the null check inside the callbacks below)
+  const mailer = resend;
+  if (mailer) {
     const registerLink = `${process.env.NEXTAUTH_URL}/register`;
     console.log(`[Resend] Attempting to send ${emailsToSend.length} activation emails...`);
 
@@ -63,8 +61,8 @@ export async function activateWaitlistUsers(waitlistIds: string[]) {
           ActivationEmail({ inviteCode: item.code, registerLink }) as React.ReactElement
         );
 
-        const data = await resend.emails.send({
-          from: 'Peake Feeds <onboarding@resend.dev>',
+        const data = await mailer.emails.send({
+          from: EMAIL_FROM,
           to: item.email,
           subject: "You're In! Welcome to Peake Feeds",
           html: emailHtml,

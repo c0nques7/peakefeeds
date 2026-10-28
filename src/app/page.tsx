@@ -187,7 +187,10 @@ export default function LandingPage() {
 
         <div className={`${styles.heroVisual} animate-in slide-in-from-right-10 duration-1000 fade-in`}>
             <div className={styles.demoCardWrapper}>
-                <PostCard post={demoPost} isDemo={true} />
+                {/* PostCard reads ?highlight=, which needs a Suspense boundary on a static page */}
+                <Suspense fallback={null}>
+                  <PostCard post={demoPost} isDemo={true} />
+                </Suspense>
             </div>
         </div>
       </section>

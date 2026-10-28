@@ -6,22 +6,32 @@ import { revalidatePath } from "next/cache";
 import { AdminLogType } from "@prisma/client";
 import { createAdminLog } from "@/lib/admin-logger";
 
-export async function getAllChannels() {
+const CHANNEL_PAGE_SIZE = 50;
+
+export async function getAllChannels(page = 1) {
   await requireRole(["ADMIN"]);
 
-  return await prisma.channel.findMany({
-    include: {
-      _count: {
-        select: { subscribers: true, posts: true }
+  const current = Math.max(Math.trunc(page) || 1, 1);
+  const [channels, totalCount] = await Promise.all([
+    prisma.channel.findMany({
+      include: {
+        _count: {
+          select: { subscribers: true, posts: true }
+        },
+        creator: {
+          select: { id: true, username: true }
+        }
       },
-      creator: {
-        select: { id: true, username: true }
-      }
-    },
-    orderBy: {
-      createdAt: "desc"
-    }
-  });
+      orderBy: {
+        createdAt: "desc"
+      },
+      take: CHANNEL_PAGE_SIZE,
+      skip: (current - 1) * CHANNEL_PAGE_SIZE,
+    }),
+    prisma.channel.count(),
+  ]);
+
+  return { channels, totalCount, page: current, totalPages: Math.max(Math.ceil(totalCount / CHANNEL_PAGE_SIZE), 1) };
 }
 
 export async function updateChannel(channelId: string, data: { name?: string, description?: string }) {

@@ -15,7 +15,7 @@ export const WelcomeEmail: React.FC<WelcomeEmailProps> = ({ userEmail }) => (
       </div>
 
       <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
-        Welcome, and thank you for your interest. We're very excited to show you what we've been working on.
+        Welcome, and thank you for your interest. We&apos;re very excited to show you what we&apos;ve been working on.
       </h1>
       
       <p style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '16px' }}>

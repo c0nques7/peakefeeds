@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import * as argon2 from "argon2";
-import { authenticator } from "otplib";
+import { checkTwoFactorCode } from "@/lib/two-factor-guard";
 import { getSessionAccountStatus, isBanned, isUnderage } from "@/lib/penalties";
 import { claimInviteForNewGoogleUser, decideGoogleSignIn } from "@/lib/google-signup";
 
@@ -68,14 +68,9 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const isValidToken = authenticator.verify({
-            token: credentials.twoFactorCode,
-            secret: user.twoFactorSecret
-          });
-
-          if (!isValidToken) {
-            throw new Error("INVALID_2FA_CODE"); 
-          }
+          const check = await checkTwoFactorCode(user.id, credentials.twoFactorCode);
+          if (check === "locked") throw new Error("2FA_LOCKED");
+          if (check !== "ok") throw new Error("INVALID_2FA_CODE");
         }
 
         return {
@@ -113,6 +108,7 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
+        token.signedInAt = Date.now();
         token.id = user.id;
         token.role = user.role;
         token.walletAddress = user.walletAddress;
@@ -125,6 +121,14 @@ export const authOptions: NextAuthOptions = {
         const status = await getSessionAccountStatus(token.id as string);
         if (!status || isBanned(status)) throw new Error("ACCOUNT_SUSPENDED");
         if (isUnderage(status)) throw new Error("ACCOUNT_UNDERAGE");
+        // A password reset ends sessions that signed in before it. Tokens from before signedInAt
+        // existed get it pinned from their issue time (iat, in seconds) the first time we see them:
+        // next-auth renews iat on every re-encode, so reading it each time would let a session that
+        // got past one stale status check stay ahead of the reset for good.
+        token.signedInAt ??= ((token.iat as number | undefined) ?? 0) * 1000;
+        if (status.passwordChangedAt && status.passwordChangedAt.getTime() > token.signedInAt) {
+          throw new Error("SESSION_EXPIRED");
+        }
         token.role = status.role;
         token.ageConfirmed = !!status.ageConfirmedAt;
         token.walletAddress = status.walletAddress;

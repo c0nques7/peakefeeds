@@ -39,20 +39,19 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    fetchPermissions();
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getChannelPermissions(channelId);
+        if (!cancelled) setPermissions(data as any);
+      } catch (error) {
+        if (!cancelled) toast.error("Failed to load permissions.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [channelId]);
-
-  const fetchPermissions = async () => {
-    setIsLoading(true);
-    try {
-      const data = await getChannelPermissions(channelId);
-      setPermissions(data as any);
-    } catch (error) {
-      toast.error("Failed to load permissions.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleUpdate = async (userId: string, updates: Partial<PermissionData>) => {
     const current = permissions.find(p => p.userId === userId);
@@ -79,7 +78,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
           toast.success("Permissions updated.");
           setPermissions(prev => prev.map(p => p.userId === userId ? { ...p, ...updates, ...newData.permissions } : p));
         } else {
-          toast.error("Failed to update.");
+          toast.error(res.error || "Failed to update.");
         }
       } catch (error) {
         toast.error("An error occurred.");
@@ -97,7 +96,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
           toast.success("User removed.");
           setPermissions(prev => prev.filter(p => p.userId !== userId));
         } else {
-          toast.error("Failed to remove user.");
+          toast.error(res.error || "Failed to remove user.");
         }
       } catch (error) {
         toast.error("An error occurred.");

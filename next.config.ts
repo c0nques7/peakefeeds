@@ -3,8 +3,18 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
   serverExternalPackages: ["argon2", "ws"],
-  turbopack: {},
-  // 1. WEBPACK CONFIG
+  // 1. BUNDLER ALIASES: wallet libraries import React Native storage, pino-pretty and Node
+  // built-ins they never use in the browser. Turbopack (dev and build) and webpack (fallback,
+  // `next build --webpack`) get the same stand-ins.
+  turbopack: {
+    resolveAlias: {
+      '@react-native-async-storage/async-storage': './src/lib/empty-module.ts',
+      'pino-pretty': './src/lib/empty-module.ts',
+      fs: { browser: './src/lib/empty-module.ts' },
+      net: { browser: './src/lib/empty-module.ts' },
+      tls: { browser: './src/lib/empty-module.ts' },
+    },
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -99,10 +109,6 @@ const nextConfig: NextConfig = {
               media-src 'self' data: blob: https://www.youtube.com https://youtu.be https://*.backblazeb2.com https://*.googlevideo.com;
             `.replace(/\s{2,}/g, ' ').trim() 
           },
-          {
-            key: 'X-Frame-Options',
-            value: 'ALLOWALL',
-          }
         ],
       },
     ];

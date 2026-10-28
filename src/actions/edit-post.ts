@@ -5,12 +5,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { UserRole, ChannelRole } from '@prisma/client';
-import { getPostingBlockReason } from "@/lib/penalties";
+import { UserRole } from '@prisma/client';
+import { getPostPermissions } from '@/lib/permissions';
+import { getInteractionBlockReason } from '@/lib/interaction-guard';
 
 const EditPostSchema = z.object({
   postId: z.string(),
-  content: z.string().min(1, "Content cannot be empty").max(1000),
+  content: z.string().min(1, "Content cannot be empty").max(2000),
 });
 
 export async function editPost(formData: FormData) {
@@ -19,9 +20,6 @@ export async function editPost(formData: FormData) {
   if (!session?.user?.id) {
     return { error: "Unauthorized" };
   }
-
-  const blocked = await getPostingBlockReason(session.user.id);
-  if (blocked) return { error: blocked };
 
   const validatedFields = EditPostSchema.safeParse({
     postId: formData.get('postId'),
@@ -42,24 +40,18 @@ export async function editPost(formData: FormData) {
 
   if (!post) return { error: "Post not found." };
 
-  if (post.isVerified) {
-    return { error: "Verified posts cannot be edited." };
-  }
-
   const userId = session.user.id;
-  const isAuthor = post.authorId === userId;
-  
   const subscription = await prisma.subscription.findUnique({
     where: { userId_channelId: { userId, channelId: post.channelId } }
   });
+  const perms = getPostPermissions({ id: userId, role: session.user.role as UserRole }, post, subscription);
 
-  const isChannelOwner = post.channel.creatorId === userId;
-  const isChannelMod = subscription?.role === ChannelRole.MODERATOR;
-  const isGlobalAdmin = (session.user as any).role === UserRole.ADMIN;
-
-  if (!isAuthor && !isChannelOwner && !isChannelMod && !isGlobalAdmin) {
-    return { error: "You do not have permission to edit this post." };
+  if (!perms.canEdit) {
+    return { error: post.isVerified ? "Verified posts cannot be edited." : "You do not have permission to edit this post." };
   }
+
+  const blocked = await getInteractionBlockReason({ userId, action: 'edit-post', postId });
+  if (blocked) return { error: blocked };
 
   try {
     await prisma.post.update({

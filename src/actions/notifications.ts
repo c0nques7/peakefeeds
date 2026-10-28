@@ -12,7 +12,7 @@ export async function getNotifications(limit = 20) {
   try {
     const notifications = await prisma.notification.findMany({
       where: { userId: session.user.id },
-      take: limit,
+      take: Math.min(Math.max(Math.trunc(limit) || 20, 1), 50),
       orderBy: { createdAt: 'desc' },
       include: {
         actor: { select: { username: true, image: true } },
@@ -37,8 +37,9 @@ export async function markAsRead(id: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return
 
-  await prisma.notification.update({
-    where: { id },
+  // Scoped to the caller so nobody can mark someone else's notifications
+  await prisma.notification.updateMany({
+    where: { id, userId: session.user.id },
     data: { isRead: true }
   })
 }

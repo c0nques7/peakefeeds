@@ -14,10 +14,10 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Phones on app pages: sit above the bottom tab bar (80px tall) instead of over it */
+/* Phones on app pages: sit above the bottom tab bar instead of over it */
 @media (max-width: 1023px) {
   .botWrapper.aboveTabBar {
-    bottom: calc(80px + 0.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--tab-bar-height) + 0.75rem + env(safe-area-inset-bottom, 0px));
     right: calc(0.75rem + env(safe-area-inset-right, 0px));
   }
 }

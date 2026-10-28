@@ -19,6 +19,8 @@ export default function TwoFactorSettings({ userId }: TwoFactorSettingsProps) {
   const [secret, setSecret] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [token, setToken] = useState("");
+  const [isDisabling, setIsDisabling] = useState(false);
+  const [disableCode, setDisableCode] = useState("");
 
   useEffect(() => {
       const loadStatus = async () => {
@@ -70,11 +72,17 @@ export default function TwoFactorSettings({ userId }: TwoFactorSettingsProps) {
   };
 
   const disable = async () => {
-      if (!confirm("Are you sure you want to disable 2FA? Your account will be less secure.")) return;
+      if (disableCode.length !== 6) return;
       setIsSetupLoading(true);
       try {
-          await disableTwoFactor(userId);
+          const result = await disableTwoFactor(userId, disableCode);
+          if (!result.success) {
+              toast.error(result.error || "Invalid code");
+              return;
+          }
           setIsEnabled(false);
+          setIsDisabling(false);
+          setDisableCode("");
           toast.success("Two-factor authentication disabled");
       } catch (e) {
           toast.error("Failed to disable 2FA");
@@ -102,12 +110,36 @@ export default function TwoFactorSettings({ userId }: TwoFactorSettingsProps) {
             </div>
         </div>
         
-        {isEnabled && (
-             <Button variant="danger" size="sm" onClick={disable} disabled={isSetupLoading}>
-                {isSetupLoading ? "Turning off…" : "Turn off"}
+        {isEnabled && !isDisabling && (
+             <Button variant="danger" size="sm" onClick={() => setIsDisabling(true)}>
+                Turn off
              </Button>
         )}
       </div>
+
+      {isEnabled && isDisabling && (
+          <div>
+              <label htmlFor="disable-2fa-code" className="block text-sm text-[var(--text-primary)] mb-2 font-medium">
+                  Enter the current 6-digit code from your authenticator app to turn off 2FA
+              </label>
+              <div className="flex gap-2">
+                  <input
+                      id="disable-2fa-code"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="000000"
+                      value={disableCode}
+                      onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className={`${inputClasses} flex-1 font-mono text-lg tracking-widest`}
+                  />
+                  <Button variant="danger" size="lg" onClick={disable} disabled={disableCode.length !== 6 || isSetupLoading}>
+                      {isSetupLoading ? "Turning off…" : "Turn off"}
+                  </Button>
+              </div>
+              <button onClick={() => { setIsDisabling(false); setDisableCode(""); }} className="mt-3 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]">Cancel</button>
+          </div>
+      )}
 
       {!isEnabled && setupStep === "idle" && (
           <Button onClick={startSetup} disabled={isSetupLoading} icon={isSetupLoading ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : undefined}>

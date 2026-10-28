@@ -38,5 +38,7 @@ declare module "next-auth/jwt" {
     role: UserRole
     walletAddress?: string | null
     ageConfirmed?: boolean
+    /** ms since epoch; sessions older than the user's passwordChangedAt are ended */
+    signedInAt?: number
   }
 }

@@ -2,7 +2,9 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
-import { getBucketAuthToken } from "@/lib/b2"; // 🟢 Added Import
+import { signMediaUrl } from "@/lib/b2";
+import { getPostPermissions } from "@/lib/permissions";
+import { UserRole } from "@prisma/client";
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm"; 
 import { SubscribeButton } from "@/components/SubscribeButton";
@@ -42,14 +44,7 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
   const currentUserId = session?.user?.id || '';
   const isGlobalAdmin = session?.user?.role === 'ADMIN';
 
-  // 1. Fetch Channel Data & Auth Token
-  // We fetch the auth token once for the whole page render
-  let bucketAuthToken = '';
-  try {
-      bucketAuthToken = await getBucketAuthToken();
-  } catch (e) {
-      console.error("Failed to get B2 Auth Token", e);
-  }
+  // 1. Fetch Channel Data
 
   const channel = await prisma.channel.findUnique({
     where: { slug: slug },
@@ -133,23 +128,15 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
   // 2. Transform Data (Fix Dates & Nulls)
   const viewerSubscription = channel.subscribers[0];
   const isCreator = channel.creatorId === currentUserId;
+  const viewer = session?.user?.id ? { id: session.user.id, role: session.user.role as UserRole } : null;
   const isSubscribedInitial = channel.subscribers.length > 0;
   
   const hasMore = channel.posts.length > show;
-  const formattedPosts = channel.posts.slice(0, show).map((post) => {
-      // @ts-ignore
+  const formattedPosts = await Promise.all(channel.posts.slice(0, show).map(async (post) => {
       const userReaction = post.likes?.[0]?.type || null;
 
-      // 🟢 FIX: Handle Private B2 Bucket URLs
-      let finalMediaUrl = post.mediaUrl ?? null;
-      if (finalMediaUrl && finalMediaUrl.includes('backblazeb2.com') && bucketAuthToken) {
-          // If it's using the S3 endpoint (s3.us-east-005), swap it to Native (f005)
-          if (finalMediaUrl.includes('s3.us-east-005')) {
-             finalMediaUrl = finalMediaUrl.replace('s3.us-east-005', 'f005');
-          }
-          // Append the auth token
-          finalMediaUrl = `${finalMediaUrl}?Authorization=${bucketAuthToken}`;
-      }
+      const finalMediaUrl = await signMediaUrl(post.mediaUrl);
+      const perms = getPostPermissions(viewer, { authorId: post.author.id, isVerified: post.isVerified, channel }, viewerSubscription);
       
       return {
           ...post,
@@ -160,8 +147,9 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
           contentHash: post.contentHash ?? null,
           
           // 🟢 ADDED: Viewer context for permissions
-          viewerChannelRole: isGlobalAdmin ? 'ADMIN' : (isCreator ? 'OWNER' : (viewerSubscription?.role || null)),
-          viewerCanDelete: isGlobalAdmin || isCreator || viewerSubscription?.canDeletePosts || false,
+          viewerChannelRole: perms.channelRole,
+          viewerCanEdit: perms.canEdit,
+          viewerCanDelete: perms.canDelete,
           
           author: {
              ...post.author,
@@ -184,7 +172,7 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
           },
           currentUserReaction: userReaction
       }
-  });
+  }));
 
   return (
     <div className={styles.feedWrapper}>

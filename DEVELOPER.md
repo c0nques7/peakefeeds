@@ -1,5 +1,12 @@
 # PeakeFeeds Developer Documentation
 
+## 🗺️ Routes
+- **App** (`src/app/(dashboard)`, signed-in features): `/home`, `/discover`, `/channels/create`, `/channels/[slug]`, `/channels/[slug]/settings`, `/messages`, `/notifications`, `/profile`, `/profile/[username]`, `/settings`. `/c/[slug]` rewrites to `/channels/[slug]`.
+- **Auth** (`src/app/(auth)`): `/login`, `/register`, `/signin`, `/forgot-password`, `/reset-password`, `/welcome` (choose a username), `/confirm-age`.
+- **Admin** (`src/app/(admin)`, staff only): `/admin`, `/admin/users`, `/admin/users/[id]`, `/admin/channels`, `/admin/posts`, `/admin/moderation`, `/admin/support`, `/admin/logs`, `/admin/waitlist`.
+- **Public**: `/` (landing), `/terms`, `/privacy`.
+- **Route handlers** (`src/app/api`): `auth/[...nextauth]`, `upload` (media to B2), `channels/search`, `oembed`, `account/export`.
+
 ## 🛡️ Moderation & Reporting System
 
 ### Unified Reporting
@@ -22,44 +29,33 @@ All administrative actions are logged in the `AdminLog` table. This includes:
 
 Audit logs are viewable at `/admin/logs`.
 
-## 📡 API Endpoints
-
-### Channel Permissions
-Managed via Route Handlers at `src/app/api/channels/[channelId]/permissions/route.ts`.
-
-#### `GET /api/channels/[channelId]/permissions`
-- **Auth**: Requires Channel Owner, Moderator, or Global Admin.
-- **Returns**: Array of subscription records with user details.
-
-#### `POST /api/channels/[channelId]/permissions`
-- **Auth**: Requires Channel Owner, Moderator, or Global Admin.
-- **Body**:
-  ```json
-  {
-    "userId": "string",
-    "role": "MEMBER | MODERATOR | OWNER",
-    "permissions": {
-      "canPost": "boolean",
-      "canComment": "boolean",
-      "canDeletePosts": "boolean",
-      "canPinPosts": "boolean"
-    }
-  }
-  ```
-
-#### `DELETE /api/channels/[channelId]/permissions?userId=[userId]`
-- **Auth**: Requires Channel Owner, Moderator, or Global Admin.
-- **Action**: Removes a user from the channel.
+## 📡 Channel Permissions
+Managed by server actions in `src/actions/channel-permissions.ts` (`getChannelPermissions`, `updateChannelPermissions`, `removeChannelUser`), used by the channel settings page.
+- **Who:** the channel creator, OWNER members and site admins manage everyone; channel moderators manage ordinary members only.
+- **Never:** nobody changes the creator's membership or their own, and only owners hand out MODERATOR/OWNER.
 
 ## 🧪 Testing
-Unit tests are implemented using **Vitest**.
-- **Run Tests**: `npm test`
-- **Setup**: Configured in `vitest.config.ts` and `src/test/setup.ts`.
+Tests use **Vitest** (`vitest.config.ts`, `src/test/setup.ts`). Many are integration tests that create and delete rows, so they run against a **local** Postgres only: `vitest.config.ts` refuses to start if `DATABASE_URL` isn't localhost (`.env.local` holds production's URL).
+
+```bash
+cp .env.example .env.development.local   # once; fill in what you need
+docker compose up -d postgres
+npx prisma migrate deploy
+npm test
+```
+
+**CI** (`.github/workflows/ci.yml`) runs on every pull request and push to `main`: `npm ci`, `prisma validate`, `npm run typecheck`, `npm run lint`, migrations against a throwaway Postgres (plus a check that they match `schema.prisma`), `npm test` and `npm run build`.
+
+**Lint:** `no-explicit-any`, `react-hooks/set-state-in-effect` and `react-hooks/purity` are warnings for now (existing debt, see `eslint.config.mjs`); every other rule fails CI.
+
+## 📦 Dependencies
+`@coinbase/wallet-sdk`, `@gemini-wallet/core`, `@metamask/sdk`, `@safe-global/safe-apps-provider`, `@walletconnect/ethereum-provider` and `porto` are never imported directly: they are optional peer dependencies of wagmi's connectors, which load them when a user picks that wallet. `@wagmi/core` is a required peer of `@reown/appkit-adapter-wagmi`. Keep them all.
 
 ## 🔒 Content Rules
-- **Verified Content**: Once signed and published to the blockchain, content **cannot** be edited or deleted.
-- **Unverified Content**: Can be edited/deleted by the Author, Channel Owner, Moderator (with `canDeletePosts` permission), or Global Admin.
-- **Locked Content**: Admins can lock any content for review. Locked content shows a `LockedOverlay` and disables all interactions.
+One rule decides who may edit or delete a post: `getPostPermissions` in `src/lib/permissions.ts`. Creating or changing content also goes through `getInteractionBlockReason` in `src/lib/interaction-guard.ts`.
+- **Verified Content**: Once signed and published to the blockchain, content **cannot** be edited; only site staff can remove it, with a reason.
+- **Unverified Content**: The author, channel owner, channel moderators and site staff can edit; the author, channel owner, members with `canDeletePosts` and site staff can delete (anyone but the author gives a reason).
+- **Locked Content**: Staff can lock a channel, post, comment or account for review. Locked content shows a `LockedOverlay`; the server refuses new posts, comments and reactions on it (site staff excepted).
 
 ## 🔑 Google Sign-In
 Google sign-in is offered only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.

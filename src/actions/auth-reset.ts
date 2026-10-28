@@ -5,15 +5,13 @@ import { randomBytes } from "crypto";
 import * as argon2 from "argon2";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { ResetPasswordEmail } from "@/components/emails/ResetPasswordEmail";
 import React from "react";
+import { PasswordSchema, firstError } from "@/lib/credentials";
+import { clearAccountStatusCache } from "@/lib/penalties";
+import { resend, SECURITY_FROM } from '@/lib/email';
 
-// Initialize Resend
-const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY.trim()) 
-  : null;
 
 /**
  * 1. REQUEST FLOW
@@ -46,7 +44,6 @@ export async function requestPasswordReset(formData: FormData) {
     if (existing) {
       const createdAt = new Date(existing.expires.getTime() - TOKEN_LIFETIME_MS);
       if (Date.now() - createdAt.getTime() < COOLDOWN_MS) {
-        console.log(`[AUTH] Reset requested too soon for ${email}. Cooldown active.`);
         return { success: true }; 
       }
     }
@@ -84,8 +81,6 @@ export async function requestPasswordReset(formData: FormData) {
     // 6. Send Email via Resend
     if (resend) {
       try {
-        console.log(`[RESEND] Rendering email template for ${email}...`);
-        
         const html = await render(
           React.createElement(ResetPasswordEmail, { 
             userEmail: email, 
@@ -93,10 +88,8 @@ export async function requestPasswordReset(formData: FormData) {
           } as any)
         );
 
-        console.log(`[RESEND] Sending from security@peakefeeds.com to ${email}...`);
-        
         const { data, error } = await resend.emails.send({
-          from: 'Peake Feeds <security@peakefeeds.com>',
+          from: SECURITY_FROM,
           to: email,
           subject: 'Reset your Peake Feeds password',
           html
@@ -119,16 +112,11 @@ export async function requestPasswordReset(formData: FormData) {
         } catch (cleanupErr) {
           console.error('[DB ERROR] Failed to cleanup token after email failure:', cleanupErr);
         }
-        
-        // Fallback: Log link to console so developers can still test if email fails
-        console.log(`\n------------------------------------------------`);
-        console.log(`[STAGING FALLBACK] RESET LINK for ${email}:`);
-        console.log(resetLink);
-        console.log(`------------------------------------------------\n`);
       }
     } else {
       console.warn('[CONFIG] RESEND_API_KEY is missing. No email will be sent.');
-      console.log(`[LOCAL DEV] Reset Link: ${resetLink}`);
+      // A reset link is a password: only print it on a developer's machine
+      if (process.env.NODE_ENV === 'development') console.log(`[LOCAL DEV] Reset Link: ${resetLink}`);
     }
   }
 
@@ -141,13 +129,11 @@ export async function requestPasswordReset(formData: FormData) {
  * Triggered when user submits the "New Password" form.
  */
 export async function completePasswordReset(token: string, email: string, formData: FormData) {
-  const password = formData.get("password") as string;
-  const confirm = formData.get("confirm") as string;
+  const parsed = PasswordSchema.safeParse(formData.get("password") ?? "");
+  if (!parsed.success) return { error: firstError(parsed.error) };
+  const password = parsed.data;
+  const confirm = formData.get("confirm");
 
-  // Basic Validation
-  if (!password || password.length < 8) {
-    return { error: "Password must be at least 8 characters long." };
-  }
   if (password !== confirm) {
     return { error: "Passwords do not match." };
   }
@@ -170,10 +156,11 @@ export async function completePasswordReset(token: string, email: string, formDa
 
   // 3. Update User & Cleanup Token (Transaction)
   try {
-    await prisma.$transaction([
+    const [updated] = await prisma.$transaction([
+      // passwordChangedAt ends every session signed in before now (see the jwt callback)
       prisma.user.update({
         where: { email: email.toLowerCase() },
-        data: { passwordHash: passwordHash }
+        data: { passwordHash: passwordHash, passwordChangedAt: new Date() }
       }),
       prisma.verificationToken.delete({
         where: {
@@ -184,6 +171,7 @@ export async function completePasswordReset(token: string, email: string, formDa
         }
       })
     ]);
+    clearAccountStatusCache(updated.id);
   } catch (err) {
     console.error("[DB ERROR] Final password update failed:", err);
     return { error: "Failed to update password. Please try again." };
