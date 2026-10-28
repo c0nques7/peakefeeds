@@ -58,4 +58,11 @@ describe('submitReport', () => {
     expect(await submitReport({}, form({ targetId: users.author.id, targetType: 'USER', reason: 'SPAM', details: 'x'.repeat(2001) })))
       .toMatchObject({ success: false });
   });
+
+  it('files only one report when the same one is submitted in parallel', async () => {
+    const results = await Promise.all(Array.from({ length: 8 }, () =>
+      submitReport({}, form({ targetId: users.author.id, targetType: 'USER', reason: 'OTHER' }))));
+    expect(results.every(r => r.success)).toBe(true);
+    expect(await prisma.report.count({ where: { reporterId: users.reporter.id, targetType: 'USER', reportedProfileId: users.author.id } })).toBe(1);
+  });
 });

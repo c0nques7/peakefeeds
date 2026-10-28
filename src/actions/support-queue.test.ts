@@ -9,7 +9,7 @@ vi.mock('next-auth', async (orig) => ({ ...(await orig<typeof import('next-auth'
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/admin-logger', () => ({ createAdminLog: vi.fn() }));
 
-import { getAllTicketsAction, getStaffTicketAction } from './support';
+import { getAllTicketsAction, getStaffTicketAction, createTicketAction } from './support';
 import { getConversations } from './messaging';
 
 const tag = `sq${Date.now()}`;
@@ -40,7 +40,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.supportTicket.deleteMany({ where: { id: ticketId } });
+  await prisma.supportTicket.deleteMany({ where: { OR: [{ id: ticketId }, { userId: users.customer.id }] } });
   await prisma.user.deleteMany({ where: { id: { in: Object.values(users).map(u => u.id) } } });
 });
 
@@ -77,5 +77,14 @@ describe('inbox', () => {
     const res = await getConversations();
     const ticket = res.data!.find(c => c.id === ticketId)!;
     expect(ticket.messages[0].content).toBe('a reply');
+  });
+});
+
+describe('ticket creation cap', () => {
+  it('holds under a burst of parallel requests', async () => {
+    loginAs(users.customer);
+    await Promise.all(Array.from({ length: 10 }, (_, i) => createTicketAction(`burst ${i} ${tag}`)));
+    // The customer already had one ticket; the cap is 5 an hour
+    expect(await prisma.supportTicket.count({ where: { userId: users.customer.id } })).toBe(5);
   });
 });

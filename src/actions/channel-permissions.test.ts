@@ -136,7 +136,7 @@ describe('Channel Permissions Actions', () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({ role: siteRole } as never);
       vi.mocked(prisma.subscription.findUnique).mockImplementation((({ where }: { where: { userId_channelId: { userId: string } } }) => {
         const role = subs[where.userId_channelId.userId];
-        return Promise.resolve(role ? { userId: where.userId_channelId.userId, role } : null);
+        return Promise.resolve(role ? { userId: where.userId_channelId.userId, role, canDeletePosts: false, canPinPosts: false } : null);
       }) as never);
     };
     const update = (userId: string, role: ChannelRole) =>
@@ -173,6 +173,34 @@ describe('Channel Permissions Actions', () => {
       setup('admin', { creator: ChannelRole.OWNER }, 'ADMIN');
       expect(await update('creator', ChannelRole.MEMBER)).toMatchObject({ success: false });
       expect(await removeChannelUser('channel-1', 'creator')).toMatchObject({ success: false });
+    });
+
+    it("doesn't let a moderator grant delete or pin rights", async () => {
+      setup('mod', { mod: ChannelRole.MODERATOR, member: ChannelRole.MEMBER });
+      const grant = (flags: Partial<typeof perms>) => updateChannelPermissions({
+        channelId: 'channel-1', userId: 'member', role: ChannelRole.MEMBER, permissions: { ...perms, ...flags },
+      });
+      expect(await grant({ canDeletePosts: true })).toMatchObject({ success: false });
+      expect(await grant({ canPinPosts: true })).toMatchObject({ success: false });
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
+    });
+
+    it('lets the owner grant delete rights to a member', async () => {
+      setup('creator', { creator: ChannelRole.OWNER, member: ChannelRole.MEMBER });
+      const res = await updateChannelPermissions({
+        channelId: 'channel-1', userId: 'member', role: ChannelRole.MEMBER, permissions: { ...perms, canDeletePosts: true },
+      });
+      expect(res).toMatchObject({ success: true });
+    });
+
+    it('rejects extra keys smuggled into permissions', async () => {
+      setup('mod', { mod: ChannelRole.MODERATOR, member: ChannelRole.MEMBER });
+      const res = await updateChannelPermissions({
+        channelId: 'channel-1', userId: 'member', role: ChannelRole.MEMBER,
+        permissions: { ...perms, role: ChannelRole.OWNER } as never,
+      });
+      expect(res).toMatchObject({ success: false });
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
     });
 
     it('lets the owner promote a member to moderator', async () => {

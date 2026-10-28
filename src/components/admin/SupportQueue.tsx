@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useDeferredValue } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import useSWR from 'swr'
 import { Ticket, ChatMessage } from '@/lib/support-types'
 import {
@@ -58,12 +58,17 @@ export default function SupportQueue() {
   const [statusFilter, setStatusFilter] = useState<SupportStatus | 'ALL'>('ALL')
   const [assigneeFilter, setAssigneeFilter] = useState<string | 'ALL'>('ALL')
 
-  // The list carries each ticket's latest message only; search runs on the server
-  const deferredSearch = useDeferredValue(searchQuery.trim())
+  // The list carries each ticket's latest message only; search runs on the server (a scan over
+  // every message), so it waits for a pause in typing rather than firing on each keystroke
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
+    return () => clearTimeout(handler)
+  }, [searchQuery])
   const { data: tickets = [], mutate: mutateTickets } = useSWR(
-    ['admin-support-tickets', deferredSearch], 
+    ['admin-support-tickets', debouncedSearch], 
     async () => {
-        const res = await getAllTicketsAction(deferredSearch || undefined)
+        const res = await getAllTicketsAction(debouncedSearch || undefined)
         return res.success ? (res.data as Ticket[]) : [];
     },
     { refreshInterval: 10000, keepPreviousData: true }

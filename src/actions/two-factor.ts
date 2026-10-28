@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { authenticator } from "otplib";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
+import { checkTwoFactorCode } from "@/lib/two-factor-guard";
 
 export async function generateTwoFactorSecret(userId: string) {
   const session = await getServerSession(authOptions);
@@ -41,6 +42,8 @@ export async function verifyAndEnableTwoFactor(userId: string, token: string, se
       data: {
         twoFactorEnabled: true,
         twoFactorSecret: secret,
+        twoFactorFailures: 0,
+        twoFactorLockedUntil: null,
       },
     });
 
@@ -64,7 +67,11 @@ export async function disableTwoFactor(userId: string, token: string) {
   });
   if (!user?.twoFactorEnabled || !user.twoFactorSecret) return { success: true };
 
-  if (!token || !authenticator.verify({ token, secret: user.twoFactorSecret })) {
+  const check = await checkTwoFactorCode(userId, token);
+  if (check === 'locked') {
+    return { success: false, error: "Too many wrong codes. Try again in 15 minutes." };
+  }
+  if (check !== 'ok') {
     return { success: false, error: "Enter the current 6-digit code from your authenticator app." };
   }
 

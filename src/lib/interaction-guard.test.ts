@@ -270,6 +270,19 @@ describe('auth', () => {
     expect(await jwt({ id: users.other.id, signedInAt: Date.now() + 1000 })).toMatchObject({ id: users.other.id });
   });
 
+  it('pins a sign-in time on older tokens so a renewed iat never outruns a reset', async () => {
+    // Issued before the reset above, and before tokens carried signedInAt
+    const legacyIat = Math.floor((Date.now() - 60_000) / 1000);
+    await expect(jwt({ id: users.other.id, iat: legacyIat })).rejects.toThrow('SESSION_EXPIRED');
+
+    // A token that slipped past a stale status check comes back pinned, with a fresh iat
+    const pinned = { id: users.other.id, signedInAt: legacyIat * 1000, iat: Math.floor(Date.now() / 1000) + 60 };
+    await expect(jwt(pinned)).rejects.toThrow('SESSION_EXPIRED');
+
+    const token: Record<string, unknown> = { id: users.mod.id, iat: legacyIat };
+    expect(await jwt(token)).toMatchObject({ signedInAt: legacyIat * 1000 });
+  });
+
   it('needs a current code to turn off 2FA', async () => {
     const secret = authenticator.generateSecret();
     await prisma.user.update({ where: { id: users.mod.id }, data: { twoFactorEnabled: true, twoFactorSecret: secret } });

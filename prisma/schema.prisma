@@ -138,6 +138,9 @@ model User {
 
   twoFactorEnabled Boolean   @default(false)
   twoFactorSecret  String?
+  /// Wrong 2FA codes in a row, and when code checks resume after too many (see lib/two-factor-guard.ts)
+  twoFactorFailures    Int       @default(0)
+  twoFactorLockedUntil DateTime?
 
   // Sessions signed in before this are ended (set on password reset)
   passwordChangedAt DateTime?
@@ -422,9 +425,12 @@ model SupportTicket {
   messages        TicketMessage[]
   directMessages  DirectMessage[]
   notifications   Notification[]
+  /// Salted hash of an anonymous creator's IP, for the per-visitor ticket cap
+  clientKey       String?
 
   @@index([status])
   @@index([userId])
+  @@index([clientKey, createdAt])
   @@index([assigneeId])
   @@index([updatedAt])
 }

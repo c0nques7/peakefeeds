@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
+import { withAdvisoryLock } from '@/lib/advisory-lock';
 import { 
   ReportReason, 
   ReportTargetType, 
@@ -131,30 +132,35 @@ export async function submitReport(
         break;
     }
 
-    // 2. One open report per reporter and target: repeats would only re-notify every staff member
-    const alreadyOpen = await prisma.report.findFirst({
-      where: {
-        reporterId: session.user.id,
-        status: "PENDING",
-        targetType,
-        postId: reportData.postId ?? null,
-        commentId: reportData.commentId ?? null,
-        messageId: reportData.messageId ?? null,
-        channelId: reportData.channelId ?? null,
-        adId: reportData.adId ?? null,
-        reportedProfileId: reportData.reportedProfileId ?? null,
-      },
-      select: { id: true },
-    });
-    if (alreadyOpen) {
-      return { success: true, message: "You've already reported this. Our team will review it.", reportedUserId, reportId: alreadyOpen.id };
-    }
+    // 2. One open report per reporter and target: repeats would only re-notify every staff member.
+    // Locked per reporter so parallel submissions can't all miss each other's report.
+    const filed = await withAdvisoryLock(`report:${session.user.id}`, async tx => {
+      const alreadyOpen = await tx.report.findFirst({
+        where: {
+          reporterId: session.user.id,
+          status: "PENDING",
+          targetType,
+          postId: reportData.postId ?? null,
+          commentId: reportData.commentId ?? null,
+          messageId: reportData.messageId ?? null,
+          channelId: reportData.channelId ?? null,
+          adId: reportData.adId ?? null,
+          reportedProfileId: reportData.reportedProfileId ?? null,
+        },
+        select: { id: true },
+      });
+      if (alreadyOpen) return { existingId: alreadyOpen.id };
 
-    // 3. Create the record in DB 
-    // We use the lowercase 'report' property on the prisma instance
-    const newReport: PrismaReport = await prisma.report.create({
-      data: reportData,
+      // 3. Create the record in DB
+      const newReport: PrismaReport = await tx.report.create({
+        data: reportData,
+      });
+      return { newReport };
     });
+    if ('existingId' in filed) {
+      return { success: true, message: "You've already reported this. Our team will review it.", reportedUserId, reportId: filed.existingId };
+    }
+    const { newReport } = filed;
 
     // 4. Handle Notifications. The report is already filed, so a failure here (say a staff
     // account deleted meanwhile) is logged rather than reported back as a failed report.

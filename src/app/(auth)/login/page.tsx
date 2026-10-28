@@ -63,6 +63,8 @@ export default function LoginPage() {
             : "This account has been banned.");
         } else if (result.error === "ACCOUNT_UNDERAGE") {
           setError(describeAuthError(result.error));
+        } else if (result.error.toLowerCase().includes("2fa_locked")) {
+          setError("Too many wrong codes. Try again in 15 minutes.");
         } else if (result.error.toLowerCase().includes("invalid_2fa_code")) {
           setError("Invalid authentication code");
         } else {

@@ -50,8 +50,14 @@ describe('Storage Utilities', () => {
       expect(() => verifiedMediaType(bytes('<svg xmlns="http://www.w3.org/2000/svg">'), 'image/png')).toThrow();
     });
 
-    it('rejects a real image declared as a different type', () => {
-      expect(() => verifiedMediaType(png, 'image/gif')).toThrow();
+    it('accepts an image whose extension names a different image type, storing what the bytes say', () => {
+      expect(verifiedMediaType(png, 'image/jpeg')).toBe('image/png');
+      expect(verifiedMediaType(bytes('RIFF', [0, 0, 0, 0], 'WEBPVP8 '), 'image/jpeg')).toBe('image/webp');
+    });
+
+    it('rejects an image declared as a video, and a video declared as an image', () => {
+      expect(() => verifiedMediaType(png, 'video/mp4')).toThrow();
+      expect(() => verifiedMediaType(bytes([0, 0, 0, 0x18], 'ftypisom'), 'image/png')).toThrow();
     });
 
     it('treats MP4 and QuickTime as interchangeable but stores what the bytes say', () => {

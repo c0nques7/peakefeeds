@@ -9,11 +9,21 @@ const b2 = new B2({
 // B2 account tokens last 24 hours: authorize again before then, and once more if B2 says ours expired
 const REAUTHORIZE_AFTER_MS = 23 * 60 * 60 * 1000;
 let authorizedAt = 0;
+// Concurrent callers (a feed signing every post at once, or several 401 retries) share one request
+let inFlight: Promise<void> | null = null;
 
 async function authorize(force = false) {
+  if (inFlight) return inFlight;
   if (!force && authorizedAt && Date.now() - authorizedAt < REAUTHORIZE_AFTER_MS) return;
-  await b2.authorize();
-  authorizedAt = Date.now();
+  inFlight = (async () => {
+    try {
+      await b2.authorize();
+      authorizedAt = Date.now();
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
 }
 
 /** Runs a B2 call with a current token, retrying once with a fresh one on 401. */
@@ -110,12 +120,25 @@ export async function getAuthorizedDownloadUrl(fileName: string, validDurationIn
   return `${baseUrl}?Authorization=${authToken}`;
 }
 
-// One signed URL per file, reused for most of its hour of validity
+// One signed URL per file. unstable_cache serves a stale entry once while it refreshes in the
+// background, so the expiry travels with the URL and an expired (or nearly expired) one is re-signed.
+const SIGNED_URL_SECONDS = 24 * 60 * 60;
+const MIN_REMAINING_MS = 5 * 60 * 1000;
+
 const getCachedFileUrl = unstable_cache(
-  async (fileName: string) => getAuthorizedDownloadUrl(fileName),
-  ['b2-signed-file-url'],
-  { revalidate: 3000 }
+  async (fileName: string) => ({
+    url: await getAuthorizedDownloadUrl(fileName, SIGNED_URL_SECONDS),
+    expiresAt: Date.now() + SIGNED_URL_SECONDS * 1000,
+  }),
+  ['b2-signed-file-url-v2'],
+  { revalidate: 60 * 60 }
 );
+
+async function getFileUrl(fileName: string) {
+  const cached = await getCachedFileUrl(fileName);
+  if (cached.expiresAt - Date.now() > MIN_REMAINING_MS) return cached.url;
+  return getAuthorizedDownloadUrl(fileName, SIGNED_URL_SECONDS);
+}
 
 /**
  * A viewable URL for stored media: files in our (private) bucket get a download token scoped to
@@ -125,7 +148,7 @@ export async function signMediaUrl(url: string | null | undefined): Promise<stri
   const fileName = fileNameFromUrl(url);
   if (!fileName) return url ?? null;
   try {
-    return await getCachedFileUrl(fileName);
+    return await getFileUrl(fileName);
   } catch (e) {
     console.error('Failed to sign B2 media URL', e);
     return url ?? null;

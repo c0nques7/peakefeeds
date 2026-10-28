@@ -59,13 +59,14 @@ export function sniffMediaType(bytes: Uint8Array): string | null {
 }
 
 /**
- * The type to store an upload as: its content must be an allowed type matching the declared one.
- * MP4 and QuickTime share a container, so browsers' labels for them are interchangeable.
+ * The type to store an upload as: its content must be an allowed type of the same kind (image or
+ * video) as the declared one. Browsers declare a type from the file's extension, so a PNG saved as
+ * .jpg is still a fine image; we store it as what the bytes say.
  */
 export function verifiedMediaType(bytes: Uint8Array, declaredType: string): string {
   const sniffed = sniffMediaType(bytes);
-  const isMp4Family = (t: string | null) => t === 'video/mp4' || t === 'video/quicktime';
-  if (!sniffed || (sniffed !== declaredType && !(isMp4Family(sniffed) && isMp4Family(declaredType)))) {
+  const kind = (t: string | null) => (t ? t.split('/')[0] : null);
+  if (!sniffed || kind(sniffed) !== kind(declaredType)) {
     throw new Error('File contents do not match its type');
   }
   return sniffed;

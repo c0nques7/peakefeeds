@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import B2 from 'backblaze-b2';
 import { uploadFile, deleteFile, signMediaUrl, fileNameFromUrl } from '@/lib/b2';
 
-const { getDownloadAuthorization, authorize } = vi.hoisted(() => ({ getDownloadAuthorization: vi.fn(), authorize: vi.fn() }));
-vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
+const { getDownloadAuthorization, authorize, staleCacheEntry } = vi.hoisted(() => ({
+  getDownloadAuthorization: vi.fn(), authorize: vi.fn(), staleCacheEntry: { value: null as unknown },
+}));
+// Passes calls through, unless a test sets `staleCacheEntry` to stand in for what the cache serves
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: (...args: unknown[]) => unknown) => (...args: unknown[]) => staleCacheEntry.value ?? fn(...args),
+}));
 
 // Mock B2
 vi.mock('backblaze-b2', () => {
@@ -81,6 +86,21 @@ describe('B2 Utility', () => {
       expect(getDownloadAuthorization).not.toHaveBeenCalled();
     });
 
+    it('signs for long enough to outlast the cache', async () => {
+      await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/abc.jpg');
+      expect(getDownloadAuthorization).toHaveBeenCalledWith(expect.objectContaining({ validDurationInSeconds: 24 * 60 * 60 }));
+    });
+
+    it('re-signs instead of serving a cached URL whose token has expired', async () => {
+      staleCacheEntry.value = { url: 'https://f005.backblazeb2.com/file/test-bucket/abc.jpg?Authorization=old', expiresAt: Date.now() - 1000 };
+      try {
+        expect(await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/abc.jpg'))
+          .toBe('https://f005.backblazeb2.com/file/test-bucket/abc.jpg?Authorization=file-token');
+      } finally {
+        staleCacheEntry.value = null;
+      }
+    });
+
     it('passes through empty values', async () => {
       expect(await signMediaUrl(null)).toBeNull();
       expect(fileNameFromUrl(undefined)).toBeNull();
@@ -120,6 +140,18 @@ describe('B2 Utility', () => {
       const now = Date.now();
       const clock = vi.spyOn(Date, 'now').mockReturnValue(now + 23.5 * 60 * 60 * 1000);
       await signMediaUrl('https://f005.backblazeb2.com/file/test-bucket/c.jpg');
+      expect(authorize).toHaveBeenCalledTimes(1);
+      clock.mockRestore();
+    });
+
+    it('shares one authorize request between parallel callers', async () => {
+      getDownloadAuthorization.mockResolvedValue({ data: { authorizationToken: 't' } });
+      // Well past the last authorization, and slow enough that every caller arrives while it runs
+      const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 48 * 60 * 60 * 1000);
+      authorize.mockClear().mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({}), 20)));
+      const signed = await Promise.all(Array.from({ length: 20 }, (_, i) =>
+        signMediaUrl(`https://f005.backblazeb2.com/file/test-bucket/p${i}.jpg`)));
+      expect(signed.every(url => url?.includes('Authorization=t'))).toBe(true);
       expect(authorize).toHaveBeenCalledTimes(1);
       clock.mockRestore();
     });

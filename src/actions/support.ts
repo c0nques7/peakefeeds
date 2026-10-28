@@ -4,11 +4,14 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth.config"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
+import { createHash } from "node:crypto"
 import { Ticket } from "@/lib/support-types"
 import { SupportStatus, SupportPriority, NotificationType, UserRole, AdminLogType, Prisma } from "@prisma/client"
 import { createAdminLog } from "@/lib/admin-logger"
 import { requireStaff } from "@/lib/rbac"
 import { findOrCreateDirectConversation } from "@/lib/conversations"
+import { withAdvisoryLock } from "@/lib/advisory-lock"
 
 const isStaffRole = (role?: string | null) => role === UserRole.ADMIN || role === UserRole.MODERATOR
 const TICKET_LIST_LIMIT = 200
@@ -206,11 +209,21 @@ export async function getTicketAction(ticketId: string) {
 // --- 2. MUTATION ACTIONS ---
 
 // Ticket text limits, and creation caps checked against the database (works across instances).
-// Anonymous Help Bot tickets share one site-wide cap since we can't tell visitors apart.
+// Anonymous Help Bot tickets are capped per visitor (by hashed IP), with a site-wide ceiling as a
+// backstop that takes many addresses to reach.
 const TICKET_TEXT_MAX = 2000
 const TICKETS_PER_USER_PER_HOUR = 5
-const ANONYMOUS_TICKETS_PER_HOUR = 30
+const ANONYMOUS_TICKETS_PER_CLIENT_PER_HOUR = 3
+const ANONYMOUS_TICKETS_PER_HOUR = 100
 const HOUR_MS = 60 * 60 * 1000
+
+/** A salted hash of the caller's IP (Vercel sets x-real-ip), or null when there isn't one. */
+async function anonymousClientKey(): Promise<string | null> {
+  const headersList = await headers()
+  const ip = headersList.get("x-real-ip") || headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
+  if (!ip) return null
+  return createHash("sha256").update(`${process.env.NEXTAUTH_SECRET ?? ""}|${ip}`).digest("hex")
+}
 
 function cleanTicketText(text: unknown): string | null {
   if (typeof text !== 'string') return null
@@ -226,30 +239,47 @@ export async function createTicketAction(initialMsg: string) {
   if (!text) return { success: false, error: `Please describe the issue in 1-${TICKET_TEXT_MAX} characters.` }
 
   try {
-    const recent = await prisma.supportTicket.count({
-      where: { userId, createdAt: { gt: new Date(Date.now() - HOUR_MS) } }
-    })
-    if (recent >= (userId ? TICKETS_PER_USER_PER_HOUR : ANONYMOUS_TICKETS_PER_HOUR)) {
-      return { success: false, error: userId
-        ? "You've opened several tickets recently. Please add to an existing one in Messages."
-        : "Support is busy right now. Please sign in or try again later." }
-    }
-
-    const ticket = await prisma.supportTicket.create({
-      data: {
-        status: SupportStatus.OPEN,
-        priority: SupportPriority.LOW,
-        severity: 0,
-        userId: userId,
-        messages: {
-          create: {
-            text,
-            sender: 'user',
-            isInternal: false
-          }
+    const clientKey = userId ? null : await anonymousClientKey()
+    // Locked per caller so parallel requests can't all pass the count before any insert lands
+    const lockKey = userId ? `support-ticket:user:${userId}` : `support-ticket:anon:${clientKey ?? "unknown"}`
+    const result = await withAdvisoryLock(lockKey, async tx => {
+      const since = new Date(Date.now() - HOUR_MS)
+      if (userId) {
+        const recent = await tx.supportTicket.count({ where: { userId, createdAt: { gt: since } } })
+        if (recent >= TICKETS_PER_USER_PER_HOUR) {
+          return { error: "You've opened several tickets recently. Please add to an existing one in Messages." }
+        }
+      } else {
+        const fromClient = clientKey ? await tx.supportTicket.count({ where: { clientKey, createdAt: { gt: since } } }) : 0
+        const allAnonymous = await tx.supportTicket.count({ where: { userId: null, createdAt: { gt: since } } })
+        if (fromClient >= ANONYMOUS_TICKETS_PER_CLIENT_PER_HOUR) {
+          return { error: "You've opened several tickets recently. Please sign in or try again later." }
+        }
+        if (allAnonymous >= ANONYMOUS_TICKETS_PER_HOUR) {
+          return { error: "Support is busy right now. Please sign in or try again later." }
         }
       }
+
+      const ticket = await tx.supportTicket.create({
+        data: {
+          status: SupportStatus.OPEN,
+          priority: SupportPriority.LOW,
+          severity: 0,
+          userId: userId,
+          clientKey,
+          messages: {
+            create: {
+              text,
+              sender: 'user',
+              isInternal: false
+            }
+          }
+        }
+      })
+      return { ticket }
     })
+    if ('error' in result) return { success: false, error: result.error }
+    const { ticket } = result
 
     if (userId) { revalidatePath('/messages') }
     revalidatePath('/admin/support')
