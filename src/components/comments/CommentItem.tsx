@@ -425,7 +425,7 @@ export function CommentItem({
             {/* Content & Embed Logic */}
             {isEditing ? (
                 <div className="mt-2">
-                    <input 
+                    <input aria-label="Edit comment" 
                         type="text" 
                         value={editText} 
                         onChange={(e) => setEditText(e.target.value)} 
@@ -463,7 +463,7 @@ export function CommentItem({
         {isReplying && (
             <div className="flex items-center gap-2 mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
                 <CornerDownRight size={14} className="text-[var(--text-muted)]" />
-                <input 
+                <input aria-label="Write a reply" 
                     type="text" 
                     placeholder="Write a reply..." 
                     className="flex-1 min-w-0 bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors shadow-sm placeholder:text-[var(--text-muted)]"

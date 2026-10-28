@@ -2,8 +2,17 @@
 
 import { useState, useMemo, useEffect, useDeferredValue } from 'react'
 import useSWR from 'swr'
-import { useSupport, Ticket } from '@/context/SupportContext'
-import { getAllTicketsAction, getStaffTicketAction } from '@/actions/support'
+import { Ticket, ChatMessage } from '@/lib/support-types'
+import {
+  getAllTicketsAction,
+  getStaffTicketAction,
+  addMessageAction,
+  updateTicketStatusAction,
+  updateTicketPriorityAction,
+  updateTicketAssigneeAction,
+  updateInternalNotesAction,
+  sendMessageToUserAction,
+} from '@/actions/support'
 import { getStaffUsers } from '@/actions/admin-users'
 import { 
   MessageSquare, 
@@ -33,14 +42,13 @@ import { toast } from 'sonner'
 // Support Queue Management Interface
 
 export default function SupportQueue() {
-  const { 
-    addMessageToTicket, 
-    updateTicketStatus, 
-    updateTicketPriority, 
-    updateTicketAssignee, 
-    updateInternalNotes,
-    sendMessageToUser 
-  } = useSupport()
+  const addMessageToTicket = (ticketId: string, msg: ChatMessage, isInternal: boolean) =>
+    addMessageAction(ticketId, msg.text, msg.sender, isInternal)
+  const updateTicketStatus = updateTicketStatusAction
+  const updateTicketPriority = updateTicketPriorityAction
+  const updateTicketAssignee = updateTicketAssigneeAction
+  const updateInternalNotes = updateInternalNotesAction
+  const sendMessageToUser = sendMessageToUserAction
   
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [reply, setReply] = useState('')

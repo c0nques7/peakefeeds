@@ -7,6 +7,16 @@ import clsx from 'clsx'
 import { parseMediaUrl } from '@/lib/media-parser'
 import { OEmbedPlayer } from './OEmbedPlayer'
 
+// next/image only optimizes hosts listed in next.config.ts and throws for any other, but link
+// previews and linked images come from anywhere: load those directly, optimize only our bucket
+const isOptimizable = (src: string) => {
+  try {
+    return new URL(src).hostname.endsWith('.backblazeb2.com');
+  } catch {
+    return false;
+  }
+};
+
 // --- 1. SIMPLE REUSABLE FALLBACK ---
 export const GenericLinkCard = ({ url, data, icon, label }: any) => (
   <a 
@@ -19,6 +29,7 @@ export const GenericLinkCard = ({ url, data, icon, label }: any) => (
           <div className="w-24 h-full flex-shrink-0 relative">
               <Image 
                 src={data.linkImage} 
+                unoptimized={!isOptimizable(data.linkImage)}
                 className="object-cover" 
                 alt="" 
                 fill
@@ -60,6 +71,7 @@ const ImageEmbed = ({ url }: { url: string }) => {
              )}
             <Image 
                 src={url} 
+                unoptimized={!isOptimizable(url)}
                 alt="Post content" 
                 fill
                 className={clsx(

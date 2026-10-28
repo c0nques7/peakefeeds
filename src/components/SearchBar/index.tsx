@@ -108,19 +108,20 @@ export function SearchBar() {
     const navigationItems = useMemo(() => {
         const items: any[] = [];
         
-        channelResults.forEach(r => {
-            items.push({ 
-                type: 'CHANNEL', 
-                data: r, 
-                href: `/channels/${r.slug}` 
-            });
-        });
-
+        // Same order as the dropdown renders them: People, then Channels, then Create
         userResults.forEach(r => {
             items.push({
                 type: 'USER',
                 data: r,
                 href: `/profile/${r.username}`
+            });
+        });
+
+        channelResults.forEach(r => {
+            items.push({ 
+                type: 'CHANNEL', 
+                data: r, 
+                href: `/channels/${r.slug}` 
             });
         });
         
@@ -180,7 +181,7 @@ export function SearchBar() {
             {/* Input Field */}
             <div className={styles.inputWrapper}>
                 <Search size={20} className={styles.searchIcon} />
-                <input
+                <input aria-label="Search people and channels"
                     type="text"
                     placeholder="Search people, channels, tags..."
                     value={query}

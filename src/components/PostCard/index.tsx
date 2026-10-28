@@ -77,12 +77,15 @@ interface PostCardProps {
     isDemo?: boolean;
 }
 
-export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostCardProps) {
+export function PostCard({ post, initialReaction, currentUserId: propUserId, isDemo }: PostCardProps) {
   const searchParams = useSearchParams()
   const highlightId = searchParams.get('highlight')
   const isHighlighted = highlightId === post.id
+  const { data: session } = useSession()
+  // Callers may omit currentUserId; the session fills in so your own posts never offer "Report"
+  const currentUserId = propUserId || session?.user?.id
   // Site staff can take down verified posts, which nobody else can delete
-  const viewerRole = useSession().data?.user?.role
+  const viewerRole = session?.user?.role
   const isSiteStaff = viewerRole === 'ADMIN' || viewerRole === 'MODERATOR'
 
   const [reaction, setReactionState] = useState(initialReaction)
@@ -134,6 +137,24 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
   const canDelete: boolean = post.viewerCanDelete ?? (isOwnUnverified || (post.isVerified && isSiteStaff));
 
   // --- HANDLERS ---
+
+  // The phone's share sheet where there is one, otherwise copy the link
+  const handleShare = async () => {
+    if (isDemo) return;
+    const path = post.channel?.slug ? `/channels/${post.channel.slug}?highlight=${post.id}#post-${post.id}` : '/discover';
+    const url = `${window.location.origin}${path}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'PeakeFeeds', text: post.content?.slice(0, 100), url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied');
+    } catch (e) {
+      // Closing the share sheet isn't an error
+      if ((e as Error)?.name !== 'AbortError') toast.error("Couldn't share this post");
+    }
+  };
   
   const handleReaction = async (type: 'LIKE' | 'DISLIKE') => {
     if (post.isLocked) {
@@ -337,7 +358,8 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
       <div className={clsx(styles.cardInner, isFlipped && styles.flipped)}>
         
         {/* ================= FRONT FACE ================= */}
-        <div className={clsx(styles.cardFront, isDemo && "h-full flex flex-col justify-between")} style={{ overflow: 'visible' }}> 
+        {/* The face turned away is inert: no focus, clicks or screen-reader reading */}
+        <div className={clsx(styles.cardFront, isDemo && "h-full flex flex-col justify-between")} style={{ overflow: 'visible' }} inert={isFlipped}> 
           
           {post.isLocked && <LockedOverlay className="rounded-2xl" />}
 
@@ -387,7 +409,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
             </div>
             
             <div className="relative">
-                <button onClick={() => setShowMenu(!showMenu)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-full hover:bg-white/5 transition-colors">
+                <button onClick={() => setShowMenu(!showMenu)} aria-label="Post options" aria-expanded={showMenu} aria-haspopup="menu" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-full hover:bg-white/5 transition-colors">
                     {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <MoreHorizontal size={18} />}
                 </button>
                 {showMenu && !isDemo && (
@@ -429,7 +451,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
           <div className={clsx(styles.contentWrapper, "flex-1 flex flex-col justify-center")}>
               {isEditing ? (
                   <div className="p-4 space-y-3">
-                      <textarea 
+                      <textarea aria-label="Edit post" 
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
                           className="w-full bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-xl p-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-all resize-none min-h-[100px]"
@@ -465,19 +487,19 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
           <div className="flex flex-col gap-3 pt-3 border-t border-[var(--glass-border)] mt-auto">
              <div className={styles.actionBar} style={{borderTop: 'none', marginTop: 0, paddingTop: 0, width: '100%', justifySelf: 'center'}}>
                  <div className="flex gap-6">
-                    <button onClick={() => handleReaction('LIKE')} className={clsx(styles.actionBtn, reaction === 'LIKE' && styles.liked)}>
-                        <Heart size={18} fill={reaction === 'LIKE' ? "currentColor" : "none"} />
+                    <button onClick={() => handleReaction('LIKE')} aria-label={`Like (${likesCount})`} aria-pressed={reaction === 'LIKE'} className={clsx(styles.actionBtn, reaction === 'LIKE' && styles.liked)}>
+                        <Heart size={18} aria-hidden="true" fill={reaction === 'LIKE' ? "currentColor" : "none"} />
                         <span>{likesCount}</span>
                     </button>
-                    <button onClick={() => handleReaction('DISLIKE')} className={clsx(styles.actionBtn, reaction === 'DISLIKE' && styles.disliked)}>
-                        <HeartCrack size={18} fill={reaction === 'DISLIKE' ? "currentColor" : "none"} />
+                    <button onClick={() => handleReaction('DISLIKE')} aria-label={`Dislike (${dislikesCount})`} aria-pressed={reaction === 'DISLIKE'} className={clsx(styles.actionBtn, reaction === 'DISLIKE' && styles.disliked)}>
+                        <HeartCrack size={18} aria-hidden="true" fill={reaction === 'DISLIKE' ? "currentColor" : "none"} />
                         <span>{dislikesCount}</span>
                     </button>
-                    <button onClick={() => setShowComments(true)} className={styles.actionBtn}>
-                        <MessageCircle size={18} />
+                    <button onClick={() => setShowComments(true)} aria-label={`Comments (${commentsCount})`} className={styles.actionBtn}>
+                        <MessageCircle size={18} aria-hidden="true" />
                         <span>{commentsCount}</span>
                     </button>
-                    <button className={styles.actionBtn}><Share2 size={18} /></button>
+                    <button onClick={handleShare} aria-label="Share post" className={styles.actionBtn}><Share2 size={18} aria-hidden="true" /></button>
                  </div>
              </div>
              
@@ -489,10 +511,10 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
           </div>
 
           {/* COMMENT DRAWER */}
-          <div className={clsx(styles.commentsPanel, showComments && styles.commentsOpen)}>
+          <div className={clsx(styles.commentsPanel, showComments && styles.commentsOpen)} inert={!showComments}>
               <div className={styles.panelHeader}>
                   <span className="font-bold text-sm">Comments ({commentsCount})</span>
-                  <button onClick={() => setShowComments(false)} className="text-[var(--text-muted)] hover:text-white"><X size={18}/></button>
+                  <button onClick={() => setShowComments(false)} aria-label="Close comments" className="text-[var(--text-muted)] hover:text-white"><X size={18} aria-hidden="true" /></button>
               </div>
               
               <div className={styles.commentsList}>
@@ -512,7 +534,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
               </div>
 
               <div className={styles.inputArea}>
-                  <input 
+                  <input aria-label="Add a comment" 
                       className={styles.commentInput} 
                       placeholder={isDemo ? "Type a demo comment..." : "Add to the discussion..."} 
                       value={commentText} 
@@ -529,7 +551,7 @@ export function PostCard({ post, initialReaction, currentUserId, isDemo }: PostC
         {/* ================= END FRONT FACE ================= */}
 
         {/* BACK FACE (METADATA) */}
-        <div className={clsx(styles.cardBack, isDemo && "h-full")}>
+        <div className={clsx(styles.cardBack, isDemo && "h-full")} inert={!isFlipped}>
              <button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
                 <ShieldCheck size={48} className={clsx("mb-4", post.isVerified ? "text-emerald-400" : "text-[var(--text-muted)]")} />

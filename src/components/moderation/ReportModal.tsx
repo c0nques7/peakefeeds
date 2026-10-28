@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Loader2, X, AlertTriangle, CheckCircle2, Ticket } from 'lucide-react';
 import { toast } from 'sonner';
 import { submitReport } from '@/actions/report-actions';
 import { blockUser } from '@/actions/block-user';
 import { ReportTargetType } from '@prisma/client';
-import { buttonClasses } from '@/components/ui';
+import { buttonClasses, Modal } from '@/components/ui';
 
 const REPORT_REASONS = [
   { value: 'SPAM', label: 'Spam' },
@@ -61,7 +60,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
     }
   }, [isOpen, targetId]);
 
-  if (!isOpen || !targetId) return null;
+  if (!targetId) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,17 +112,15 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
 
   const displayTitle = title || `Report ${targetType.charAt(0) + targetType.slice(1).toLowerCase()}`;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-[var(--radius-card)] p-6 shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        
+  return (
+    <Modal open={isOpen} onClose={handleClose} labelledBy="report-modal-title">
         <button 
           onClick={handleClose}
           className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors touch-manipulation p-2 -m-2"
           style={{ WebkitTapHighlightColor: 'transparent' }}
           aria-label="Close"
         >
-          <X size={20} />
+          <X size={20} aria-hidden="true" />
         </button>
 
         {showSuccess ? (
@@ -131,7 +128,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-4 text-emerald-400 border border-emerald-500/30">
               <CheckCircle2 size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Report Successful</h2>
+            <h2 id="report-modal-title" className="text-2xl font-bold text-[var(--text-primary)] mb-2">Report Successful</h2>
             <p className="text-[var(--text-muted)] text-sm mb-6">
               Thank you for helping us keep PeakeFeeds safe. Our moderators will review this shortly.
             </p>
@@ -170,7 +167,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--status-error-bg)] mb-3 text-[var(--status-error)]">
                 <AlertTriangle size={24} />
               </div>
-              <h2 className="text-xl font-bold text-[var(--text-primary)]">{displayTitle}</h2>
+              <h2 id="report-modal-title" className="text-xl font-bold text-[var(--text-primary)]">{displayTitle}</h2>
               <p className="text-[var(--text-muted)] text-sm mt-1">
                 Help us keep the community safe.
               </p>
@@ -178,8 +175,9 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase mb-2">Reason</label>
-                <select 
+                <label htmlFor="report-reason" className="block text-xs font-medium text-[var(--text-muted)] uppercase mb-2">Reason</label>
+                <select
+                  id="report-reason" 
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors appearance-none"
@@ -191,8 +189,9 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase mb-2">Details (Optional)</label>
-                <textarea 
+                <label htmlFor="report-details" className="block text-xs font-medium text-[var(--text-muted)] uppercase mb-2">Details (Optional)</label>
+                <textarea
+                  id="report-details" 
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                   rows={3}
@@ -216,7 +215,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-500/20 mb-3 text-orange-400 border border-orange-500/30">
               <AlertTriangle size={24} />
             </div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)]">Block User?</h2>
+            <h2 id="report-modal-title" className="text-xl font-bold text-[var(--text-primary)]">Block User?</h2>
             <p className="text-[var(--text-muted)] text-sm mt-2 mb-6">
               Would you also like to block the user associated with this {targetType.toLowerCase()}? They will no longer be able to interact with you.
             </p>
@@ -242,8 +241,6 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
           </div>
         )}
 
-      </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }

@@ -443,9 +443,11 @@ export default function CreatePostForm({
                         <button 
                           type="button" 
                           onClick={removeMedia}
-                          className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                          aria-label="Remove attachment"
+                          // Always visible on touch screens (no hover there); hover-revealed on desktop
+                          className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100"
                         >
-                          <X size={16} />
+                          <X size={16} aria-hidden="true" />
                         </button>
                       )}
                     </div>

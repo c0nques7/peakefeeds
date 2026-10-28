@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 :root {
+  /* Phone tab bar (MobileBottomNav), not counting the home-indicator inset below it */
+  --tab-bar-height: 64px;
   /* --- ☀️ LIGHT MODE (Institutional) --- */
   --bg-app: #f5f7f9;       /* Light Gray/Blue tint - Official feel */
   --bg-grid: transparent;  /* Clean, no grid */
@@ -115,4 +117,15 @@ body {
   min-height: 100vh;
   
   background-attachment: fixed; 
+}
+/* iOS Safari zooms the page into any field under 16px when it gets focus. Only iOS touch
+   devices get this (-webkit-touch-callout is iOS-only); larger fields keep their size. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 1023px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    textarea,
+    select {
+      font-size: max(16px, 1em) !important;
+    }
+  }
 }

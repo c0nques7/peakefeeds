@@ -1,12 +1,10 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import { headers } from 'next/headers' 
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
-import { Web3Provider } from "@/components/providers/Web3Provider"; 
 import { Providers } from "@/components/Providers"; 
 import ClientLayout from '@/components/layout/ClientLayout' 
-import { SupportProvider } from '@/context/SupportContext'
+import { AppToaster } from '@/components/ui/AppToaster'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 
@@ -21,15 +19,24 @@ export const metadata: Metadata = {
   description: 'The first social platform verified by Ethereum.',
 };
 
-export default async function RootLayout({
+// viewport-fit=cover makes the env(safe-area-inset-*) padding in our CSS take effect on iOS
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f7f9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f1115' },
+  ],
+};
+
+// Wallet providers live in the (dashboard) layout, so landing, legal and auth pages ship no
+// wallet code and can be served statically
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Await headers to ensure we don't block rendering improperly
-  const headersData = await headers();
-  const cookies = headersData.get('cookie');
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -39,17 +46,14 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Web3Provider cookies={cookies}>
-            <Providers>
-              <SupportProvider>
-                <ClientLayout>
-                  {children}
-                </ClientLayout>
-                <SpeedInsights />
-                <Analytics />
-              </SupportProvider>
-            </Providers>
-          </Web3Provider>
+          <Providers>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+            <AppToaster />
+            <SpeedInsights />
+            <Analytics />
+          </Providers>
         </ThemeProvider>
       </body>
     </html>

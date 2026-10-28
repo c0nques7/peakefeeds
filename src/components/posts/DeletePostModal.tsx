@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { X, AlertTriangle, Loader2 } from 'lucide-react';
-import { buttonClasses } from '@/components/ui';
+import { buttonClasses, Modal } from '@/components/ui';
 
 const DELETION_REASONS = [
   { value: 'SPAM', label: 'Spam / Automated Content' },
@@ -27,30 +26,27 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
   const [reason, setReason] = useState('');
   const [comments, setComments] = useState('');
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason) return;
     onConfirm(reason, comments);
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-[var(--radius-card)] p-6 shadow-2xl relative overflow-hidden">
-        
+  return (
+    <Modal open={isOpen} onClose={onClose} labelledBy="delete-post-title">
         <button 
           onClick={onClose}
+          aria-label="Close"
           className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
         >
-          <X size={20} />
+          <X size={20} aria-hidden="true" />
         </button>
 
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--status-error-bg)] mb-3 text-[var(--status-error)]">
-            <AlertTriangle size={24} />
+            <AlertTriangle size={24} aria-hidden="true" />
           </div>
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">Delete this post?</h2>
+          <h2 id="delete-post-title" className="text-xl font-bold text-[var(--text-primary)]">Delete this post?</h2>
           <p className="text-[var(--text-muted)] text-sm mt-1">
             You are deleting content authored by another user. Please specify a reason for this action.
           </p>
@@ -58,8 +54,9 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Reason (required)</label>
+            <label htmlFor="delete-post-reason" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Reason (required)</label>
             <select 
+              id="delete-post-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
@@ -73,8 +70,9 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Internal note (optional)</label>
+            <label htmlFor="delete-post-note" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Internal note (optional)</label>
             <textarea 
+              id="delete-post-note"
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               rows={3}
@@ -100,9 +98,6 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
             </button>
           </div>
         </form>
-
-      </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }

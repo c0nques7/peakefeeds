@@ -100,7 +100,7 @@ export default function MessagingUI() {
          <div className="p-3 border-b border-[var(--glass-border)]">
             <div className="relative">
                 <Search className="absolute left-3 top-2.5 text-[var(--text-muted)]" size={16} />
-                <input 
+                <input aria-label="Search inbox" 
                   placeholder="Search inbox..." 
                   className="w-full bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
                 />
@@ -258,7 +258,7 @@ export default function MessagingUI() {
                 {/* Input Area */}
                 <div className="p-4 border-t border-[var(--glass-border)] bg-[var(--glass-card-hover)]">
                     <div className="flex gap-2">
-                        <input 
+                        <input aria-label="Write a message" 
                            value={inputText}
                            onChange={(e) => setInputText(e.target.value)}
                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
