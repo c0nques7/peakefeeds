@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { prisma } from '@/lib/db';
-import { Resend } from 'resend';
 
 // 1. Mock 'resend' BEFORE importing the module under test
 const { sendMock } = vi.hoisted(() => {
+  // Set before any import runs (imports are hoisted above plain statements), so the module
+  // creates its Resend client whether or not a real key is in the env files
+  process.env.RESEND_API_KEY = 'test_key';
   return { sendMock: vi.fn() }
 })
 
@@ -18,10 +20,7 @@ vi.mock('resend', () => {
   };
 });
 
-// 2. Ensure API key is set so the module actually creates the Resend instance
-process.env.RESEND_API_KEY = 'test_key';
-
-// 3. Import the module under test
+// 2. Import the module under test
 import { requestPasswordReset } from './auth-reset';
 
 describe('auth-reset action', () => {
