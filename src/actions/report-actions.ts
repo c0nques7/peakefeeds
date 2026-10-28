@@ -156,21 +156,26 @@ export async function submitReport(
       data: reportData,
     });
 
-    // 4. Handle Notifications
-    const adminsAndMods = await prisma.user.findMany({
-      where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
-      select: { id: true }
-    });
-
-    if (adminsAndMods.length > 0) {
-      await prisma.notification.createMany({
-        data: adminsAndMods.map(admin => ({
-          userId: admin.id,
-          actorId: session.user.id,
-          type: NotificationType.REPORT,
-          reportId: newReport.id,
-        }))
+    // 4. Handle Notifications. The report is already filed, so a failure here (say a staff
+    // account deleted meanwhile) is logged rather than reported back as a failed report.
+    try {
+      const adminsAndMods = await prisma.user.findMany({
+        where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
+        select: { id: true }
       });
+
+      if (adminsAndMods.length > 0) {
+        await prisma.notification.createMany({
+          data: adminsAndMods.map(admin => ({
+            userId: admin.id,
+            actorId: session.user.id,
+            type: NotificationType.REPORT,
+            reportId: newReport.id,
+          }))
+        });
+      }
+    } catch (error) {
+      console.error("REPORT_NOTIFICATION_ERROR:", error);
     }
 
     return { 

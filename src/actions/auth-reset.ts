@@ -5,17 +5,13 @@ import { randomBytes } from "crypto";
 import * as argon2 from "argon2";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { ResetPasswordEmail } from "@/components/emails/ResetPasswordEmail";
 import React from "react";
 import { PasswordSchema, firstError } from "@/lib/credentials";
 import { clearAccountStatusCache } from "@/lib/penalties";
+import { resend, SECURITY_FROM } from '@/lib/email';
 
-// Initialize Resend
-const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY.trim()) 
-  : null;
 
 /**
  * 1. REQUEST FLOW
@@ -93,7 +89,7 @@ export async function requestPasswordReset(formData: FormData) {
         );
 
         const { data, error } = await resend.emails.send({
-          from: 'Peake Feeds <security@peakefeeds.com>',
+          from: SECURITY_FROM,
           to: email,
           subject: 'Reset your Peake Feeds password',
           html

@@ -27,6 +27,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     env,
+    // The integration tests share one database and some read global rows (e.g. every staff
+    // account), so test files run one at a time to keep them from racing each other
+    fileParallelism: false,
   },
   resolve: {
     alias: {

@@ -17,17 +17,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 
 // 🟢 NEW: Email Infrastructure
-import { Resend } from 'resend';
 import { render } from "@react-email/render";
 import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
 import { ActivationEmail } from "@/components/emails/ActivationEmail";
 import { AdminWelcomeEmail } from "@/components/emails/AdminWelcomeEmail";
 import { clearAccountStatusCache } from "@/lib/penalties";
+import { resend, EMAIL_FROM } from '@/lib/email';
 
-// Initialize Resend safely
-const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY.trim()) 
-  : null;
 
 /**
  * 1. FETCH USER DETAILS
@@ -234,7 +230,7 @@ export async function triggerManualEmail(userId: string, type: "WELCOME" | "ACTI
 
     if (emailHtml && subject) {
       await resend.emails.send({
-        from: 'Peake Feeds <onboarding@resend.dev>', // Update to your verified domain in Prod
+        from: EMAIL_FROM,
         to: user.email,
         subject: subject,
         html: emailHtml,

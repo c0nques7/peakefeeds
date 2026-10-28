@@ -1,5 +1,12 @@
 # PeakeFeeds Developer Documentation
 
+## 🗺️ Routes
+- **App** (`src/app/(dashboard)`, signed-in features): `/home`, `/discover`, `/channels/create`, `/channels/[slug]`, `/channels/[slug]/settings`, `/messages`, `/notifications`, `/profile`, `/profile/[username]`, `/settings`. `/c/[slug]` rewrites to `/channels/[slug]`.
+- **Auth** (`src/app/(auth)`): `/login`, `/register`, `/signin`, `/forgot-password`, `/reset-password`, `/welcome` (choose a username), `/confirm-age`.
+- **Admin** (`src/app/(admin)`, staff only): `/admin`, `/admin/users`, `/admin/users/[id]`, `/admin/channels`, `/admin/posts`, `/admin/moderation`, `/admin/support`, `/admin/logs`, `/admin/waitlist`.
+- **Public**: `/` (landing), `/terms`, `/privacy`.
+- **Route handlers** (`src/app/api`): `auth/[...nextauth]`, `upload` (media to B2), `channels/search`, `oembed`, `account/export`.
+
 ## 🛡️ Moderation & Reporting System
 
 ### Unified Reporting
@@ -42,7 +49,7 @@ npm test
 **Lint:** `no-explicit-any`, `react-hooks/set-state-in-effect` and `react-hooks/purity` are warnings for now (existing debt, see `eslint.config.mjs`); every other rule fails CI.
 
 ## 📦 Dependencies
-`@coinbase/wallet-sdk`, `@gemini-wallet/core`, `@metamask/sdk`, `@safe-global/safe-apps-provider`, `@walletconnect/ethereum-provider` and `porto` are never imported directly: they are optional peer dependencies of wagmi's connectors, which load them when a user picks that wallet. Keep them.
+`@coinbase/wallet-sdk`, `@gemini-wallet/core`, `@metamask/sdk`, `@safe-global/safe-apps-provider`, `@walletconnect/ethereum-provider` and `porto` are never imported directly: they are optional peer dependencies of wagmi's connectors, which load them when a user picks that wallet. `@wagmi/core` is a required peer of `@reown/appkit-adapter-wagmi`. Keep them all.
 
 ## 🔒 Content Rules
 One rule decides who may edit or delete a post: `getPostPermissions` in `src/lib/permissions.ts`. Creating or changing content also goes through `getInteractionBlockReason` in `src/lib/interaction-guard.ts`.

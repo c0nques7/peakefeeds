@@ -21,8 +21,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Old copy of the app kept for reference; not built or deployed
-    ".old-app-backup/**",
   ]),
 ]);
 

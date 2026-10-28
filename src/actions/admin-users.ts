@@ -9,14 +9,10 @@ import { randomBytes } from "crypto";
 import { createAdminLog } from "@/lib/admin-logger";
 
 // Email Infrastructure
-import { Resend } from 'resend';
 import { render } from "@react-email/render";
 import { AdminWelcomeEmail } from "@/components/emails/AdminWelcomeEmail";
+import { resend, EMAIL_FROM } from '@/lib/email';
 
-// Initialize Resend (Safe check)
-const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY) 
-  : null;
 
 /**
  * -------------------------------------------------------
@@ -199,7 +195,7 @@ export async function createUser(formData: FormData) {
       );
 
       const data = await resend.emails.send({
-        from: 'Peake Feeds <onboarding@resend.dev>', // ⚠️ UPDATE THIS to your verified domain in Production
+        from: EMAIL_FROM,
         to: email,
         subject: 'Your Peake Feeds Admin Account',
         html: emailHtml,
