@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -10,6 +11,13 @@ const nextConfig: NextConfig = {
     resolveAlias: {
       '@react-native-async-storage/async-storage': './src/lib/empty-module.ts',
       'pino-pretty': './src/lib/empty-module.ts',
+      // Coinbase's CDP SDK (pulled in by the Base Account connector) loads x402 payment
+      // clients from optional packages we don't install; the app never makes x402 payments
+      '@x402/core/client': './src/lib/x402-stub.ts',
+      '@x402/evm': './src/lib/x402-stub.ts',
+      '@x402/evm/exact/client': './src/lib/x402-stub.ts',
+      '@x402/evm/upto/client': './src/lib/x402-stub.ts',
+      '@x402/svm/exact/client': './src/lib/x402-stub.ts',
       fs: { browser: './src/lib/empty-module.ts' },
       net: { browser: './src/lib/empty-module.ts' },
       tls: { browser: './src/lib/empty-module.ts' },
@@ -20,6 +28,11 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
       '@react-native-async-storage/async-storage': false,
       'pino-pretty': false,
+      '@x402/core/client': path.resolve(__dirname, 'src/lib/x402-stub.ts'),
+      '@x402/evm': path.resolve(__dirname, 'src/lib/x402-stub.ts'),
+      '@x402/evm/exact/client': path.resolve(__dirname, 'src/lib/x402-stub.ts'),
+      '@x402/evm/upto/client': path.resolve(__dirname, 'src/lib/x402-stub.ts'),
+      '@x402/svm/exact/client': path.resolve(__dirname, 'src/lib/x402-stub.ts'),
     };
     config.resolve.fallback = {
       ...config.resolve.fallback,
