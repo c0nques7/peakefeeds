@@ -5,66 +5,16 @@ import { unstable_cache } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { SubscribeButton } from "@/components/SubscribeButton";
+import { loadSidebarData } from "@/lib/sidebar-data";
 
-type ChannelSummary = {
-    id: string;
-    name: string;
-    slug: string;
-    subscribersCount: number;
-}
-
-type PostPreview = {
-    id: string;
-    title: string | null;
-    content: string;
-    createdAt: string;
-    likesCount: number;
-}
-
-const getSidebarData = unstable_cache(async () => {
-    // Newest channels with subscriber counts
-    const channels = await prisma.channel.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        select: { id: true, name: true, slug: true, _count: { select: { subscribers: true } } },
-    });
-
-    // Latest post per channel: one small indexed query each (a nested `take` would load
-    // whole channels' posts into memory in Prisma 5)
-    const latestPosts = await Promise.all(channels.map(c => prisma.post.findFirst({
-        where: { channelId: c.id },
-        orderBy: { createdAt: 'desc' },
-        select: { title: true, content: true },
-    })));
-
-    // Most-liked posts from the last 7 days
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
-    const trending = await prisma.post.findMany({
-        where: { createdAt: { gte: sevenDaysAgo } },
-        take: 4,
-        orderBy: { likesCount: 'desc' },
-        select: { id: true, title: true, content: true, likesCount: true, channel: { select: { slug: true } } }
-    });
-
-    return {
-        channelSummaries: channels.map(c => ({ id: c.id, name: c.name, slug: c.slug, subscribersCount: c._count.subscribers })) as ChannelSummary[],
-        latestByChannel: Object.fromEntries(channels.map((c, i) => [c.id, latestPosts[i]])),
-        trendingPosts: trending.map(p => ({
-            id: p.id,
-            title: p.title,
-            content: p.content,
-            likesCount: p.likesCount ?? 0,
-            channelSlug: p.channel?.slug
-        })),
-    };
-}, ['right-sidebar'], { revalidate: 60 });
+// Same for every visitor, so cached for a minute instead of querying on every page render
+const getSidebarData = unstable_cache(() => loadSidebarData(), ['right-sidebar-v2'], { revalidate: 60 });
 
 export async function RightSidebar() {
     // 1. DATA FETCHING -------------------------------------
     
-    // A. Shared data (same for every visitor), cached for a minute instead of
-    // running these queries on every page render
-    const { channelSummaries, latestByChannel, trendingPosts } = await getSidebarData();
+    // A. Shared data (cached)
+    const { channels: channelSummaries, trendingPosts } = await getSidebarData();
 
     // B. Check User Subscriptions
     const session = await getServerSession(authOptions);
@@ -79,7 +29,7 @@ export async function RightSidebar() {
         subscribedSet = new Set(subs.map(s => s.channelId));
     }
 
-    const suggestedChannels = channelSummaries.map(ch => ({ channel: ch, latest: latestByChannel[ch.id] ?? null }));
+    const suggestedChannels = channelSummaries.map(ch => ({ channel: ch, latest: ch.latest }));
 
     // 2. RENDER UI -----------------------------------------
     return (
