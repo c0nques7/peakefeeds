@@ -103,13 +103,12 @@ describe('createPost Action', () => {
     });
   });
 
-  it('rejects the unverified AD (sponsored) method', async () => {
+  it('rejects the removed AD (sponsored) method', async () => {
     vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1', walletAddress: '0xabc' } } as never);
     const formData = new FormData();
     formData.append('content', 'hello');
     formData.append('channelId', 'channel-1');
     formData.append('verificationMethod', 'AD');
-    formData.append('adProofToken', 'anything-long-enough');
     const state = await createPost({}, formData);
     expect(state.success).toBeFalsy();
     expect(prisma.post.create).not.toHaveBeenCalled();

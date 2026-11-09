@@ -14,7 +14,7 @@ import { fileNameFromUrl } from "@/lib/b2";
 const FinalPostSchema = z.object({
   content: z.string().min(1).max(2000),
   channelId: z.string(),
-  // 'AD' (sponsored) is off until ad proofs can be verified server-side
+  // Verified (signed with the linked wallet) or unverified
   verificationMethod: z.enum(['WALLET', 'SKIP']), 
   contentHash: z.string().nullable().optional(),
   salt: z.string().nullable().optional(),

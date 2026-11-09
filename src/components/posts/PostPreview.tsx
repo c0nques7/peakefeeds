@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { 
   MessageCircle, Heart, Share2, MoreHorizontal, 
-  ShieldCheck, AlertCircle, X, Zap
+  ShieldCheck, AlertCircle, X
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -57,11 +57,7 @@ export default function PostPreview({
   
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const isVerified = verificationMethod === 'AD' || verificationMethod === 'WALLET';
-  const isGold = verificationMethod === 'AD';
-  
-  const verificationColorClass = isGold ? "text-amber-400" : "text-emerald-400";
-  const verificationBorderClass = isGold ? "border-amber-500/50" : ""; 
+  const isVerified = verificationMethod === 'WALLET';
 
   // ⚡️ Strip the URL from the text preview so it looks like the final feed
   const displayContent = content; 
@@ -127,14 +123,13 @@ export default function PostPreview({
                 onClick={(e) => { e.stopPropagation(); setIsFlipped(true); }} 
                 className={clsx(
                     styles.verifyChip, 
-                    !isVerified && styles.unverified,
-                    isGold && verificationBorderClass
+                    !isVerified && styles.unverified
                 )}
              >
                 {isVerified ? (
                     <>
-                        {isGold ? <Zap size={14} className="text-amber-400" /> : <ShieldCheck size={14} className="text-emerald-400" />}
-                        <span className={verificationColorClass}>{isGold ? 'SPONSORED' : 'VERIFIED'}</span>
+                        <ShieldCheck size={14} className="text-emerald-400" />
+                        <span className="text-emerald-400">VERIFIED</span>
                     </>
                 ) : (
                     <>
@@ -150,11 +145,11 @@ export default function PostPreview({
         <div className={styles.cardBack}>
              <button type="button" onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
-                {isGold ? <Zap size={48} className="mb-4 text-amber-400" /> : <ShieldCheck size={48} className={clsx("mb-4", isVerified ? "text-emerald-400" : "text-[var(--text-muted)]")} />}
-                <h3 className={styles.verifyTitle}>{isVerified ? (isGold ? "Sponsored Content" : "On-Chain Verification") : "Unverified Content"}</h3>
+                <ShieldCheck size={48} className={clsx("mb-4", isVerified ? "text-emerald-400" : "text-[var(--text-muted)]")} />
+                <h3 className={styles.verifyTitle}>{isVerified ? "On-Chain Verification" : "Unverified Content"}</h3>
                 <p className={styles.verifyText}>
                     {isVerified 
-                        ? (isGold ? "This content is sponsored via Ad Watch." : "This content will be cryptographically signed on Optimism.")
+                        ? "This content will be cryptographically signed on Optimism."
                         : "This content lives off-chain and is not verified."}
                 </p>
              </div>

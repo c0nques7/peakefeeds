@@ -18,7 +18,7 @@ PeakeFeeds is a Next.js 16 (App Router) social feed where posts can be signed wi
 - Import Prisma from `@/lib/db`. Send email with `resend` and `EMAIL_FROM` from `@/lib/email`.
 - Media lives in a private B2 bucket: store plain bucket URLs and sign them for display with `signMediaUrl` (`src/lib/b2.ts`).
 - Shared credential rules (username, email, password) are in `src/lib/credentials.ts`.
-- Verification sources: `WALLET` (signed content hash) and `SKIP` (unverified). Sponsored (`AD`) posts are disabled until ad proofs can be checked server-side.
+- Verification sources: `WALLET` (signed content hash) and `SKIP` (unverified). The old sponsored (`AD`) method was removed.
 
 ## Workflows
 
