@@ -1,7 +1,7 @@
 // src/lib/prisma.ts
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeon } from '@prisma/adapter-neon';
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
 import { withPoolerSettings } from './db-url';
 
@@ -10,8 +10,7 @@ const prismaClientSingleton = () => {
   // for networks that block Postgres' port 5432. Production uses the default TCP driver.
   if (process.env.PRISMA_NEON_WS === '1') {
     neonConfig.webSocketConstructor = ws;
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    return new PrismaClient({ adapter: new PrismaNeon(pool) });
+    return new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL }) });
   }
   return new PrismaClient({ datasourceUrl: withPoolerSettings(process.env.DATABASE_URL) });
 };
