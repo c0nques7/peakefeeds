@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { ChannelRole, UserRole } from '@prisma/client';
+import { ChannelRole, UserRole } from '@/generated/prisma/client';
 import { authenticator } from 'otplib';
 
 // Integration tests against the local database: the server enforces the same rules the UI shows.

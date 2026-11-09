@@ -1,4 +1,4 @@
-import { ChannelRole, Prisma, UserRole } from '@prisma/client';
+import { ChannelRole, Prisma, UserRole } from '@/generated/prisma/client';
 import { prisma } from '@/lib/db';
 import { deleteFileByName, fileNameFromUrl } from '@/lib/b2';
 import { clearAccountStatusCache } from '@/lib/penalties';

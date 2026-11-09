@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { ReactionType } from '@prisma/client';
+import { ReactionType } from '@/generated/prisma/client';
 import { createNotification } from "@/lib/notifications"; // 1. Import
 import { getInteractionBlockReason } from "@/lib/interaction-guard";
 

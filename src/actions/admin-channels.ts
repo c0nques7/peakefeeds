@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
-import { AdminLogType } from "@prisma/client";
+import { AdminLogType } from "@/generated/prisma/client";
 import { createAdminLog } from "@/lib/admin-logger";
 
 const CHANNEL_PAGE_SIZE = 50;

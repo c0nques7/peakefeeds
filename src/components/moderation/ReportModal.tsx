@@ -5,7 +5,7 @@ import { Loader2, X, AlertTriangle, CheckCircle2, Ticket } from 'lucide-react';
 import { toast } from 'sonner';
 import { submitReport } from '@/actions/report-actions';
 import { blockUser } from '@/actions/block-user';
-import { ReportTargetType } from '@prisma/client';
+import { ReportTargetType } from '@/generated/prisma/browser';
 import { buttonClasses, Modal } from '@/components/ui';
 
 const REPORT_REASONS = [

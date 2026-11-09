@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { AdminLogType } from "@prisma/client";
+import { AdminLogType } from "@/generated/prisma/client";
 import { headers } from "next/headers";
 
 interface CreateLogParams {

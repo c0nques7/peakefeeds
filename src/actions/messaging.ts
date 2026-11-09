@@ -7,7 +7,7 @@ import { createNotification } from "@/lib/notifications"
 import { addMessageAction } from "@/actions/support" // Reuse existing support logic
 import { revalidatePath } from "next/cache"
 import { getPostingBlockReason } from "@/lib/penalties"
-import { SupportStatus } from "@prisma/client"
+import { SupportStatus } from "@/generated/prisma/client"
 import { z } from "zod"
 import { findOrCreateDirectConversation } from "@/lib/conversations"
 

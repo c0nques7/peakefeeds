@@ -23,7 +23,7 @@ import styles from './PostCard.module.css'
 import ReportModal from '../moderation/ReportModal'
 import LockedOverlay from '../moderation/LockedOverlay'
 import DeletePostModal from '../posts/DeletePostModal'
-import { ReportTargetType } from '@prisma/client'
+import { ReportTargetType } from '@/generated/prisma/browser'
 import { MOD_TAG } from '@/lib/constants'
 
 // --- HELPERS ---

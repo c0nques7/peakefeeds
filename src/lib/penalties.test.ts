@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/generated/prisma/client';
 import * as argon2 from 'argon2';
 
 // Integration tests against the local database for ban and mute enforcement.

@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/generated/prisma/client';
 import { getInteractionBlockReason } from '@/lib/interaction-guard';
 
 const UpdateCommentSchema = z.object({

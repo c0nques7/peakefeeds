@@ -4,11 +4,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/generated/prisma/client';
 import { getPostPermissions } from '@/lib/permissions';
 
 import { createAdminLog } from "@/lib/admin-logger";
-import { AdminLogType } from "@prisma/client";
+import { AdminLogType } from "@/generated/prisma/client";
 
 export async function deletePost(postId: string, reason?: string, comments?: string) {
   const session = await getServerSession(authOptions);

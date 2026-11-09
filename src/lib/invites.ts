@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { prisma } from '@/lib/db';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '@/generated/prisma/client';
 
 // Invite codes gate every sign-up path (email and Google). These helpers are the one place
 // that checks and claims them.

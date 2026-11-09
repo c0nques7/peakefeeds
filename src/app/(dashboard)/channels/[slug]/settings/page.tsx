@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth.config";
 import { ArrowLeft, Shield } from "lucide-react";
 import Link from "next/link";
 import ModeratorChannelPermissions from "@/components/channels/ModeratorChannelPermissions";
-import { ChannelRole } from "@prisma/client";
+import { ChannelRole } from "@/generated/prisma/client";
 
 // Shared Layout Styles
 import styles from "../../../../(dashboard)/dashboard.module.css"; 

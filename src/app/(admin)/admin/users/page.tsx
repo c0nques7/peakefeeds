@@ -2,7 +2,7 @@ import { getAdminUsers } from "@/actions/admin-users";
 import Link from "next/link";
 import { Search, Filter, Shield } from "lucide-react";
 import styles from "../admin.module.css";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/generated/prisma/client";
 // 🟢 Import the new Create Button
 import { CreateUserButton } from "./_components/create-user-button"; 
 

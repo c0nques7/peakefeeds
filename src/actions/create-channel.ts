@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import slugify from 'slugify';
 import { redirect } from 'next/navigation';
-import { ChannelRole, Prisma } from '@prisma/client';
+import { ChannelRole, Prisma } from '@/generated/prisma/client';
 import { randomBytes } from 'crypto';
 import { getPostingBlockReason } from "@/lib/penalties";
 

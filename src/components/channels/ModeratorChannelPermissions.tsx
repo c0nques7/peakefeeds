@@ -6,7 +6,7 @@ import {
   updateChannelPermissions, 
   removeChannelUser 
 } from '@/actions/channel-permissions';
-import { ChannelRole } from '@prisma/client';
+import { ChannelRole } from '@/generated/prisma/browser';
 import { 
   Shield, User, Trash2, Check, X, Loader2, 
   MessageSquare, Send, Pin, ShieldAlert 

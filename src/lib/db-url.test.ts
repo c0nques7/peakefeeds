@@ -1,37 +1,40 @@
 import { describe, it, expect } from 'vitest';
-import { withPoolerSettings } from './db-url';
+import { poolSettings } from './db-url';
 
 const pooler = 'postgresql://u:p@ep-old-morning-abc-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require';
 
-describe('withPoolerSettings', () => {
-  it('adds the pooler settings on Vercel and keeps existing ones', () => {
-    const url = new URL(withPoolerSettings(pooler, true)!);
-    expect(url.searchParams.get('sslmode')).toBe('require');
-    expect(url.searchParams.get('pgbouncer')).toBe('true');
-    expect(url.searchParams.get('connect_timeout')).toBe('15');
-    expect(url.searchParams.get('connection_limit')).toBe('1');
+describe('poolSettings', () => {
+  it('limits pooled Neon connections to one per instance on Vercel', () => {
+    const settings = poolSettings(pooler, true)!;
+    expect(settings.max).toBe(1);
+    expect(settings.connectionTimeoutMillis).toBe(15000);
+    expect(new URL(settings.connectionString).searchParams.get('sslmode')).toBe('verify-full');
+  });
+
+  it('leaves the pool size to pg off Vercel', () => {
+    const settings = poolSettings(pooler, false)!;
+    expect(settings.max).toBeUndefined();
+    expect(settings.connectionTimeoutMillis).toBe(15000);
+  });
+
+  it('uses settings already in the URL and strips Prisma-only parameters', () => {
+    const settings = poolSettings(`${pooler}&pgbouncer=true&connect_timeout=30&connection_limit=3`, true)!;
+    expect(settings.connectionTimeoutMillis).toBe(30000);
+    expect(settings.max).toBe(3);
+    const url = new URL(settings.connectionString);
+    expect(url.searchParams.get('sslmode')).toBe('verify-full');
+    expect(url.searchParams.has('pgbouncer')).toBe(false);
+    expect(url.searchParams.has('connect_timeout')).toBe(false);
+    expect(url.searchParams.has('connection_limit')).toBe(false);
     expect(url.username).toBe('u');
     expect(url.password).toBe('p');
   });
 
-  it('leaves the connection limit alone off Vercel', () => {
-    const url = new URL(withPoolerSettings(pooler, false)!);
-    expect(url.searchParams.get('pgbouncer')).toBe('true');
-    expect(url.searchParams.has('connection_limit')).toBe(false);
-  });
-
-  it('does not override settings already in the URL', () => {
-    const url = new URL(withPoolerSettings(`${pooler}&connect_timeout=30&connection_limit=3`, true)!);
-    expect(url.searchParams.get('connect_timeout')).toBe('30');
-    expect(url.searchParams.get('connection_limit')).toBe('3');
-  });
-
-  it('leaves direct and local URLs unchanged', () => {
-    const direct = 'postgresql://u:p@ep-old-morning-abc.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require';
+  it('keeps direct and local URLs as they are', () => {
+    const direct = 'postgresql://u:p@ep-old-morning-abc.c-2.us-east-1.aws.neon.tech/neondb?sslmode=verify-full';
     const local = 'postgresql://peakeuser:peakepassword@localhost:5432/peakefeeds_test';
-    expect(withPoolerSettings(direct, true)).toBe(direct);
-    expect(withPoolerSettings(local, true)).toBe(local);
-    expect(withPoolerSettings(undefined, true)).toBeUndefined();
-    expect(withPoolerSettings('not a url', true)).toBe('not a url');
+    expect(poolSettings(direct, true)).toEqual({ connectionString: direct, connectionTimeoutMillis: 15000 });
+    expect(poolSettings(local, true)).toEqual({ connectionString: local, connectionTimeoutMillis: 15000 });
+    expect(poolSettings(undefined, true)).toBeUndefined();
   });
 });

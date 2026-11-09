@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/generated/prisma/client';
 
 const { getServerAuthSession, redirect } = vi.hoisted(() => ({
   getServerAuthSession: vi.fn(),

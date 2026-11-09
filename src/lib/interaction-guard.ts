@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/generated/prisma/client';
 import { getPostingBlockReason } from '@/lib/penalties';
 
 export type InteractionAction = 'post' | 'comment' | 'react' | 'edit-post' | 'edit-comment';

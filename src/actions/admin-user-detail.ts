@@ -9,7 +9,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireStaff, requireRole } from "@/lib/rbac";
-import { UserRole, PenaltyType, AdminLogType } from "@prisma/client";
+import { UserRole, PenaltyType, AdminLogType } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { createAdminLog } from "@/lib/admin-logger";

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createUser } from "@/actions/admin-users";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/generated/prisma/browser";
 import { Plus, X, Loader2, UserPlus, Ticket } from "lucide-react";
 import styles from "@/app/(admin)/admin/admin.module.css"; // Admin CSS
 

@@ -1,7 +1,6 @@
-import { PrismaClient, PostType, ReactionType, UserRole, ReportReason, ReportTargetType, ReportStatus, PenaltyType, WaitlistStatus, SupportStatus } from '@prisma/client';
+import { PostType, ReactionType, UserRole, ReportReason, ReportTargetType, ReportStatus, PenaltyType, WaitlistStatus, SupportStatus } from '../src/generated/prisma/client';
 import { faker } from '@faker-js/faker';
-
-const prisma = new PrismaClient();
+import { prisma } from '../src/lib/prisma';
 
 // --- Configuration ---
 const USER_COUNT = 200;

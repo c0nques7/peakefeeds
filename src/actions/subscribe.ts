@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { ChannelRole } from '@prisma/client';
+import { ChannelRole } from '@/generated/prisma/client';
 
 const SubscribeSchema = z.object({
   channelId: z.string().cuid("Invalid Channel ID"),

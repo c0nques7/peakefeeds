@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
-import { AdminLogType, Prisma } from "@prisma/client";
+import { AdminLogType, Prisma } from "@/generated/prisma/client";
 
 export async function getAdminLogs({
   adminId,
