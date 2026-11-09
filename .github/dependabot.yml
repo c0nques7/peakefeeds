@@ -1,0 +1,45 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR a week for routine updates; CI runs typecheck, lint, tests and build on it
+      minor-and-patch:
+        update-types: [minor, patch]
+        exclude-patterns:
+          - "@reown/*"
+          - "@walletconnect/*"
+          - "@metamask/*"
+          - "@coinbase/*"
+          - "@gemini-wallet/*"
+          - "@safe-global/*"
+          - "@wagmi/*"
+          - "wagmi"
+          - "viem"
+          - "porto"
+      # Wallet libraries move together and need a manual sign-in check, so they get their own PR
+      wallet:
+        patterns:
+          - "@reown/*"
+          - "@walletconnect/*"
+          - "@metamask/*"
+          - "@coinbase/*"
+          - "@gemini-wallet/*"
+          - "@safe-global/*"
+          - "@wagmi/*"
+          - "wagmi"
+          - "viem"
+          - "porto"
+    ignore:
+      # Major versions (Prisma 7, Tailwind 4, TypeScript 7...) are planned upgrades, not weekly PRs
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
