@@ -67,7 +67,6 @@ async function main() {
   await prisma.penalty.deleteMany();
   await prisma.report.deleteMany();
   await prisma.waitlist.deleteMany();
-  await prisma.adView.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.reaction.deleteMany(); 

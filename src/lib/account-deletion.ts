@@ -82,7 +82,6 @@ export async function deleteAccount(userId: string): Promise<void> {
       },
     });
     await tx.penalty.deleteMany({ where: { userId } });
-    await tx.adView.deleteMany({ where: { userId } });
 
     // Conversations are one-to-one, so each goes with the account, along with its messages
     await tx.conversation.deleteMany({ where: { participants: { some: { id: userId } } } });
