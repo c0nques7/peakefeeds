@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
+import { withPoolerSettings } from './db-url';
 
 const prismaClientSingleton = () => {
   // PRISMA_NEON_WS=1 (Development only) talks to Neon over WebSockets on port 443,
@@ -12,7 +13,7 @@ const prismaClientSingleton = () => {
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     return new PrismaClient({ adapter: new PrismaNeon(pool) });
   }
-  return new PrismaClient();
+  return new PrismaClient({ datasourceUrl: withPoolerSettings(process.env.DATABASE_URL) });
 };
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
