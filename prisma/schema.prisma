@@ -3,8 +3,7 @@
 // --------------------------------------
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -116,28 +115,28 @@ enum NotificationType {
 // --------------------------------------
 
 model User {
-  id              String    @id @default(cuid())
-  name            String?
-  username        String?   @unique
-  email           String?   @unique
-  emailVerified   DateTime?
-  image           String?
-  passwordHash    String?
-  walletAddress   String?   @unique
-  role            UserRole  @default(STANDARD)
-  strikeCount     Int       @default(0)
-  isBanned        Boolean   @default(false)
-  isLocked        Boolean   @default(false)
-  mutedUntil      DateTime?
-  bannedUntil     DateTime?
-  managerId       String?
-  manager         User?     @relation("BusinessManagement", fields: [managerId], references: [id])
-  managedUsers    User[]    @relation("BusinessManagement")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  username      String?   @unique
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  walletAddress String?   @unique
+  role          UserRole  @default(STANDARD)
+  strikeCount   Int       @default(0)
+  isBanned      Boolean   @default(false)
+  isLocked      Boolean   @default(false)
+  mutedUntil    DateTime?
+  bannedUntil   DateTime?
+  managerId     String?
+  manager       User?     @relation("BusinessManagement", fields: [managerId], references: [id])
+  managedUsers  User[]    @relation("BusinessManagement")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  twoFactorEnabled Boolean   @default(false)
-  twoFactorSecret  String?
+  twoFactorEnabled     Boolean   @default(false)
+  twoFactorSecret      String?
   /// Wrong 2FA codes in a row, and when code checks resume after too many (see lib/two-factor-guard.ts)
   twoFactorFailures    Int       @default(0)
   twoFactorLockedUntil DateTime?
@@ -146,104 +145,103 @@ model User {
   passwordChangedAt DateTime?
 
   // Age check: only the outcome and when it happened are kept, never the date of birth
-  ageConfirmedAt   DateTime?
-  ageRejectedAt    DateTime?
+  ageConfirmedAt DateTime?
+  ageRejectedAt  DateTime?
 
   accounts        Account[]
   sessions        Session[]
-  channelsCreated Channel[] @relation("CreatedChannels")
+  channelsCreated Channel[]      @relation("CreatedChannels")
   posts           Post[]
   comments        Comment[]
   subscriptions   Subscription[]
   likes           Reaction[]
 
-  reportsFiled    Report[]  @relation("ReportedBy")
-  reportsResolved Report[]  @relation("ResolvedBy")
-  reportsAgainst  Report[]  @relation("ProfileReported")
-  
-  penaltiesReceived Penalty[] @relation("ReceivedPenalties")
-  penaltiesIssued   Penalty[] @relation("IssuedPenalties")
-  adsWatched      AdView[]
-  invitesIssued   InviteCode[] @relation("IssuedInvites")
-  inviteUsed      InviteCode?  @relation("UsedInvite")
-  supportTickets  SupportTicket[] @relation("UserTickets")
-  assignedTickets SupportTicket[] @relation("AssignedTickets")
-  notificationsReceived Notification[] @relation("NotificationsReceived")
-  notificationsSent     Notification[] @relation("NotificationsTriggered")
-  conversations   Conversation[] @relation("ConversationParticipants")
-  messagesSent    DirectMessage[] @relation("SentMessages")
-  blocksInitiated Block[] @relation("BlocksInitiated")
-  blocksReceived  Block[] @relation("BlocksReceived")
-  adminLogs       AdminLog[] @relation("AdminActions")
-  ticketMessages  TicketMessage[] @relation("AdminMessages")
+  reportsFiled    Report[] @relation("ReportedBy")
+  reportsResolved Report[] @relation("ResolvedBy")
+  reportsAgainst  Report[] @relation("ProfileReported")
+
+  penaltiesReceived     Penalty[]       @relation("ReceivedPenalties")
+  penaltiesIssued       Penalty[]       @relation("IssuedPenalties")
+  invitesIssued         InviteCode[]    @relation("IssuedInvites")
+  inviteUsed            InviteCode?     @relation("UsedInvite")
+  supportTickets        SupportTicket[] @relation("UserTickets")
+  assignedTickets       SupportTicket[] @relation("AssignedTickets")
+  notificationsReceived Notification[]  @relation("NotificationsReceived")
+  notificationsSent     Notification[]  @relation("NotificationsTriggered")
+  conversations         Conversation[]  @relation("ConversationParticipants")
+  messagesSent          DirectMessage[] @relation("SentMessages")
+  blocksInitiated       Block[]         @relation("BlocksInitiated")
+  blocksReceived        Block[]         @relation("BlocksReceived")
+  adminLogs             AdminLog[]      @relation("AdminActions")
+  ticketMessages        TicketMessage[] @relation("AdminMessages")
 }
 
 model Channel {
-  id            String    @id @default(cuid())
-  name          String
-  slug          String    @unique
-  description   String?
-  tags          String[]
-  isLocked      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  creatorId     String
-  creator       User      @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
-  subscribers   Subscription[]
-  posts         Post[]
-  reports       Report[]
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String?
+  tags        String[]
+  isLocked    Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  creatorId   String
+  creator     User           @relation("CreatedChannels", fields: [creatorId], references: [id], onDelete: Cascade)
+  subscribers Subscription[]
+  posts       Post[]
+  reports     Report[]
 
   @@index([name])
   @@index([creatorId])
 }
 
 model Subscription {
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channelId String
-  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  joinedAt  DateTime @default(now())
-  role      ChannelRole @default(MEMBER)
-  canPost        Boolean @default(true)
-  canComment     Boolean @default(true)
-  canDeletePosts Boolean @default(false)
-  canPinPosts    Boolean @default(false)
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId      String
+  channel        Channel     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime    @default(now())
+  role           ChannelRole @default(MEMBER)
+  canPost        Boolean     @default(true)
+  canComment     Boolean     @default(true)
+  canDeletePosts Boolean     @default(false)
+  canPinPosts    Boolean     @default(false)
 
   @@id([userId, channelId])
   @@index([channelId])
 }
 
 model Post {
-  id              String    @id @default(cuid())
-  title           String?
-  content         String    @db.Text
-  type            PostType  @default(TEXT)
-  mediaUrl        String?
-  embedUrl        String?
-  mediaHash       String?
-  linkTitle       String?
-  linkDescription String?   @db.Text
-  linkImage       String?
-  linkDomain      String?
-  isVerified      Boolean   @default(false)
-  isLocked        Boolean   @default(false)
-  contentHash     String?
-  salt            String?
-  signature       String?
-  verificationTx  String?
+  id                 String         @id @default(cuid())
+  title              String?
+  content            String         @db.Text
+  type               PostType       @default(TEXT)
+  mediaUrl           String?
+  embedUrl           String?
+  mediaHash          String?
+  linkTitle          String?
+  linkDescription    String?        @db.Text
+  linkImage          String?
+  linkDomain         String?
+  isVerified         Boolean        @default(false)
+  isLocked           Boolean        @default(false)
+  contentHash        String?
+  salt               String?
+  signature          String?
+  verificationTx     String?
   verificationSource String?
-  likesCount      Int       @default(0)
-  dislikesCount   Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  channelId       String
-  channel         Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  authorId        String
-  author          User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments        Comment[]
-  likes           Reaction[]
-  reports         Report[]
-  notifications   Notification[]
+  likesCount         Int            @default(0)
+  dislikesCount      Int            @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  channelId          String
+  channel            Channel        @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  authorId           String
+  author             User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments           Comment[]
+  likes              Reaction[]
+  reports            Report[]
+  notifications      Notification[]
 
   @@index([channelId, createdAt(sort: Desc)])
   @@index([authorId, createdAt(sort: Desc)])
@@ -251,20 +249,20 @@ model Post {
 }
 
 model Comment {
-  id        String    @id @default(cuid())
-  content   String    @db.Text
-  isLocked  Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  authorId  String
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  postId    String
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parentId  String?
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
+  id            String         @id @default(cuid())
+  content       String         @db.Text
+  isLocked      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postId        String
+  post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[]      @relation("CommentReplies")
   notifications Notification[]
-  reports   Report[]
+  reports       Report[]
 
   @@index([postId])
   @@index([parentId])
@@ -272,43 +270,43 @@ model Comment {
 }
 
 model Reaction {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now())
+  id        String       @id @default(cuid())
+  createdAt DateTime     @default(now())
   type      ReactionType @default(LIKE)
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   postId    String
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([postId])
 }
 
 model Report {
-  id         String    @id @default(cuid())
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  reason     ReportReason
-  details    String?      @db.Text
-  status     ReportStatus @default(PENDING)
-  targetType ReportTargetType
-  reporterId String
-  reporter   User     @relation("ReportedBy", fields: [reporterId], references: [id])
-  postId     String?
-  post       Post?     @relation(fields: [postId], references: [id], onDelete: SetNull)
+  id                String           @id @default(cuid())
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  reason            ReportReason
+  details           String?          @db.Text
+  status            ReportStatus     @default(PENDING)
+  targetType        ReportTargetType
+  reporterId        String
+  reporter          User             @relation("ReportedBy", fields: [reporterId], references: [id])
+  postId            String?
+  post              Post?            @relation(fields: [postId], references: [id], onDelete: SetNull)
   reportedProfileId String?
-  reportedProfile   User?     @relation("ProfileReported", fields: [reportedProfileId], references: [id])
-  channelId  String?
-  channel    Channel? @relation(fields: [channelId], references: [id])
-  messageId  String?
-  message    DirectMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
-  commentId  String?
-  comment    Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
-  adId       String?
-  resolverId String?
-  resolver   User?  @relation("ResolvedBy", fields: [resolverId], references: [id])
-  penalty    Penalty?
-  notifications Notification[]
+  reportedProfile   User?            @relation("ProfileReported", fields: [reportedProfileId], references: [id])
+  channelId         String?
+  channel           Channel?         @relation(fields: [channelId], references: [id])
+  messageId         String?
+  message           DirectMessage?   @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  commentId         String?
+  comment           Comment?         @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  adId              String?
+  resolverId        String?
+  resolver          User?            @relation("ResolvedBy", fields: [resolverId], references: [id])
+  penalty           Penalty?
+  notifications     Notification[]
 
   @@index([status, createdAt])
   @@index([reporterId])
@@ -321,30 +319,18 @@ model Report {
 }
 
 model Penalty {
-  id            String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  type          PenaltyType
-  reason        String      @db.Text
-  expiresAt     DateTime?
-  isActive      Boolean     @default(true)
-  userId        String
-  user          User        @relation("ReceivedPenalties", fields: [userId], references: [id])
-  issuerId      String
-  issuer        User        @relation("IssuedPenalties", fields: [issuerId], references: [id])
-  reportId      String?     @unique
-  report        Report?     @relation(fields: [reportId], references: [id])
-
-  @@index([userId])
-}
-
-model AdView {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  provider  String
-  txHash     String?
-  revenueEst Float?
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  id        String      @id @default(cuid())
+  createdAt DateTime    @default(now())
+  type      PenaltyType
+  reason    String      @db.Text
+  expiresAt DateTime?
+  isActive  Boolean     @default(true)
+  userId    String
+  user      User        @relation("ReceivedPenalties", fields: [userId], references: [id])
+  issuerId  String
+  issuer    User        @relation("IssuedPenalties", fields: [issuerId], references: [id])
+  reportId  String?     @unique
+  report    Report?     @relation(fields: [reportId], references: [id])
 
   @@index([userId])
 }
@@ -356,29 +342,29 @@ enum WaitlistStatus {
 }
 
 model Waitlist {
-  id        String          @id @default(cuid())
-  email     String          @unique
-  joinedAt  DateTime        @default(now())
-  status    WaitlistStatus @default(PENDING)
-  source    String?
-  medium    String?
-  campaign  String?
+  id       String         @id @default(cuid())
+  email    String         @unique
+  joinedAt DateTime       @default(now())
+  status   WaitlistStatus @default(PENDING)
+  source   String?
+  medium   String?
+  campaign String?
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -400,9 +386,9 @@ model VerificationToken {
 }
 
 model InviteCode {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  createdAt DateTime @default(now())
+  id        String    @id @default(cuid())
+  code      String    @unique
+  createdAt DateTime  @default(now())
   usedAt    DateTime?
   issuerId  String?
   issuer    User?     @relation("IssuedInvites", fields: [issuerId], references: [id])
@@ -411,22 +397,22 @@ model InviteCode {
 }
 
 model SupportTicket {
-  id              String   @id @default(cuid())
-  status          SupportStatus @default(OPEN)
-  priority        SupportPriority @default(LOW)
-  severity        Int      @default(0)
-  internalNotes   String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  userId          String?
-  user            User?    @relation("UserTickets", fields: [userId], references: [id])
-  assigneeId      String?
-  assignee        User?    @relation("AssignedTickets", fields: [assigneeId], references: [id])
-  messages        TicketMessage[]
-  directMessages  DirectMessage[]
-  notifications   Notification[]
+  id             String          @id @default(cuid())
+  status         SupportStatus   @default(OPEN)
+  priority       SupportPriority @default(LOW)
+  severity       Int             @default(0)
+  internalNotes  String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  userId         String?
+  user           User?           @relation("UserTickets", fields: [userId], references: [id])
+  assigneeId     String?
+  assignee       User?           @relation("AssignedTickets", fields: [assigneeId], references: [id])
+  messages       TicketMessage[]
+  directMessages DirectMessage[]
+  notifications  Notification[]
   /// Salted hash of an anonymous creator's IP, for the per-visitor ticket cap
-  clientKey       String?
+  clientKey      String?
 
   @@index([status])
   @@index([userId])
@@ -435,17 +421,16 @@ model SupportTicket {
   @@index([updatedAt])
 }
 
-
 model TicketMessage {
-  id              String        @id @default(cuid())
-  text            String        @db.Text
-  sender          String        // "user", "admin", "bot"
-  createdAt       DateTime      @default(now())
-  ticketId        String
-  ticket          SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  adminId         String?
-  admin           User?         @relation("AdminMessages", fields: [adminId], references: [id])
-  isInternal      Boolean       @default(false)
+  id         String        @id @default(cuid())
+  text       String        @db.Text
+  sender     String // "user", "admin", "bot"
+  createdAt  DateTime      @default(now())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  adminId    String?
+  admin      User?         @relation("AdminMessages", fields: [adminId], references: [id])
+  isInternal Boolean       @default(false)
 
   @@index([ticketId])
   @@index([adminId])
@@ -480,28 +465,28 @@ model Notification {
 }
 
 model Conversation {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  participants User[] @relation("ConversationParticipants")
-  messages     DirectMessage[]
-  lastMessageAt DateTime @default(now())
+  id            String          @id @default(cuid())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  participants  User[]          @relation("ConversationParticipants")
+  messages      DirectMessage[]
+  lastMessageAt DateTime        @default(now())
 
   @@index([lastMessageAt])
 }
 
 model DirectMessage {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  senderId  String
-  sender    User   @relation("SentMessages", fields: [senderId], references: [id])
+  id             String         @id @default(cuid())
+  content        String         @db.Text
+  createdAt      DateTime       @default(now())
+  senderId       String
+  sender         User           @relation("SentMessages", fields: [senderId], references: [id])
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   ticketId       String?
   ticket         SupportTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
-  isRead    Boolean @default(false)
-  reports   Report[]
+  isRead         Boolean        @default(false)
+  reports        Report[]
 
   @@index([conversationId, createdAt])
   @@index([senderId])
