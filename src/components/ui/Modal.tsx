@@ -40,12 +40,12 @@ export function Modal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       className={clsx(
         'm-auto w-[calc(100%-2rem)] max-w-md overflow-visible bg-transparent p-0 text-inherit',
-        'backdrop:bg-black/80 backdrop:backdrop-blur-sm',
+        'backdrop:bg-black/80 backdrop:backdrop-blur-xs',
         className
       )}
     >
       {open && (
-        <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--glass-border)] bg-[var(--glass-card)] p-6 shadow-2xl">
+        <div className="relative overflow-hidden rounded-(--radius-card) border border-(--glass-border) bg-(--glass-card) p-6 shadow-2xl">
           {children}
         </div>
       )}

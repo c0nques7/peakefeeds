@@ -23,10 +23,10 @@ export const GenericLinkCard = ({ url, data, icon, label }: any) => (
     href={url} 
     target="_blank" 
     rel="noopener noreferrer" 
-    className="group relative z-10 flex mt-3 h-24 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-panel)] hover:bg-white/5 transition-all"
+    className="group relative z-10 flex mt-3 h-24 overflow-hidden rounded-xl border border-(--glass-border) bg-(--glass-panel) hover:bg-white/5 transition-all"
   >
       {data?.linkImage ? (
-          <div className="w-24 h-full flex-shrink-0 relative">
+          <div className="w-24 h-full shrink-0 relative">
               <Image 
                 src={data.linkImage} 
                 unoptimized={!isOptimizable(data.linkImage)}
@@ -37,16 +37,16 @@ export const GenericLinkCard = ({ url, data, icon, label }: any) => (
               />
           </div>
       ) : (
-          <div className="w-20 h-full flex-shrink-0 bg-[var(--surface-elevated)] flex items-center justify-center border-r border-[var(--glass-border)] text-[var(--text-muted)]">
+          <div className="w-20 h-full shrink-0 bg-(--surface-elevated) flex items-center justify-center border-r border-(--glass-border) text-(--text-muted)">
                {icon || <ExternalLink size={24} />}
           </div>
       )}
       <div className="flex-1 p-3 min-w-0 flex flex-col justify-center">
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-(--text-muted) mb-1">
               <span>{label || new URL(url).hostname.replace('www.','')}</span>
               <ExternalLink size={10} />
           </div>
-          <h3 className="font-bold text-sm text-[var(--text-primary)] truncate pr-2">
+          <h3 className="font-bold text-sm text-(--text-primary) truncate pr-2">
               {data?.linkTitle || label || "External Link"}
           </h3>
           {data?.linkDescription && (
@@ -63,9 +63,9 @@ const ImageEmbed = ({ url }: { url: string }) => {
     if (status === 'error') return null;
 
     return (
-        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black/5 flex justify-center min-h-[200px]">
+        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-(--glass-border) bg-black/5 flex justify-center min-h-[200px]">
              {status === 'loading' && (
-                 <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)]">
+                 <div className="absolute inset-0 flex items-center justify-center text-(--text-muted)">
                      <Loader2 className="animate-spin" />
                  </div>
              )}
@@ -89,7 +89,7 @@ const ImageEmbed = ({ url }: { url: string }) => {
 // --- 2.5 LOCAL VIDEO RENDERER ---
 const VideoEmbed = ({ url }: { url: string }) => {
     return (
-        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black/5 flex justify-center bg-black">
+        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-(--glass-border) bg-black/5 flex justify-center bg-black">
             <video 
                 src={url} 
                 controls 
@@ -110,7 +110,7 @@ const useOrigin = () => useSyncExternalStore(noopSubscribe, () => window.locatio
 const YouTubeEmbed = ({ id }: { id: string }) => {
     const origin = useOrigin();
     return (
-        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-[var(--glass-border)] bg-black aspect-video">
+        <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-(--glass-border) bg-black aspect-video">
             {origin && <iframe
                 src={`https://www.youtube-nocookie.com/embed/${id}?origin=${origin}`}
                 title="YouTube video player"

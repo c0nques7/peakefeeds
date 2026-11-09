@@ -38,9 +38,9 @@ export default function MobileBottomNav({ user }: { user?: NavUser }) {
             onKeyDown={(e) => { if (e.key === 'Escape') setShowNotifs(false); }}
           >
             <div className={styles.drawerHeader}>
-              <h3 id="activity-drawer-title" className="font-bold text-[var(--text-primary)]">Activity</h3>
-              <button onClick={() => setShowNotifs(false)} aria-label="Close activity" autoFocus className="p-2 rounded-full hover:bg-[var(--glass-border)]">
-                <X size={20} aria-hidden="true" className="text-[var(--text-muted)]" />
+              <h3 id="activity-drawer-title" className="font-bold text-(--text-primary)">Activity</h3>
+              <button onClick={() => setShowNotifs(false)} aria-label="Close activity" autoFocus className="p-2 rounded-full hover:bg-(--glass-border)">
+                <X size={20} aria-hidden="true" className="text-(--text-muted)" />
               </button>
             </div>
             

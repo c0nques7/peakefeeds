@@ -32,14 +32,14 @@ export function EditUserForm({ user }: { user: User }) {
   if (!isEditing) {
     return (
       <div className={styles.glassPanel}>
-        <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-center">
-          <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <UserIcon size={18} className="text-[var(--accent-primary)]" />
+        <div className="p-4 border-b border-(--glass-border) flex justify-between items-center">
+          <h3 className="font-bold text-(--text-primary) flex items-center gap-2">
+            <UserIcon size={18} className="text-(--accent-primary)" />
             Profile Information
           </h3>
           <button
             onClick={() => setIsEditing(true)}
-            className="p-2 hover:bg-[var(--glass-card-hover)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+            className="p-2 hover:bg-(--glass-card-hover) rounded-lg text-(--text-muted) hover:text-(--text-primary) transition-all"
           >
             <Edit2 size={16} />
           </button>
@@ -47,16 +47,16 @@ export function EditUserForm({ user }: { user: User }) {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Display Name</label>
-              <p className="text-[var(--text-primary)] font-medium">{user.name || "N/A"}</p>
+              <label className="text-xs font-bold text-(--text-muted) uppercase">Display Name</label>
+              <p className="text-(--text-primary) font-medium">{user.name || "N/A"}</p>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Username</label>
-              <p className="text-[var(--text-primary)] font-medium">@{user.username || "Anonymous"}</p>
+              <label className="text-xs font-bold text-(--text-muted) uppercase">Username</label>
+              <p className="text-(--text-primary) font-medium">@{user.username || "Anonymous"}</p>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Email Address</label>
-              <p className="text-[var(--text-primary)] font-medium">{user.email || "N/A"}</p>
+              <label className="text-xs font-bold text-(--text-muted) uppercase">Email Address</label>
+              <p className="text-(--text-primary) font-medium">{user.email || "N/A"}</p>
             </div>
           </div>
         </div>
@@ -67,9 +67,9 @@ export function EditUserForm({ user }: { user: User }) {
   return (
     <div className={styles.glassPanel}>
       <form onSubmit={handleSubmit}>
-        <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-center">
-          <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <UserIcon size={18} className="text-[var(--accent-primary)]" />
+        <div className="p-4 border-b border-(--glass-border) flex justify-between items-center">
+          <h3 className="font-bold text-(--text-primary) flex items-center gap-2">
+            <UserIcon size={18} className="text-(--accent-primary)" />
             Edit Profile
           </h3>
           <div className="flex gap-2">
@@ -93,38 +93,38 @@ export function EditUserForm({ user }: { user: User }) {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase flex items-center gap-2">
+              <label className="text-xs font-bold text-(--text-muted) uppercase flex items-center gap-2">
                 <UserIcon size={12} /> Full Name
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 rounded bg-black/20 border border-[var(--glass-border)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all"
+                className="w-full px-4 py-2 rounded-sm bg-black/20 border border-(--glass-border) text-(--text-primary) focus:border-(--accent-primary) outline-hidden transition-all"
                 placeholder="Real Name"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase flex items-center gap-2">
+              <label className="text-xs font-bold text-(--text-muted) uppercase flex items-center gap-2">
                 <AtSign size={12} /> Username
               </label>
               <input
                 type="text"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="w-full px-4 py-2 rounded bg-black/20 border border-[var(--glass-border)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all"
+                className="w-full px-4 py-2 rounded-sm bg-black/20 border border-(--glass-border) text-(--text-primary) focus:border-(--accent-primary) outline-hidden transition-all"
                 placeholder="username"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase flex items-center gap-2">
+              <label className="text-xs font-bold text-(--text-muted) uppercase flex items-center gap-2">
                 <Mail size={12} /> Email
               </label>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 rounded bg-black/20 border border-[var(--glass-border)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all"
+                className="w-full px-4 py-2 rounded-sm bg-black/20 border border-(--glass-border) text-(--text-primary) focus:border-(--accent-primary) outline-hidden transition-all"
                 placeholder="user@example.com"
               />
             </div>

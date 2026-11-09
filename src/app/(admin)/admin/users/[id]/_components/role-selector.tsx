@@ -36,7 +36,7 @@ export function UserRoleSelector({
         disabled={isPending}
         value={role}
         onChange={(e) => handleChange(e.target.value as UserRole)}
-        className="w-full px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] appearance-none cursor-pointer focus:outline-none focus:border-[var(--accent-primary)] hover:bg-[var(--glass-card-hover)] transition-all"
+        className="w-full px-4 py-2 bg-(--glass-panel) border border-(--glass-border) rounded-lg text-(--text-primary) appearance-none cursor-pointer focus:outline-hidden focus:border-(--accent-primary) hover:bg-(--glass-card-hover) transition-all"
       >
         {Object.values(UserRole).map((r) => (
           <option key={r} value={r}>
@@ -44,10 +44,10 @@ export function UserRoleSelector({
           </option>
         ))}
       </select>
-      <div className="absolute right-3 top-2.5 pointer-events-none text-[var(--accent-primary)]">
+      <div className="absolute right-3 top-2.5 pointer-events-none text-(--accent-primary)">
         {isPending ? <Loader2 size={16} className="animate-spin" /> : 
          isSuccess ? <Check size={16} className="text-emerald-400" /> : 
-         <span className="text-[var(--text-muted)] text-xs">▼</span>}
+         <span className="text-(--text-muted) text-xs">▼</span>}
       </div>
     </div>
   );

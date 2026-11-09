@@ -30,8 +30,8 @@ export function WalletCard({
 
   return (
     <div className={styles.glassPanel}>
-      <div className="p-4 border-b border-[var(--glass-border)]">
-        <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
+      <div className="p-4 border-b border-(--glass-border)">
+        <h3 className="font-bold text-(--text-primary) flex items-center gap-2">
           <Wallet size={18} className="text-emerald-400" />
           Web3 Connection
         </h3>
@@ -40,8 +40,8 @@ export function WalletCard({
         {walletAddress ? (
           <>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Connected Address</label>
-              <div className="font-mono text-xs p-3 bg-black/20 rounded border border-[var(--glass-border)] break-all text-[var(--text-primary)]">
+              <label className="text-xs font-bold text-(--text-muted) uppercase">Connected Address</label>
+              <div className="font-mono text-xs p-3 bg-black/20 rounded-sm border border-(--glass-border) break-all text-(--text-primary)">
                 {walletAddress}
               </div>
             </div>
@@ -55,14 +55,14 @@ export function WalletCard({
                   <button
                     onClick={handleDisconnect}
                     disabled={isPending}
-                    className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-sm transition-colors flex items-center justify-center gap-2"
                   >
                     {isPending ? <Loader2 size={14} className="animate-spin" /> : <Unlink size={14} />}
                     Yes, Disconnect
                   </button>
                   <button
                     onClick={() => setShowConfirm(false)}
-                    className="flex-1 py-1.5 bg-[var(--glass-panel)] text-[var(--text-muted)] text-xs font-bold rounded border border-[var(--glass-border)]"
+                    className="flex-1 py-1.5 bg-(--glass-panel) text-(--text-muted) text-xs font-bold rounded-sm border border-(--glass-border)"
                   >
                     Cancel
                   </button>
@@ -79,7 +79,7 @@ export function WalletCard({
             )}
           </>
         ) : (
-          <div className="flex flex-col items-center py-4 text-[var(--text-muted)]">
+          <div className="flex flex-col items-center py-4 text-(--text-muted)">
             <Wallet size={32} className="opacity-20 mb-2" />
             <p className="text-sm">No wallet connected</p>
           </div>

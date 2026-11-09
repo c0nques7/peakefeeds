@@ -25,8 +25,8 @@ export default function ThemeToggle({ variant = "icon", className }: { variant?:
         type="button"
         onClick={() => setTheme(next)}
         className={clsx(
-          "flex w-full items-center gap-3 rounded-[var(--radius-control)] px-3 h-10 text-sm font-medium",
-          "text-[var(--text-secondary)] hover:bg-[var(--glass-card-hover)] hover:text-[var(--text-primary)] transition-colors",
+          "flex w-full items-center gap-3 rounded-(--radius-control) px-3 h-10 text-sm font-medium",
+          "text-(--text-secondary) hover:bg-(--glass-card-hover) hover:text-(--text-primary) transition-colors",
           className
         )}
         aria-label={label}
@@ -42,8 +42,8 @@ export default function ThemeToggle({ variant = "icon", className }: { variant?:
       type="button"
       onClick={() => setTheme(next)}
       className={clsx(
-        "flex h-10 w-10 items-center justify-center rounded-[var(--radius-pill)] border border-[var(--glass-border)]",
-        "bg-[var(--glass-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)] transition-colors",
+        "flex h-10 w-10 items-center justify-center rounded-(--radius-pill) border border-(--glass-border)",
+        "bg-(--glass-card) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--glass-card-hover) transition-colors",
         className
       )}
       aria-label={label}

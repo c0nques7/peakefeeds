@@ -90,7 +90,7 @@ export default function PostPreview({
                     </div>
                 </div>
             </div>
-            <div className="text-[var(--text-muted)] p-1"><MoreHorizontal size={18} /></div>
+            <div className="text-(--text-muted) p-1"><MoreHorizontal size={18} /></div>
           </div>
 
           <div className={styles.contentWrapper}>
@@ -111,7 +111,7 @@ export default function PostPreview({
              </div>
           )}
 
-          <div className="flex items-center justify-between pt-3 border-t border-[var(--glass-border)] mt-auto">
+          <div className="flex items-center justify-between pt-3 border-t border-(--glass-border) mt-auto">
              <div className={styles.actionBar} style={{borderTop: 'none', marginTop: 0, paddingTop: 0}}>
                  <button className={styles.actionBtn} disabled><Heart size={18} /> <span>0</span></button>
                  <button className={styles.actionBtn} disabled><MessageCircle size={18} /> <span>0</span></button>
@@ -145,7 +145,7 @@ export default function PostPreview({
         <div className={styles.cardBack}>
              <button type="button" onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
-                <ShieldCheck size={48} className={clsx("mb-4", isVerified ? "text-emerald-400" : "text-[var(--text-muted)]")} />
+                <ShieldCheck size={48} className={clsx("mb-4", isVerified ? "text-emerald-400" : "text-(--text-muted)")} />
                 <h3 className={styles.verifyTitle}>{isVerified ? "On-Chain Verification" : "Unverified Content"}</h3>
                 <p className={styles.verifyText}>
                     {isVerified 

@@ -27,22 +27,22 @@ export default async function SettingsPage() {
 
       <div className="flex flex-col gap-6">
         <section aria-labelledby="security-heading">
-          <h2 id="security-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Security</h2>
+          <h2 id="security-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--text-muted)">Security</h2>
           <TwoFactorSettings userId={session.user.id} />
         </section>
 
         <section aria-labelledby="appearance-heading">
-          <h2 id="appearance-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Appearance</h2>
+          <h2 id="appearance-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--text-muted)">Appearance</h2>
           <Card>
             <CardHeader title="Theme" description="Switch between the light and dark themes." />
             <div className="max-w-xs">
-              <ThemeToggle variant="row" className="border border-[var(--glass-border)]" />
+              <ThemeToggle variant="row" className="border border-(--glass-border)" />
             </div>
           </Card>
         </section>
 
         <section aria-labelledby="account-heading">
-          <h2 id="account-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Account</h2>
+          <h2 id="account-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--text-muted)">Account</h2>
           <Card>
             <CardHeader
               title={`Logged in as @${session.user.username ?? 'user'}`}
@@ -53,7 +53,7 @@ export default async function SettingsPage() {
         </section>
 
         <section aria-labelledby="data-heading">
-          <h2 id="data-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Your data</h2>
+          <h2 id="data-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--text-muted)">Your data</h2>
           <DeleteAccountCard hasPassword={!!account?.passwordHash} blocker={deletionBlocker} />
         </section>
       </div>

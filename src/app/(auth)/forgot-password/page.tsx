@@ -52,12 +52,12 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Reset your password</h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">Enter your account email and we&apos;ll send you a reset link.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">Reset your password</h1>
+        <p className="mt-1 text-sm text-(--text-muted)">Enter your account email and we&apos;ll send you a reset link.</p>
       </div>
 
       {message && (
-        <div role="status" className="flex items-start gap-2 p-3 mb-5 rounded-[var(--radius-control)] bg-[var(--status-success-bg)] text-[var(--status-success)] text-sm">
+        <div role="status" className="flex items-start gap-2 p-3 mb-5 rounded-(--radius-control) bg-(--status-success-bg) text-(--status-success) text-sm">
           <Check size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>{message}</span>
         </div>
@@ -85,8 +85,8 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-5">
-        Remembered it? <Link href="/login" className="text-[var(--accent-primary)] font-bold hover:underline">Log in</Link>
+      <div className="mt-6 text-center text-sm text-(--text-muted) border-t border-(--glass-border) pt-5">
+        Remembered it? <Link href="/login" className="text-(--accent-primary) font-bold hover:underline">Log in</Link>
       </div>
     </>
   )

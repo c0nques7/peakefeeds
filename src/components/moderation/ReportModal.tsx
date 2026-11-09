@@ -116,7 +116,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
     <Modal open={isOpen} onClose={handleClose} labelledBy="report-modal-title">
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors touch-manipulation p-2 -m-2"
+          className="absolute top-4 right-4 text-(--text-muted) hover:text-(--text-primary) transition-colors touch-manipulation p-2 -m-2"
           style={{ WebkitTapHighlightColor: 'transparent' }}
           aria-label="Close"
         >
@@ -128,16 +128,16 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-4 text-emerald-400 border border-emerald-500/30">
               <CheckCircle2 size={32} />
             </div>
-            <h2 id="report-modal-title" className="text-2xl font-bold text-[var(--text-primary)] mb-2">Report Successful</h2>
-            <p className="text-[var(--text-muted)] text-sm mb-6">
+            <h2 id="report-modal-title" className="text-2xl font-bold text-(--text-primary) mb-2">Report Successful</h2>
+            <p className="text-(--text-muted) text-sm mb-6">
               Thank you for helping us keep PeakeFeeds safe. Our moderators will review this shortly.
             </p>
             
-            <div className="bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-2xl p-4 mb-8 flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px] uppercase font-bold tracking-widest">
+            <div className="bg-(--glass-panel) border border-(--glass-border) rounded-2xl p-4 mb-8 flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2 text-(--text-muted) text-[10px] uppercase font-bold tracking-widest">
                 <Ticket size={12} /> Ticket ID
               </div>
-              <code className="text-[var(--accent-primary)] font-mono text-lg font-bold select-all">
+              <code className="text-(--accent-primary) font-mono text-lg font-bold select-all">
                 {reportId || 'PENDING'}
               </code>
             </div>
@@ -164,23 +164,23 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
         ) : !showBlockPrompt ? (
           <>
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--status-error-bg)] mb-3 text-[var(--status-error)]">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--status-error-bg) mb-3 text-(--status-error)">
                 <AlertTriangle size={24} />
               </div>
-              <h2 id="report-modal-title" className="text-xl font-bold text-[var(--text-primary)]">{displayTitle}</h2>
-              <p className="text-[var(--text-muted)] text-sm mt-1">
+              <h2 id="report-modal-title" className="text-xl font-bold text-(--text-primary)">{displayTitle}</h2>
+              <p className="text-(--text-muted) text-sm mt-1">
                 Help us keep the community safe.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="report-reason" className="block text-xs font-medium text-[var(--text-muted)] uppercase mb-2">Reason</label>
+                <label htmlFor="report-reason" className="block text-xs font-medium text-(--text-muted) uppercase mb-2">Reason</label>
                 <select
                   id="report-reason" 
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors appearance-none"
+                  className="w-full bg-(--input-bg) border border-(--glass-border) rounded-(--radius-control) px-4 py-3 text-sm text-(--text-primary) focus:outline-hidden focus:border-(--accent-primary) transition-colors appearance-none"
                 >
                   {REPORT_REASONS.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -189,14 +189,14 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
               </div>
 
               <div>
-                <label htmlFor="report-details" className="block text-xs font-medium text-[var(--text-muted)] uppercase mb-2">Details (Optional)</label>
+                <label htmlFor="report-details" className="block text-xs font-medium text-(--text-muted) uppercase mb-2">Details (Optional)</label>
                 <textarea
                   id="report-details" 
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                   rows={3}
                   placeholder="Provide more context..."
-                  className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors resize-none"
+                  className="w-full bg-(--input-bg) border border-(--glass-border) rounded-(--radius-control) px-4 py-3 text-sm text-(--text-primary) focus:outline-hidden focus:border-(--accent-primary) transition-colors resize-none"
                 />
               </div>
 
@@ -215,8 +215,8 @@ export default function ReportModal({ isOpen, onClose, targetId, targetType, tit
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-500/20 mb-3 text-orange-400 border border-orange-500/30">
               <AlertTriangle size={24} />
             </div>
-            <h2 id="report-modal-title" className="text-xl font-bold text-[var(--text-primary)]">Block User?</h2>
-            <p className="text-[var(--text-muted)] text-sm mt-2 mb-6">
+            <h2 id="report-modal-title" className="text-xl font-bold text-(--text-primary)">Block User?</h2>
+            <p className="text-(--text-muted) text-sm mt-2 mb-6">
               Would you also like to block the user associated with this {targetType.toLowerCase()}? They will no longer be able to interact with you.
             </p>
             

@@ -180,18 +180,18 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
         <SearchBar />
       </div>
       {/* CHANNEL HEADER */}
-      <header className="relative mb-6 overflow-hidden rounded-[var(--radius-card)] border border-[var(--glass-border)] bg-[var(--glass-card)] p-6 sm:p-8 text-center shadow-[var(--glass-shadow)]">
+      <header className="relative mb-6 overflow-hidden rounded-(--radius-card) border border-(--glass-border) bg-(--glass-card) p-6 sm:p-8 text-center shadow-(--glass-shadow)">
         {channel.isLocked && <LockedOverlay message="This Channel is Under Review by PeakeFeeds Admins. You can still view its content, but new posts and interactions are disabled." />}
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] [text-wrap:balance]">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-(--text-primary) text-balance">
           {channel.name}
         </h1>
         {channel.description && (
-          <p className="mx-auto mt-2 max-w-prose text-base text-[var(--text-secondary)]">{channel.description}</p>
+          <p className="mx-auto mt-2 max-w-prose text-base text-(--text-secondary)">{channel.description}</p>
         )}
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex h-10 items-center gap-2 px-3 text-sm font-medium text-[var(--text-muted)]">
+          <span className="inline-flex h-10 items-center gap-2 px-3 text-sm font-medium text-(--text-muted)">
             <Users size={16} aria-hidden="true" />
             {channel._count.subscribers.toLocaleString('en-US')} {channel._count.subscribers === 1 ? 'Verifier' : 'Verifiers'}
           </span>
@@ -217,7 +217,7 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
 
       {/* NEW POST: posting happens right here in the channel */}
       {currentUserId && (
-        <section aria-label="New post" className="relative mb-6 overflow-hidden rounded-[var(--radius-card)] border border-[var(--glass-border)] bg-[var(--glass-card)] p-4 shadow-[var(--glass-shadow)]">
+        <section aria-label="New post" className="relative mb-6 overflow-hidden rounded-(--radius-card) border border-(--glass-border) bg-(--glass-card) p-4 shadow-(--glass-shadow)">
           {channel.isLocked && <LockedOverlay message="New posts are disabled while this channel is under review." />}
           <CreatePostForm
             channelId={channel.id}

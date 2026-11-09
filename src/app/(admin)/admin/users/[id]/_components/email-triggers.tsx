@@ -25,7 +25,7 @@ export function EmailTriggers({ userId }: { userId: string }) {
       <button
         onClick={() => handleSend("WELCOME", "Waitlist Welcome")}
         disabled={isPending}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all border border-[var(--glass-border)]"
+        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) text-sm text-(--text-muted) hover:text-(--text-primary) transition-all border border-(--glass-border)"
       >
         <span className="flex items-center gap-2">
           <Mail size={16} className="text-blue-400" />
@@ -37,10 +37,10 @@ export function EmailTriggers({ userId }: { userId: string }) {
       <button
         onClick={() => handleSend("ACTIVATION", "Activation (Invite)")}
         disabled={isPending}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all border border-[var(--glass-border)]"
+        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) text-sm text-(--text-muted) hover:text-(--text-primary) transition-all border border-(--glass-border)"
       >
         <span className="flex items-center gap-2">
-          <Mail size={16} className="text-[var(--accent-primary)]" />
+          <Mail size={16} className="text-(--accent-primary)" />
           <span>Send Activation (Invite Code)</span>
         </span>
         {isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={14} className="opacity-50" />}
@@ -49,7 +49,7 @@ export function EmailTriggers({ userId }: { userId: string }) {
       <button
         onClick={() => handleSend("ADMIN_WELCOME", "Admin Credentials")}
         disabled={isPending}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all border border-[var(--glass-border)]"
+        className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) text-sm text-(--text-muted) hover:text-(--text-primary) transition-all border border-(--glass-border)"
       >
         <span className="flex items-center gap-2">
           <Mail size={16} className="text-emerald-400" />

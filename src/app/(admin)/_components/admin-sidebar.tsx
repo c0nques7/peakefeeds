@@ -22,12 +22,12 @@ export function AdminSidebar() {
       {/* 1. Mobile Top Bar (Visible only on small screens) */}
       <header className={styles.mobileHeader}>
         <div className="flex items-center gap-2">
-           <ShieldAlert className="text-[var(--accent-primary)]" size={24} />
-           <span className="font-bold text-[var(--text-primary)] tracking-wider">PEAKE<span className="text-[var(--accent-primary)]">ADMIN</span></span>
+           <ShieldAlert className="text-(--accent-primary)" size={24} />
+           <span className="font-bold text-(--text-primary) tracking-wider">PEAKE<span className="text-(--accent-primary)">ADMIN</span></span>
         </div>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-[var(--text-primary)] hover:bg-black/5 rounded-lg"
+          className="p-2 text-(--text-primary) hover:bg-black/5 rounded-lg"
           aria-label="Toggle Menu"
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -37,17 +37,17 @@ export function AdminSidebar() {
       {/* 2. Backdrop Overlay (Click to close) */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-50 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-50 md:hidden backdrop-blur-xs"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* 3. The Sidebar Drawer */}
       <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
-        <div className="p-6 border-b border-[var(--glass-border)] hidden md:block">
+        <div className="p-6 border-b border-(--glass-border) hidden md:block">
           <h1 className="text-xl font-bold tracking-wider flex items-center gap-2">
-            <ShieldAlert className="text-[var(--accent-primary)]" />
-            <span className="text-[var(--text-primary)]">PEAKE<span className="text-[var(--accent-primary)]">ADMIN</span></span>
+            <ShieldAlert className="text-(--accent-primary)" />
+            <span className="text-(--text-primary)">PEAKE<span className="text-(--accent-primary)">ADMIN</span></span>
           </h1>
         </div>
 
@@ -70,10 +70,10 @@ export function AdminSidebar() {
           <NavLink href="/admin/support" icon={<MessageSquare size={18} />} label="Support Queue" active={pathname.startsWith("/admin/support")} onClick={handleLinkClick} />
         </nav>
 
-        <div className="p-4 border-t border-[var(--glass-border)] space-y-2">
+        <div className="p-4 border-t border-(--glass-border) space-y-2">
           <ThemeToggle variant="row" />
 
-          <Link href="/home" className="flex items-center gap-3 px-3 h-10 rounded-[var(--radius-control)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)] transition-colors text-sm font-medium">
+          <Link href="/home" className="flex items-center gap-3 px-3 h-10 rounded-(--radius-control) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--glass-card-hover) transition-colors text-sm font-medium">
             <LogOut size={18} aria-hidden="true" />
             <span>Back to the app</span>
           </Link>
@@ -91,8 +91,8 @@ function NavLink({ href, icon, label, active, onClick }: any) {
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
         active 
-        ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)]" 
-        : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5"
+        ? "bg-(--btn-primary) text-(--btn-primary-text)" 
+        : "text-(--text-muted) hover:text-(--text-primary) hover:bg-black/5"
       }`}
     >
       {icon}

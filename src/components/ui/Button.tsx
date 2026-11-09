@@ -8,20 +8,20 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const base =
   'inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap select-none ' +
-  'rounded-[var(--radius-control)] border transition-colors ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ' +
-  'focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-app)] ' +
+  'rounded-(--radius-control) border transition-colors ' +
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-primary) ' +
+  'focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-app) ' +
   'disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:pointer-events-none';
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'bg-[var(--btn-primary)] text-[var(--btn-primary-text)] border-transparent hover:bg-[var(--btn-primary-hover)]',
+    'bg-(--btn-primary) text-(--btn-primary-text) border-transparent hover:bg-(--btn-primary-hover)',
   secondary:
-    'bg-[var(--glass-card)] text-[var(--text-primary)] border-[var(--glass-border)] hover:bg-[var(--glass-card-hover)]',
+    'bg-(--glass-card) text-(--text-primary) border-(--glass-border) hover:bg-(--glass-card-hover)',
   ghost:
-    'bg-transparent text-[var(--text-secondary)] border-transparent hover:bg-[var(--glass-card-hover)] hover:text-[var(--text-primary)]',
+    'bg-transparent text-(--text-secondary) border-transparent hover:bg-(--glass-card-hover) hover:text-(--text-primary)',
   danger:
-    'bg-[var(--status-error-bg)] text-[var(--status-error)] border-transparent hover:brightness-95',
+    'bg-(--status-error-bg) text-(--status-error) border-transparent hover:brightness-95',
 };
 
 const sizes: Record<ButtonSize, string> = {

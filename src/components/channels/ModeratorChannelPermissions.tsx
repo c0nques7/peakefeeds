@@ -107,19 +107,19 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="animate-spin text-[var(--accent-primary)]" size={32} />
+        <Loader2 className="animate-spin text-(--accent-primary)" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-2xl overflow-hidden shadow-xl">
-      <div className="p-6 border-b border-[var(--glass-border)] bg-white/5">
+    <div className="bg-(--glass-card) border border-(--glass-border) rounded-2xl overflow-hidden shadow-xl">
+      <div className="p-6 border-b border-(--glass-border) bg-white/5">
         <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <Shield className="text-[var(--accent-primary)]" size={20} />
+          <Shield className="text-(--accent-primary)" size={20} />
           Channel Permissions
         </h3>
-        <p className="text-xs text-[var(--text-muted)] mt-1">
+        <p className="text-xs text-(--text-muted) mt-1">
           Manage roles and granular access for channel members.
         </p>
       </div>
@@ -127,7 +127,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-white/5 text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
+            <tr className="bg-white/5 text-[10px] uppercase tracking-wider text-(--text-muted) font-bold">
               <th className="px-6 py-4">User</th>
               <th className="px-6 py-4">Role</th>
               <th className="px-6 py-4 text-center">Post</th>
@@ -136,10 +136,10 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--glass-border)]">
+          <tbody className="divide-y divide-(--glass-border)">
             {permissions.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-[var(--text-muted)] italic">
+                <td colSpan={6} className="px-6 py-12 text-center text-(--text-muted) italic">
                   No members found in this channel.
                 </td>
               </tr>
@@ -148,7 +148,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
                 <tr key={p.userId} className="hover:bg-white/5 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[var(--accent-secondary)] flex items-center justify-center text-white overflow-hidden border border-white/10">
+                      <div className="w-8 h-8 rounded-full bg-(--accent-secondary) flex items-center justify-center text-white overflow-hidden border border-white/10">
                         {p.user.image ? (
                           <img src={p.user.image} alt="" className="w-full h-full object-cover" />
                         ) : (
@@ -168,7 +168,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
                       value={p.role}
                       onChange={(e) => handleUpdate(p.userId, { role: e.target.value as ChannelRole })}
                       disabled={isPending || p.role === 'OWNER'}
-                      className="bg-[var(--glass-panel)] border border-[var(--glass-border)] text-xs text-white rounded-lg px-2 py-1 focus:outline-none focus:border-[var(--accent-primary)] transition-all disabled:opacity-50"
+                      className="bg-(--glass-panel) border border-(--glass-border) text-xs text-white rounded-lg px-2 py-1 focus:outline-hidden focus:border-(--accent-primary) transition-all disabled:opacity-50"
                     >
                       <option value="MEMBER">Member</option>
                       <option value="MODERATOR">Moderator</option>
@@ -213,7 +213,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
                     <button 
                       onClick={() => handleRemove(p.userId)}
                       disabled={isPending || p.role === 'OWNER'}
-                      className="text-[var(--text-muted)] hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-all disabled:opacity-30"
+                      className="text-(--text-muted) hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-all disabled:opacity-30"
                       title="Remove from channel"
                     >
                       <Trash2 size={16} />

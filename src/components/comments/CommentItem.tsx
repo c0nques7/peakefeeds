@@ -39,7 +39,7 @@ const CommentEmbed = ({ url }: { url: string }) => {
     const videoId = url.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|shorts\/)([^"&?\/\s]{11})/)?.[1];
     if (!videoId) return <GenericLinkCard url={url} />;
     return (
-      <div className="mt-3 w-full max-w-[400px] overflow-hidden rounded-xl border border-[var(--glass-border)] bg-black aspect-video shadow-sm">
+      <div className="mt-3 w-full max-w-[400px] overflow-hidden rounded-xl border border-(--glass-border) bg-black aspect-video shadow-xs">
         <iframe 
           src={`https://www.youtube-nocookie.com/embed/${videoId}`} 
           className="w-full h-full" 
@@ -60,7 +60,7 @@ const CommentEmbed = ({ url }: { url: string }) => {
               width="100%" 
               height="80" 
               allow="encrypted-media" 
-              className="rounded-xl shadow-sm bg-white/5" 
+              className="rounded-xl shadow-xs bg-white/5" 
               style={{ border: 'none' }}
             />
         </div>
@@ -76,7 +76,7 @@ const CommentEmbed = ({ url }: { url: string }) => {
           scrolling="no" 
           allow="autoplay" 
           src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`} 
-          className="rounded-xl border border-[var(--glass-border)]" 
+          className="rounded-xl border border-(--glass-border)" 
           style={{ border: 'none' }}
         />
       </div>
@@ -85,7 +85,7 @@ const CommentEmbed = ({ url }: { url: string }) => {
 
   if (type === 'image') {
     return (
-      <div className="mt-3 w-full max-w-[400px] rounded-xl overflow-hidden border border-[var(--glass-border)] shadow-sm relative group/image">
+      <div className="mt-3 w-full max-w-[400px] rounded-xl overflow-hidden border border-(--glass-border) shadow-xs relative group/image">
         <img 
             src={url} 
             alt="Comment attachment" 
@@ -109,21 +109,21 @@ const CommentEmbed = ({ url }: { url: string }) => {
                 href={url} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="group block relative overflow-hidden rounded-xl border border-[var(--glass-border)] bg-gradient-to-br from-[#833ab4]/5 via-[#fd1d1d]/5 to-[#fcb045]/5 hover:from-[#833ab4]/10 hover:via-[#fd1d1d]/10 hover:to-[#fcb045]/10 transition-all"
+                className="group block relative overflow-hidden rounded-xl border border-(--glass-border) bg-linear-to-br from-[#833ab4]/5 via-[#fd1d1d]/5 to-[#fcb045]/5 hover:from-[#833ab4]/10 hover:via-[#fd1d1d]/10 hover:to-[#fcb045]/10 transition-all"
             >
                 <div className="flex items-center gap-3 p-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-tr from-[#ffc107] via-[#f44336] to-[#9c27b0] flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-linear-to-tr from-[#ffc107] via-[#f44336] to-[#9c27b0] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
                         <ExternalLink size={20} />
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+                        <span className="text-xs font-bold text-(--text-primary) truncate">
                             {postId ? "View Post on Instagram" : "View Profile on Instagram"}
                         </span>
-                        <span className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">
+                        <span className="text-[10px] text-(--text-muted) truncate mt-0.5">
                             {label} • Click to open
                         </span>
                     </div>
-                    <div className="ml-auto text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] transition-colors">
+                    <div className="ml-auto text-(--text-muted) group-hover:text-(--accent-primary) transition-colors">
                         <CornerDownRight size={14} />
                     </div>
                 </div>
@@ -140,13 +140,13 @@ const CommentEmbed = ({ url }: { url: string }) => {
 };
 
 const GenericLinkCard = ({ url, icon, label }: any) => (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 p-2 pr-4 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-card)] hover:bg-[var(--glass-card-hover)] transition-colors max-w-md group/card">
-        <div className="p-2 bg-[var(--glass-card-hover)] rounded-lg text-[var(--text-muted)] group-hover/card:text-[var(--accent-primary)] transition-colors">
+    <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 p-2 pr-4 rounded-xl border border-(--glass-border) bg-(--glass-card) hover:bg-(--glass-card-hover) transition-colors max-w-md group/card">
+        <div className="p-2 bg-(--glass-card-hover) rounded-lg text-(--text-muted) group-hover/card:text-(--accent-primary) transition-colors">
             {icon || <ExternalLink size={16} />}
         </div>
         <div className="flex flex-col overflow-hidden">
-            <span className="text-xs font-bold text-[var(--text-primary)] truncate">{label || new URL(url).hostname}</span>
-            <span className="text-[10px] text-[var(--text-muted)] truncate">{url}</span>
+            <span className="text-xs font-bold text-(--text-primary) truncate">{label || new URL(url).hostname}</span>
+            <span className="text-[10px] text-(--text-muted) truncate">{url}</span>
         </div>
     </a>
 );
@@ -154,7 +154,7 @@ const GenericLinkCard = ({ url, icon, label }: any) => (
 const ModBadge = ({ channelRole }: { channelRole: string | null }) => {
     if (!channelRole || (channelRole !== 'MODERATOR' && channelRole !== 'OWNER')) return null;
     return (
-        <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded ml-1 align-middle tracking-tighter">
+        <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded-sm ml-1 align-middle tracking-tighter">
             {MOD_TAG}
         </span>
     );
@@ -316,7 +316,7 @@ export function CommentItem({
     const parts = text.split(/(https?:\/\/[^\s]+)/g);
     return parts.map((part, i) => 
         part.match(/^https?:\/\//) ? (
-            <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline break-all" onClick={(e) => e.stopPropagation()}>
+            <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-(--accent-primary) hover:underline break-all" onClick={(e) => e.stopPropagation()}>
                 {part}
             </a>
         ) : part
@@ -327,7 +327,7 @@ export function CommentItem({
     <div className="flex gap-3 mb-4 w-full animate-in fade-in slide-in-from-bottom-2 duration-300 group/comment relative">
       {/* Avatar & Thread Line */}
       <div className="flex flex-col items-center">
-         <Link href={`/profile/${comment.author?.username}`} className="w-8 h-8 rounded-full bg-[var(--glass-card-hover)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] shrink-0 overflow-hidden border border-[var(--glass-border)]">
+         <Link href={`/profile/${comment.author?.username}`} className="w-8 h-8 rounded-full bg-(--glass-card-hover) flex items-center justify-center text-xs font-bold text-(--text-secondary) shrink-0 overflow-hidden border border-(--glass-border)">
             {comment.author?.image ? (
                 <img src={comment.author.image} alt={comment.author.username} className="w-full h-full object-cover" />
             ) : (
@@ -335,7 +335,7 @@ export function CommentItem({
             )}
          </Link>
          {comment.replies && comment.replies.length > 0 && (
-             <div className="w-[2px] bg-[var(--glass-border)] flex-grow mt-2 rounded-full min-h-[20px]" />
+             <div className="w-[2px] bg-(--glass-border) grow mt-2 rounded-full min-h-[20px]" />
          )}
       </div>
 
@@ -344,7 +344,7 @@ export function CommentItem({
         {/* BUBBLE CONTAINER */}
         <div className={clsx(
             "relative rounded-2xl p-3 border-2 group transition-colors duration-500",
-            "bg-[var(--glass-card-hover)] overflow-visible",
+            "bg-(--glass-card-hover) overflow-visible",
             randomBorderClass
         )}>
             {comment.isLocked && <LockedOverlay className="rounded-2xl" />}
@@ -353,7 +353,7 @@ export function CommentItem({
             <div 
                 className={clsx(
                     "absolute inset-0 z-20 flex items-center justify-between px-4 transition-all duration-300 rounded-2xl",
-                    "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-900 dark:to-red-800",
+                    "bg-linear-to-r from-red-600 to-red-500 dark:from-red-900 dark:to-red-800",
                     { 
                         'opacity-100 pointer-events-auto': showDeleteConfirm, 
                         'opacity-0 pointer-events-none': !showDeleteConfirm 
@@ -363,7 +363,7 @@ export function CommentItem({
                 <span className="text-white font-bold text-sm">Delete this?</span>
                 <div className="flex gap-2">
                     <button onClick={() => setShowDeleteConfirm(false)} className="p-1 rounded-full bg-black/20 text-white hover:bg-black/40"><X size={14}/></button>
-                    <button onClick={confirmDelete} disabled={isSubmitting} className="p-1 rounded-full bg-white text-red-600 hover:bg-red-50 shadow-sm">
+                    <button onClick={confirmDelete} disabled={isSubmitting} className="p-1 rounded-full bg-white text-red-600 hover:bg-red-50 shadow-xs">
                         {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                     </button>
                 </div>
@@ -372,14 +372,14 @@ export function CommentItem({
             {/* HEADER */}
             <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center">
-                    <span className="text-xs font-bold text-[var(--text-primary)]">
+                    <span className="text-xs font-bold text-(--text-primary)">
                         @{comment.author?.username || 'user'}
                     </span>
                     <ModBadge channelRole={comment.author?.channelRole} />
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[var(--text-muted)]">
+                    <span className="text-[10px] text-(--text-muted)">
                         {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : 'Just now'}
                     </span>
                     
@@ -390,7 +390,7 @@ export function CommentItem({
                                     <div className="relative">
                     
                     
-                            <button onClick={() => setShowMenu(!showMenu)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 -mr-1">
+                            <button onClick={() => setShowMenu(!showMenu)} className="text-(--text-muted) hover:text-(--text-primary) transition-colors p-1 -mr-1">
                                 <MoreVertical size={14} />
                             </button>
                             
@@ -398,19 +398,19 @@ export function CommentItem({
                                 <>
                                     <div className="fixed inset-0 z-20" onClick={() => setShowMenu(false)}/>
                                     
-                                    <div className="absolute right-0 top-6 bg-[var(--glass-card)] shadow-xl border border-[var(--glass-border)] rounded-lg z-30 p-1 w-24 animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="absolute right-0 top-6 bg-(--glass-card) shadow-xl border border-(--glass-border) rounded-lg z-30 p-1 w-24 animate-in fade-in zoom-in-95 duration-100">
                                         {canEdit && (
-                                            <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs hover:bg-[var(--glass-card-hover)] rounded text-[var(--text-primary)]">
+                                            <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs hover:bg-(--glass-card-hover) rounded-sm text-(--text-primary)">
                                                 <Edit2 size={10} className="mr-2"/> Edit
                                             </button>
                                         )}
                                         {canDelete && (
-                                            <button onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                                            <button onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm">
                                                 <Trash size={10} className="mr-2"/> Delete
                                             </button>
                                         )}
                                         {!isCommentAuthor && (
-                                            <button onClick={() => { setReportModalOpen(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                                            <button onClick={() => { setReportModalOpen(true); setShowMenu(false); }} className="flex items-center w-full px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm">
                                                 <Flag size={10} className="mr-2"/> Report
                                             </button>
                                         )}
@@ -429,20 +429,20 @@ export function CommentItem({
                         type="text" 
                         value={editText} 
                         onChange={(e) => setEditText(e.target.value)} 
-                        className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] rounded p-1 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                        className="w-full bg-(--input-bg) border border-(--glass-border) text-(--text-primary) rounded-sm p-1 text-sm focus:outline-hidden focus:ring-1 focus:ring-(--accent-primary)"
                         autoFocus
                         onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
                     />
                     <div className="flex gap-2 mt-2 justify-end">
-                        <button onClick={() => setIsEditing(false)} className="text-xs text-[var(--text-muted)] px-2 py-1 hover:text-[var(--text-primary)]">Cancel</button>
-                        <button onClick={handleUpdate} disabled={isSubmitting} className="text-xs bg-[var(--btn-primary)] text-[var(--btn-primary-text)] px-2 py-1 rounded hover:bg-[var(--btn-primary-hover)] flex items-center gap-1">
+                        <button onClick={() => setIsEditing(false)} className="text-xs text-(--text-muted) px-2 py-1 hover:text-(--text-primary)">Cancel</button>
+                        <button onClick={handleUpdate} disabled={isSubmitting} className="text-xs bg-(--btn-primary) text-(--btn-primary-text) px-2 py-1 rounded-sm hover:bg-(--btn-primary-hover) flex items-center gap-1">
                             {isSubmitting && <Loader2 size={10} className="animate-spin" />} Save
                         </button>
                     </div>
                 </div>
             ) : (
                 <>
-                    <p className="text-sm text-[var(--text-secondary)] break-words leading-relaxed whitespace-pre-wrap">
+                    <p className="text-sm text-(--text-secondary) wrap-break-word leading-relaxed whitespace-pre-wrap">
                         {renderContent(comment.content)}
                     </p>
                     
@@ -453,7 +453,7 @@ export function CommentItem({
 
             {/* Reply Button */}
             {!isEditing && (
-                <button onClick={() => setIsReplying(!isReplying)} className="flex items-center gap-1 text-[10px] font-semibold text-[var(--text-muted)] hover:text-[var(--accent-primary)] mt-2 transition-colors">
+                <button onClick={() => setIsReplying(!isReplying)} className="flex items-center gap-1 text-[10px] font-semibold text-(--text-muted) hover:text-(--accent-primary) mt-2 transition-colors">
                     <Reply size={12} /> Reply
                 </button>
             )}
@@ -462,17 +462,17 @@ export function CommentItem({
         {/* Reply Input Form */}
         {isReplying && (
             <div className="flex items-center gap-2 mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                <CornerDownRight size={14} className="text-[var(--text-muted)]" />
+                <CornerDownRight size={14} className="text-(--text-muted)" />
                 <input aria-label="Write a reply" 
                     type="text" 
                     placeholder="Write a reply..." 
-                    className="flex-1 min-w-0 bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors shadow-sm placeholder:text-[var(--text-muted)]"
+                    className="flex-1 min-w-0 bg-(--input-bg) border border-(--glass-border) rounded-lg py-1 px-2 text-xs focus:outline-hidden focus:border-(--accent-primary) transition-colors shadow-xs placeholder:text-(--text-muted)"
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleReply()}
                     autoFocus
                 />
-                <button onClick={handleReply} disabled={isSubmitting} className="p-1 bg-[var(--btn-primary)] rounded-md text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] shadow-sm">
+                <button onClick={handleReply} disabled={isSubmitting} className="p-1 bg-(--btn-primary) rounded-md text-(--btn-primary-text) hover:bg-(--btn-primary-hover) shadow-xs">
                     {isSubmitting ? <Loader2 size={12} className="animate-spin"/> : <Send size={12} />}
                 </button>
             </div>

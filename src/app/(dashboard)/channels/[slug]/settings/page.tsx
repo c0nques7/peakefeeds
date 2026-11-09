@@ -56,17 +56,17 @@ export default async function ChannelSettingsPage({ params }: ChannelSettingsPag
         <div className="flex items-center gap-4">
           <Link 
             href={`/channels/${slug}`}
-            className="p-2 rounded-full bg-[var(--glass-panel)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-white transition-all"
+            className="p-2 rounded-full bg-(--glass-panel) border border-(--glass-border) text-(--text-muted) hover:text-white transition-all"
           >
             <ArrowLeft size={20} />
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-white">Channel Management</h1>
-            <p className="text-sm text-[var(--text-muted)]">#{channel.slug} • {channel.name}</p>
+            <p className="text-sm text-(--text-muted)">#{channel.slug} • {channel.name}</p>
           </div>
         </div>
         
-        <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--status-info-bg)] border border-[var(--accent-primary)] text-[var(--accent-primary)] text-xs font-bold uppercase tracking-wider">
+        <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-(--status-info-bg) border border-(--accent-primary) text-(--accent-primary) text-xs font-bold uppercase tracking-wider">
           <Shield size={14} />
           {isCreator ? 'Owner Access' : 'Moderator Access'}
         </div>

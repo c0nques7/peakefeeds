@@ -21,26 +21,26 @@ export default async function AdminPostsPage({
       {/* HEADER & FILTERS */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Post Management</h1>
-          <p className="text-[var(--text-muted)]">Moderate content, check reports, and manage feed safety.</p>
+          <h1 className="text-2xl font-bold text-(--text-primary)">Post Management</h1>
+          <p className="text-(--text-muted)">Moderate content, check reports, and manage feed safety.</p>
         </div>
 
         {/* Filter Toolbar */}
         <form className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
           <div className="relative group w-full md:w-auto">
-            <Search className="absolute left-3 top-2.5 text-[var(--text-muted)] group-focus-within:text-[var(--accent-primary)]" size={18} />
+            <Search className="absolute left-3 top-2.5 text-(--text-muted) group-focus-within:text-(--accent-primary)" size={18} />
             <input
               name="q"
               defaultValue={query}
               placeholder="Search content or author..."
-              className="pl-10 pr-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] w-full md:w-64 transition-all"
+              className="pl-10 pr-4 py-2 bg-(--glass-panel) border border-(--glass-border) rounded-lg text-(--text-primary) placeholder:text-(--text-muted) focus:outline-hidden focus:border-(--accent-primary) w-full md:w-64 transition-all"
             />
           </div>
           
           <select 
             name="sort" 
             defaultValue={sort}
-            className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer w-full md:w-auto"
+            className="px-4 py-2 bg-(--glass-panel) border border-(--glass-border) rounded-lg text-(--text-primary) focus:outline-hidden focus:border-(--accent-primary) appearance-none cursor-pointer w-full md:w-auto"
           >
             <option value="latest">Latest</option>
             <option value="oldest">Oldest</option>
@@ -55,23 +55,23 @@ export default async function AdminPostsPage({
       {/* COMMENTS RESULTS (Only if searching) */}
       {query && comments && comments.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-2">
+          <h2 className="text-sm font-bold text-(--text-muted) uppercase tracking-wider flex items-center gap-2">
             <MessageSquare size={14} /> Matching Comments ({totalComments})
           </h2>
-          <div className={`${styles.glassPanel} divide-y divide-[var(--glass-border)]`}>
+          <div className={`${styles.glassPanel} divide-y divide-(--glass-border)`}>
             {comments.map((comment: any) => (
-              <div key={comment.id} className="p-4 hover:bg-[var(--glass-card-hover)] transition-colors flex justify-between items-start gap-4">
+              <div key={comment.id} className="p-4 hover:bg-(--glass-card-hover) transition-colors flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-[var(--text-primary)]">@{comment.author.username}</span>
-                    <span className="text-[10px] text-[var(--text-muted)]">on Post: {comment.post.id.slice(0,8)}...</span>
+                    <span className="text-xs font-bold text-(--text-primary)">@{comment.author.username}</span>
+                    <span className="text-[10px] text-(--text-muted)">on Post: {comment.post.id.slice(0,8)}...</span>
                   </div>
-                  <p className="text-sm text-[var(--text-primary)] line-clamp-2">{comment.content}</p>
+                  <p className="text-sm text-(--text-primary) line-clamp-2">{comment.content}</p>
                 </div>
                 <Link 
                   href={`/channels/post/${comment.postId}`} 
                   target="_blank"
-                  className="p-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                  className="p-2 bg-(--glass-panel) border border-(--glass-border) rounded-lg text-(--text-muted) hover:text-(--text-primary) transition-all"
                 >
                   <ExternalLink size={16} />
                 </Link>
@@ -83,7 +83,7 @@ export default async function AdminPostsPage({
 
       {/* DATA TABLE (Posts) */}
       <div className="space-y-3">
-        {query && <h2 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-2">
+        {query && <h2 className="text-sm font-bold text-(--text-muted) uppercase tracking-wider flex items-center gap-2">
           <FileText size={14} /> Matching Posts ({totalPosts})
         </h2>}
         <div className={styles.tableWrapper}>
@@ -97,17 +97,17 @@ export default async function AdminPostsPage({
                 <th className={`p-4 ${styles.tableHeader} text-right`}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--glass-border)]">
+            <tbody className="divide-y divide-(--glass-border)">
               {posts.map((post) => (
                 <tr key={post.id} className={styles.tableRow}>
                   
                   {/* Content Preview */}
                   <td className="p-4 align-top">
                     <div className="flex flex-col gap-1">
-                      <p className="text-sm text-[var(--text-primary)] line-clamp-2 leading-relaxed">
-                        {post.content || <span className="italic text-[var(--text-muted)]">No text content (Media only)</span>}
+                      <p className="text-sm text-(--text-primary) line-clamp-2 leading-relaxed">
+                        {post.content || <span className="italic text-(--text-muted)">No text content (Media only)</span>}
                       </p>
-                      <span className="text-xs text-[var(--text-muted)] font-mono">
+                      <span className="text-xs text-(--text-muted) font-mono">
                         ID: {post.id.slice(0, 8)}... • {new Date(post.createdAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -116,21 +116,21 @@ export default async function AdminPostsPage({
                   {/* Author */}
                   <td className="p-4 align-top">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[var(--glass-border)] overflow-hidden">
-                        <div className="w-full h-full flex items-center justify-center bg-[var(--glass-card-hover)] text-xs font-bold text-[var(--text-primary)]">
+                      <div className="w-8 h-8 rounded-full bg-(--glass-border) overflow-hidden">
+                        <div className="w-full h-full flex items-center justify-center bg-(--glass-card-hover) text-xs font-bold text-(--text-primary)">
                             {post.author.username?.[0]?.toUpperCase() || "?"}
                         </div>
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-medium text-[var(--text-primary)] text-sm">@{post.author.username || "Anon"}</span>
-                        <span className="text-xs text-[var(--text-muted)]">{post.author.email}</span>
+                        <span className="font-medium text-(--text-primary) text-sm">@{post.author.username || "Anon"}</span>
+                        <span className="text-xs text-(--text-muted)">{post.author.email}</span>
                       </div>
                     </div>
                   </td>
 
                   {/* Engagement */}
                   <td className="hidden md:table-cell p-4 align-top">
-                    <div className="flex gap-4 text-xs text-[var(--text-muted)]">
+                    <div className="flex gap-4 text-xs text-(--text-muted)">
                       <div className="flex items-center gap-1">
                           <Heart size={14} /> {post._count.likes}
                       </div>
@@ -156,12 +156,12 @@ export default async function AdminPostsPage({
                       
                       <div className="flex flex-wrap gap-1">
                         {post.isVerified && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
                             Verified
                           </span>
                         )}
                         {post.isLocked && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">
                             Locked
                           </span>
                         )}
@@ -179,7 +179,7 @@ export default async function AdminPostsPage({
           </table>
           
           {posts.length === 0 && (
-            <div className="p-12 text-center text-[var(--text-muted)]">
+            <div className="p-12 text-center text-(--text-muted)">
               <Filter size={48} className="mx-auto mb-4 opacity-20" />
               <p>No posts found matching your criteria.</p>
             </div>
@@ -188,14 +188,14 @@ export default async function AdminPostsPage({
       </div>
 
       {/* PAGINATION */}
-      <div className="flex justify-between items-center text-sm text-[var(--text-muted)]">
+      <div className="flex justify-between items-center text-sm text-(--text-muted)">
         <span>Page {page} of {totalPages}</span>
         <div className="flex gap-2">
            {page > 1 && (
-             <Link href={`?page=${page - 1}&q=${query}&sort=${sort}`} className="px-4 py-2 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] transition-colors">Previous</Link>
+             <Link href={`?page=${page - 1}&q=${query}&sort=${sort}`} className="px-4 py-2 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) transition-colors">Previous</Link>
            )}
            {page < totalPages && (
-             <Link href={`?page=${page + 1}&q=${query}&sort=${sort}`} className="px-4 py-2 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] transition-colors">Next</Link>
+             <Link href={`?page=${page + 1}&q=${query}&sort=${sort}`} className="px-4 py-2 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) transition-colors">Next</Link>
            )}
         </div>
       </div>

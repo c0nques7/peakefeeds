@@ -43,14 +43,14 @@ export default function LogFilters() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-xl">
+    <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-(--glass-panel) border border-(--glass-border) rounded-xl">
       {/* Search Input */}
       <div className="flex-1 relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted)" size={16} />
         <input
           type="text"
           placeholder="Search logs (Admin, Target, Details)..."
-          className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+          className="w-full bg-(--input-bg) border border-(--glass-border) rounded-lg pl-10 pr-4 py-2 text-sm text-(--text-primary) focus:outline-hidden focus:border-(--accent-primary) transition-colors"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -59,9 +59,9 @@ export default function LogFilters() {
 
       {/* Type Filter */}
       <div className="relative min-w-[200px]">
-        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted)" size={16} />
         <select
-          className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-[var(--text-primary)] appearance-none focus:outline-none focus:border-[var(--accent-primary)] transition-colors cursor-pointer"
+          className="w-full bg-(--input-bg) border border-(--glass-border) rounded-lg pl-10 pr-4 py-2 text-sm text-(--text-primary) appearance-none focus:outline-hidden focus:border-(--accent-primary) transition-colors cursor-pointer"
           value={type}
           onChange={(e) => handleTypeChange(e.target.value)}
         >
@@ -78,14 +78,14 @@ export default function LogFilters() {
       <div className="flex gap-2">
         <button
           onClick={handleSearch}
-          className="px-4 py-2 bg-[var(--btn-primary)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-[var(--radius-control)] text-sm font-bold transition-colors"
+          className="px-4 py-2 bg-(--btn-primary) hover:bg-(--btn-primary-hover) text-(--btn-primary-text) rounded-(--radius-control) text-sm font-bold transition-colors"
         >
           Search
         </button>
         {(search || type) && (
           <button
             onClick={clearFilters}
-            className="px-4 py-2 bg-[var(--glass-card-hover)] hover:bg-[var(--glass-card-hover)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg text-sm transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-(--glass-card-hover) hover:bg-(--glass-card-hover) border border-(--glass-border) text-(--text-muted) hover:text-(--text-primary) rounded-lg text-sm transition-colors flex items-center gap-2"
           >
             <X size={14} /> Clear
           </button>

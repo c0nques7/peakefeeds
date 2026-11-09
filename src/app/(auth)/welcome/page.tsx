@@ -19,8 +19,8 @@ export default async function WelcomePage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Choose your username</h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">It&apos;s your public name on PeakeFeeds and the address of your profile.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">Choose your username</h1>
+        <p className="mt-1 text-sm text-(--text-muted)">It&apos;s your public name on PeakeFeeds and the address of your profile.</p>
       </div>
       <ChooseUsernameForm suggestion={suggestion.length >= 3 ? suggestion : ''} />
     </>

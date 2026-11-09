@@ -125,7 +125,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
   if (isPending) {
     return (
       <div className={`${styles.glassPanel} p-8 flex items-center justify-center opacity-50 min-h-[300px]`}>
-        <Loader2 className="animate-spin text-[var(--accent-primary)]" size={32} />
+        <Loader2 className="animate-spin text-(--accent-primary)" size={32} />
       </div>
     );
   }
@@ -133,44 +133,44 @@ export function ModerationCard({ report }: { report: ReportData }) {
   return (
     <div className={`${styles.glassPanel} flex flex-col h-full`}>
       {/* HEADER: The Accusation */}
-      <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-start bg-[var(--status-error-bg)]">
+      <div className="p-4 border-b border-(--glass-border) flex justify-between items-start bg-(--status-error-bg)">
         <div>
-          <span className="text-xs font-bold text-[var(--status-error)] uppercase tracking-wider">
+          <span className="text-xs font-bold text-(--status-error) uppercase tracking-wider">
             Reported for {report.reason.replace("_", " ")}
           </span>
-          <p className="text-xs text-[var(--text-muted)] mt-1">
+          <p className="text-xs text-(--text-muted) mt-1">
             by @{report.reporter.username || "Anon"} • {new Date(report.createdAt).toLocaleDateString()}
           </p>
           {report.details && (
-             <p className="mt-2 text-sm text-[var(--text-primary)] italic border-l-2 border-[var(--status-error)]/30 pl-2">&quot;{report.details}&quot;</p>
+             <p className="mt-2 text-sm text-(--text-primary) italic border-l-2 border-(--status-error)/30 pl-2">&quot;{report.details}&quot;</p>
           )}
         </div>
-        <ShieldAlert className="opacity-50 text-[var(--status-error)]" size={20} />
+        <ShieldAlert className="opacity-50 text-(--status-error)" size={20} />
       </div>
 
       {/* BODY: The Evidence (Reported Content) */}
       <div className="p-6 flex-1">
         {report.post ? (
-          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full relative group/evidence">
-             <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
+          <div className="bg-(--glass-card) p-4 rounded-lg border border-(--glass-border) h-full relative group/evidence">
+             <div className="flex justify-between mb-2 border-b border-(--glass-border) pb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-[var(--accent-primary)]">Post: @{report.post.author.username}</span>
+                  <span className="font-bold text-(--accent-primary)">Post: @{report.post.author.username}</span>
                   <Link 
                     href={`/channels/${report.post.channel.slug}#post-${report.post.id}`} 
                     target="_blank"
-                    className="text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
+                    className="text-(--text-muted) hover:text-(--accent-primary) transition-colors"
                     title="View post in channel"
                   >
                     <ExternalLink size={14} />
                   </Link>
                 </div>
-                <span className="text-xs text-[var(--status-warning)] font-mono">
+                <span className="text-xs text-(--status-warning) font-mono">
                     {report.post.author.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-[var(--text-primary)] mb-4 whitespace-pre-wrap">{report.post.content}</p>
+             <p className="text-(--text-primary) mb-4 whitespace-pre-wrap">{report.post.content}</p>
              {report.post.mediaUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-[var(--glass-border)] bg-[var(--glass-card-hover)] relative">
+                <div className="mt-2 rounded-lg overflow-hidden border border-(--glass-border) bg-(--glass-card-hover) relative">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
                    <img 
                       src={report.post.mediaUrl} 
@@ -182,34 +182,34 @@ export function ModerationCard({ report }: { report: ReportData }) {
              )}
           </div>
         ) : report.message ? (
-          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
-             <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
-                <span className="font-bold text-[var(--accent-primary)]">Message: @{report.message.sender.username}</span>
+          <div className="bg-(--glass-card) p-4 rounded-lg border border-(--glass-border) h-full">
+             <div className="flex justify-between mb-2 border-b border-(--glass-border) pb-2">
+                <span className="font-bold text-(--accent-primary)">Message: @{report.message.sender.username}</span>
                 <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                     {report.message.sender.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-[var(--text-primary)] mb-4 whitespace-pre-wrap">{report.message.content}</p>
+             <p className="text-(--text-primary) mb-4 whitespace-pre-wrap">{report.message.content}</p>
           </div>
         ) : report.comment ? (
-          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
-             <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
-                <span className="font-bold text-[var(--accent-primary)]">Comment: @{report.comment.author.username}</span>
+          <div className="bg-(--glass-card) p-4 rounded-lg border border-(--glass-border) h-full">
+             <div className="flex justify-between mb-2 border-b border-(--glass-border) pb-2">
+                <span className="font-bold text-(--accent-primary)">Comment: @{report.comment.author.username}</span>
                 <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                     {report.comment.author.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-[var(--text-primary)] mb-4 whitespace-pre-wrap">{report.comment.content}</p>
+             <p className="text-(--text-primary) mb-4 whitespace-pre-wrap">{report.comment.content}</p>
           </div>
         ) : report.channel ? (
-          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
-             <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
+          <div className="bg-(--glass-card) p-4 rounded-lg border border-(--glass-border) h-full">
+             <div className="flex justify-between mb-2 border-b border-(--glass-border) pb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-[var(--accent-primary)]">Channel: {report.channel.name}</span>
+                  <span className="font-bold text-(--accent-primary)">Channel: {report.channel.name}</span>
                   <Link 
                     href={`/channels/${report.channel.slug}`}
                     target="_blank"
-                    className="text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
+                    className="text-(--text-muted) hover:text-(--accent-primary) transition-colors"
                   >
                     <ExternalLink size={14} />
                   </Link>
@@ -218,25 +218,25 @@ export function ModerationCard({ report }: { report: ReportData }) {
                     Creator: @{report.channel.creator.username} ({report.channel.creator.strikeCount} strikes)
                 </span>
              </div>
-             <p className="text-[var(--text-primary)] italic">Report filed against the entire channel.</p>
+             <p className="text-(--text-primary) italic">Report filed against the entire channel.</p>
           </div>
         ) : report.adId ? (
-          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
-             <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
-                <span className="font-bold text-[var(--accent-primary)]">Advertisement</span>
+          <div className="bg-(--glass-card) p-4 rounded-lg border border-(--glass-border) h-full">
+             <div className="flex justify-between mb-2 border-b border-(--glass-border) pb-2">
+                <span className="font-bold text-(--accent-primary)">Advertisement</span>
              </div>
-             <p className="text-[var(--text-primary)]">Ad ID: <span className="font-mono text-xs">{report.adId}</span></p>
-             <p className="text-[var(--text-muted)] text-sm mt-2 italic">Reported from ad provider.</p>
+             <p className="text-(--text-primary)">Ad ID: <span className="font-mono text-xs">{report.adId}</span></p>
+             <p className="text-(--text-muted) text-sm mt-2 italic">Reported from ad provider.</p>
           </div>
         ) : report.reportedProfile ? (
-          <div className="bg-[var(--glass-card)] p-4 rounded-lg border border-[var(--glass-border)] h-full">
-             <div className="flex justify-between mb-2 border-b border-[var(--glass-border)] pb-2">
+          <div className="bg-(--glass-card) p-4 rounded-lg border border-(--glass-border) h-full">
+             <div className="flex justify-between mb-2 border-b border-(--glass-border) pb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-[var(--accent-primary)]">Profile: @{report.reportedProfile.username}</span>
+                  <span className="font-bold text-(--accent-primary)">Profile: @{report.reportedProfile.username}</span>
                   <Link 
                     href={`/profile/${report.reportedProfile.username}`} 
                     target="_blank"
-                    className="text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
+                    className="text-(--text-muted) hover:text-(--accent-primary) transition-colors"
                   >
                     <ExternalLink size={14} />
                   </Link>
@@ -245,30 +245,30 @@ export function ModerationCard({ report }: { report: ReportData }) {
                     {report.reportedProfile.strikeCount} Previous Strikes
                 </span>
              </div>
-             <p className="text-[var(--text-primary)] italic">Direct profile report.</p>
+             <p className="text-(--text-primary) italic">Direct profile report.</p>
           </div>
         ) : (
-          <div className="text-[var(--text-muted)] italic flex items-center justify-center h-full bg-[var(--glass-card)] rounded-lg">
+          <div className="text-(--text-muted) italic flex items-center justify-center h-full bg-(--glass-card) rounded-lg">
             Content unavailable or deleted.
           </div>
         )}
       </div>
 
       {/* FOOTER: The Gavel (Buttons) */}
-      <div className="p-4 border-t border-[var(--glass-border)]">
+      <div className="p-4 border-t border-(--glass-border)">
         {!showPenaltyOptions ? (
           // View 1: Initial Choice
           <div className="flex flex-col gap-3">
              <div className="grid grid-cols-2 gap-4">
                 <button 
                   onClick={handleDismiss}
-                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors border border-[var(--glass-border)]"
+                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) text-(--text-muted) hover:text-(--text-primary) transition-colors border border-(--glass-border)"
                 >
                   <Check size={16} /> Dismiss
                 </button>
                 <button 
                   onClick={() => setShowPenaltyOptions(true)}
-                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--status-error-bg)] hover:opacity-80 text-[var(--status-error)] border border-[var(--status-error)]/20 transition-colors"
+                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-(--status-error-bg) hover:opacity-80 text-(--status-error) border border-(--status-error)/20 transition-colors"
                 >
                   <AlertTriangle size={16} /> Punish
                 </button>
@@ -278,7 +278,7 @@ export function ModerationCard({ report }: { report: ReportData }) {
                <button 
                  onClick={handleToggleLock}
                  disabled={isLocking}
-                 className="flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20 transition-colors w-full"
+                 className="flex items-center justify-center gap-2 py-2 rounded-lg bg-(--accent-primary)/10 hover:bg-(--accent-primary)/20 text-(--accent-primary) border border-(--accent-primary)/20 transition-colors w-full"
                >
                  {isLocking ? (
                    <Loader2 size={16} className="animate-spin" />
@@ -296,14 +296,14 @@ export function ModerationCard({ report }: { report: ReportData }) {
           // View 2: Penalty Selection
           <div className="space-y-2 animate-in slide-in-from-bottom-2 fade-in">
             <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => handlePenalize("WARNING")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-[var(--btn-primary)] hover:text-[var(--btn-primary-text)] transition-colors">Warning</button>
-                <button onClick={() => handlePenalize("CONTENT_REMOVAL")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-orange-500 hover:text-white transition-colors">Remove Content</button>
-                <button onClick={() => handlePenalize("STRIKE_2_SUSPENSION")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-red-500 hover:text-white transition-colors">Suspend (7d)</button>
-                <button onClick={() => handlePenalize("PERMANENT_BAN")} className="text-xs py-2 bg-[var(--glass-panel)] rounded hover:bg-red-700 hover:text-white font-bold transition-colors">PERMA-BAN</button>
+                <button onClick={() => handlePenalize("WARNING")} className="text-xs py-2 bg-(--glass-panel) rounded-sm hover:bg-(--btn-primary) hover:text-(--btn-primary-text) transition-colors">Warning</button>
+                <button onClick={() => handlePenalize("CONTENT_REMOVAL")} className="text-xs py-2 bg-(--glass-panel) rounded-sm hover:bg-orange-500 hover:text-white transition-colors">Remove Content</button>
+                <button onClick={() => handlePenalize("STRIKE_2_SUSPENSION")} className="text-xs py-2 bg-(--glass-panel) rounded-sm hover:bg-red-500 hover:text-white transition-colors">Suspend (7d)</button>
+                <button onClick={() => handlePenalize("PERMANENT_BAN")} className="text-xs py-2 bg-(--glass-panel) rounded-sm hover:bg-red-700 hover:text-white font-bold transition-colors">PERMA-BAN</button>
             </div>
             <button 
               onClick={() => setShowPenaltyOptions(false)}
-              className="w-full text-center text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] mt-2"
+              className="w-full text-center text-xs text-(--text-muted) hover:text-(--text-primary) mt-2"
             >
               Cancel
             </button>

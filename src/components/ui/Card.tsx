@@ -7,7 +7,7 @@ export function Card({ padded = true, className, ...rest }: { padded?: boolean }
   return (
     <div
       className={clsx(
-        'rounded-[var(--radius-card)] border border-[var(--glass-border)] bg-[var(--glass-card)] shadow-[var(--glass-shadow)]',
+        'rounded-(--radius-card) border border-(--glass-border) bg-(--glass-card) shadow-(--glass-shadow)',
         padded && 'p-5 sm:p-6',
         className
       )}
@@ -20,8 +20,8 @@ export function CardHeader({ title, description, actions }: { title: ReactNode; 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
       <div className="min-w-0">
-        <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
-        {description && <p className="mt-0.5 text-sm text-[var(--text-muted)]">{description}</p>}
+        <h2 className="text-base font-semibold text-(--text-primary)">{title}</h2>
+        {description && <p className="mt-0.5 text-sm text-(--text-muted)">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>

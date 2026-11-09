@@ -43,7 +43,7 @@ export default function CreateChannelForm() {
         />
 
         {state.message && (
-          <p role="alert" className="rounded-[var(--radius-control)] bg-[var(--status-error-bg)] p-3 text-sm text-[var(--status-error)]">
+          <p role="alert" className="rounded-(--radius-control) bg-(--status-error-bg) p-3 text-sm text-(--status-error)">
             {state.message}
           </p>
         )}

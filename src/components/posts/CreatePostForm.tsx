@@ -280,18 +280,18 @@ export default function CreatePostForm({
     <>
       {/* Verification Warning Modal */}
       {showVerifyWarning && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div role="dialog" aria-modal="true" aria-labelledby="finality-title" className="relative w-full max-w-md bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-[var(--radius-card)] shadow-2xl p-6 overflow-hidden">
+        <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div role="dialog" aria-modal="true" aria-labelledby="finality-title" className="relative w-full max-w-md bg-(--glass-card) border border-(--glass-border) rounded-(--radius-card) shadow-2xl p-6 overflow-hidden">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-[var(--status-warning-bg)] rounded-full text-[var(--status-warning)]">
+              <div className="p-3 bg-(--status-warning-bg) rounded-full text-(--status-warning)">
                 <ShieldCheck size={32} />
               </div>
             </div>
 
-            <h3 id="finality-title" className="text-xl font-bold text-[var(--text-primary)] text-center mb-2">Verified posts are permanent</h3>
-            <p className="text-[var(--text-secondary)] text-sm text-center leading-relaxed mb-6">
+            <h3 id="finality-title" className="text-xl font-bold text-(--text-primary) text-center mb-2">Verified posts are permanent</h3>
+            <p className="text-(--text-secondary) text-sm text-center leading-relaxed mb-6">
               Verified posts are cryptographically signed and anchored to the blockchain. 
-              <span className="text-[var(--status-warning)] font-bold block mt-2">
+              <span className="text-(--status-warning) font-bold block mt-2">
                 Once published, this content cannot be edited or deleted.
               </span>
               Please ensure you have reviewed your content thoroughly.
@@ -311,20 +311,20 @@ export default function CreatePostForm({
       
       <div className="mb-2">
         <div className="flex justify-between items-end mb-3">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">New Truth Submission</h2>
+            <h2 className="text-lg font-semibold text-(--text-primary)">New Truth Submission</h2>
             
             {mounted && isConnected ? (
-                <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--status-success)] bg-[var(--status-success-bg)] px-2 py-1 rounded-[var(--radius-pill)]">
-                    <div className="w-1.5 h-1.5 bg-[var(--status-success)] rounded-full" />
+                <div className="flex items-center gap-2 text-[11px] font-mono text-(--status-success) bg-(--status-success-bg) px-2 py-1 rounded-(--radius-pill)">
+                    <div className="w-1.5 h-1.5 bg-(--status-success) rounded-full" />
                     {address?.slice(0,6)}...{address?.slice(-4)}
                 </div>
             ) : mounted && linkedWallet && (
-                 <div className="text-[11px] text-[var(--text-muted)] font-mono">Linked: {linkedWallet.slice(0,6)}…</div>
+                 <div className="text-[11px] text-(--text-muted) font-mono">Linked: {linkedWallet.slice(0,6)}…</div>
             )}
         </div>
 
         {mounted && !isConnected && (
-             <button type="button" onClick={redirectToProfile} className="mb-4 w-full p-3 rounded-[var(--radius-control)] bg-[var(--status-info-bg)] text-[var(--accent-primary)] flex items-center justify-between gap-3 text-left hover:brightness-110 transition">
+             <button type="button" onClick={redirectToProfile} className="mb-4 w-full p-3 rounded-(--radius-control) bg-(--status-info-bg) text-(--accent-primary) flex items-center justify-between gap-3 text-left hover:brightness-110 transition">
                  <span className="flex items-center gap-3">
                     <Wallet size={16} aria-hidden="true" />
                     <span className="text-sm font-medium">Connect a wallet to post verified content</span>
@@ -344,11 +344,11 @@ export default function CreatePostForm({
                   return;
               }
           }}
-          className={`relative rounded-[var(--radius-control)] transition-all duration-300 ${isDragging ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--status-info-bg)]' : ''}`}
+          className={`relative rounded-(--radius-control) transition-all duration-300 ${isDragging ? 'ring-2 ring-(--accent-primary) bg-(--status-info-bg)' : ''}`}
         >
           
           <div className="flex gap-4">
-              <div className="h-10 w-10 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-bold shadow-lg">
+              <div className="h-10 w-10 rounded-full shrink-0 overflow-hidden bg-linear-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-bold shadow-lg">
                   {userImage ? (<img src={userImage} alt="User" className="w-full h-full object-cover" />) : (<User size={20} />)}
               </div>
 
@@ -360,7 +360,7 @@ export default function CreatePostForm({
                       placeholder="Share your truth..." 
                       name="content"
                       readOnly={method === 'WALLET'}
-                      className="w-full border-none focus:ring-0 resize-none p-2 text-lg bg-transparent placeholder-gray-500/50 focus:outline-none transition-all read-only:opacity-70"
+                      className="w-full border-none focus:ring-0 resize-none p-2 text-lg bg-transparent placeholder-gray-500/50 focus:outline-hidden transition-all read-only:opacity-70"
                       style={{ color: 'var(--text-primary)' }}
                       onClick={() => setIsExpanded(true)}
                   />
@@ -375,7 +375,7 @@ export default function CreatePostForm({
 
                   {/* MEDIA PREVIEW */}
                   {mediaPreview && (
-                    <div className="relative mt-2 rounded-xl overflow-hidden group border border-[var(--glass-border)]">
+                    <div className="relative mt-2 rounded-xl overflow-hidden group border border-(--glass-border)">
                       {mediaType === 'IMAGE' ? (
                         <img src={mediaPreview} alt="Upload preview" className="w-full h-auto max-h-[300px] object-cover" />
                       ) : (
@@ -383,11 +383,11 @@ export default function CreatePostForm({
                       )}
                       
                       {uploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-xs">
                            <div className="text-center">
                               <Loader2 className="animate-spin text-white mb-2 mx-auto" size={24} />
                               <div className="w-32 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                                 <div className="h-full bg-[var(--accent-primary)] transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                                 <div className="h-full bg-(--accent-primary) transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
                               </div>
                            </div>
                         </div>
@@ -411,8 +411,8 @@ export default function CreatePostForm({
                   {isExpanded && content.trim().length > 0 && showPreview && (
                       <div className="mt-4 mb-2 animate-in fade-in slide-in-from-top-2 duration-300">
                           <div className="flex items-center gap-2 mb-2">
-                             <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)]">Live Preview</span>
-                             <div className="h-px flex-1 bg-[var(--glass-border)]"></div>
+                             <span className="text-[10px] uppercase tracking-wider font-bold text-(--text-muted)">Live Preview</span>
+                             <div className="h-px flex-1 bg-(--glass-border)"></div>
                           </div>
                           <div className="transform scale-[0.98] origin-top-left opacity-90 hover:opacity-100 hover:scale-100 transition-all duration-300">
                             <PostPreview 
@@ -437,7 +437,7 @@ export default function CreatePostForm({
                           type="button" 
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploading}
-                          className="text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors flex items-center gap-1.5 text-xs font-medium"
+                          className="text-(--text-muted) hover:text-(--accent-primary) transition-colors flex items-center gap-1.5 text-xs font-medium"
                         >
                           <ImageIcon size={18} />
                           <span>Photo</span>
@@ -446,7 +446,7 @@ export default function CreatePostForm({
                           type="button" 
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploading}
-                          className="text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors flex items-center gap-1.5 text-xs font-medium"
+                          className="text-(--text-muted) hover:text-(--accent-primary) transition-colors flex items-center gap-1.5 text-xs font-medium"
                         >
                           <VideoIcon size={18} />
                           <span>Video</span>
@@ -464,7 +464,7 @@ export default function CreatePostForm({
                         <button 
                           type="button" 
                           onClick={() => setShowPreview(!showPreview)}
-                          className="text-[10px] flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                          className="text-[10px] flex items-center gap-1 text-(--text-muted) hover:text-(--text-primary) transition-colors"
                         >
                           <Eye size={12} /> {showPreview ? 'Hide Preview' : 'Show Preview'}
                         </button>
@@ -475,21 +475,21 @@ export default function CreatePostForm({
 
           {isExpanded && (
               <>
-                <div className="mt-4 pt-3 border-t border-[var(--glass-border)]">
-                  <h4 className="text-xs font-semibold mb-3 text-[var(--text-secondary)] uppercase tracking-wide">Verification Method</h4>
+                <div className="mt-4 pt-3 border-t border-(--glass-border)">
+                  <h4 className="text-xs font-semibold mb-3 text-(--text-secondary) uppercase tracking-wide">Verification Method</h4>
                   <div className="grid grid-cols-2 gap-3">
                     
                     {/* OPTION 1: WALLET */}
                     <button type="button" onClick={() => handleVerifyClick('WALLET')} disabled={isPreparing || method === 'SKIP'}
-                      className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group ${method === 'WALLET' ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
+                      className={`p-3 rounded-(--radius-control) transition-all border text-xs flex flex-col items-center group ${method === 'WALLET' ? 'bg-(--status-info-bg) border-(--accent-primary) text-(--accent-primary)' : 'bg-(--glass-card) border-(--glass-border) text-(--text-muted) hover:bg-(--glass-card-hover)'}`}>
                       <Wallet size={18} />
                       <span className="mt-1">Pay Gas</span>
-                      {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null}
+                      {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-(--status-success)' /> : null}
                     </button>
 
                     {/* OPTION 2: SKIP */}
                     <button type="button" onClick={() => { setMethod('SKIP'); setSignature(null); }} disabled={isPreparing}
-                      className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group ${method === 'SKIP' ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
+                      className={`p-3 rounded-(--radius-control) transition-all border text-xs flex flex-col items-center group ${method === 'SKIP' ? 'bg-(--status-info-bg) border-(--accent-primary) text-(--accent-primary)' : 'bg-(--glass-card) border-(--glass-border) text-(--text-muted) hover:bg-(--glass-card-hover)'}`}>
                       <ShieldOff size={18} />
                       <span className="mt-1">Unverified</span>
                     </button>
