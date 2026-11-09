@@ -1,5 +1,5 @@
 import { getServerAuthSession } from "@/lib/auth.config";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/generated/prisma/browser";
 import { redirect } from "next/navigation";
 
 /**

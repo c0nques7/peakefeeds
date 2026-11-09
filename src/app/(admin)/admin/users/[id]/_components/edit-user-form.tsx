@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateUserDetails } from "@/actions/admin-user-detail";
-import { User } from "@prisma/client";
+import { User } from "@/generated/prisma/browser";
 import { Edit2, Save, X, Loader2, User as UserIcon, AtSign, Mail } from "lucide-react";
 import styles from "@/app/(admin)/admin/admin.module.css";
 import { toast } from "sonner";

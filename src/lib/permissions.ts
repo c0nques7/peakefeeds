@@ -1,4 +1,4 @@
-import { UserRole, ChannelRole } from '@prisma/client';
+import { UserRole, ChannelRole } from '@/generated/prisma/browser';
 
 type UserWithRole = { id: string; role: UserRole };
 

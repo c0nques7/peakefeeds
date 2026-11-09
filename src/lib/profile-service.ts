@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { PostType, ReactionType, UserRole } from '@prisma/client';
+import { PostType, ReactionType, UserRole } from '@/generated/prisma/client';
 import { signMediaUrl } from '@/lib/b2';
 import { getPostPermissions } from '@/lib/permissions';
 

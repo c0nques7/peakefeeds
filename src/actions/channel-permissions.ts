@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
-import { ChannelRole, AdminLogType } from "@prisma/client";
+import { ChannelRole, AdminLogType } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { createAdminLog } from "@/lib/admin-logger";
 import { z } from "zod";

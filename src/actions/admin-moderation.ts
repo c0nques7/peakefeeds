@@ -11,7 +11,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/rbac";
-import { ReportStatus, PenaltyType, AdminLogType, UserRole } from "@prisma/client";
+import { ReportStatus, PenaltyType, AdminLogType, UserRole } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { createAdminLog } from "@/lib/admin-logger";
 import { TIMEOUT_MS, SUSPENSION_MS, clearAccountStatusCache } from "@/lib/penalties";

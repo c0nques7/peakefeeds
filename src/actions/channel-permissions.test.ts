@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { updateChannelPermissions, removeChannelUser } from './channel-permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from "next-auth";
-import { ChannelRole } from '@prisma/client';
+import { ChannelRole } from '@/generated/prisma/client';
 
 // Mock Dependencies
 vi.mock('@/lib/db', () => ({

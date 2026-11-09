@@ -31,7 +31,7 @@ import {
   AlertCircle,
   Eye
 } from 'lucide-react'
-import { SupportStatus, SupportPriority } from '@prisma/client'
+import { SupportStatus, SupportPriority } from '@/generated/prisma/browser'
 import styles from '@/app/(admin)/admin/admin.module.css'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'

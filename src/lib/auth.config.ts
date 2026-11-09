@@ -12,7 +12,9 @@ import { claimInviteForNewGoogleUser, decideGoogleSignIn } from "@/lib/google-si
 const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // The adapter is typed against the old @prisma/client package; it only uses the model delegates,
+  // which the generated Prisma 7 client still has
+  adapter: PrismaAdapter(prisma as unknown as Parameters<typeof PrismaAdapter>[0]),
   session: { strategy: "jwt" },
   // Errors (e.g. a refused Google sign-in) come back to the login page, which explains them
   pages: { signIn: "/login", error: "/login" },

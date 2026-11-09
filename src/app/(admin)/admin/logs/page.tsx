@@ -1,5 +1,5 @@
 import { getAdminLogs } from "@/actions/admin-logs";
-import { AdminLogType } from "@prisma/client";
+import { AdminLogType } from "@/generated/prisma/client";
 import { formatDistanceToNow } from "date-fns";
 import { ShieldCheck, User, Info, Calendar, Terminal } from "lucide-react";
 import styles from "@/app/(admin)/admin/admin.module.css";

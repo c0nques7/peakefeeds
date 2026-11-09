@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { Search, Filter, X } from "lucide-react";
-import { AdminLogType } from "@prisma/client";
+import { AdminLogType } from "@/generated/prisma/browser";
 
 export default function LogFilters() {
   const router = useRouter();

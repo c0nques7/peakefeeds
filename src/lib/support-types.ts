@@ -1,4 +1,4 @@
-import { SupportStatus, SupportPriority } from '@prisma/client'
+import { SupportStatus, SupportPriority } from '@/generated/prisma/browser'
 
 // Shapes shared by the support actions, the Help Bot and the staff support queue
 export type ChatMessage = {

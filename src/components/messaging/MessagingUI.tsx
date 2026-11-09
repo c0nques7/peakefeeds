@@ -8,7 +8,7 @@ import { formatDistanceToNow } from 'date-fns'
 import clsx from 'clsx'
 import { useSession } from 'next-auth/react'
 import ReportModal from '../moderation/ReportModal'
-import { ReportTargetType } from '@prisma/client'
+import { ReportTargetType } from '@/generated/prisma/browser'
 import { toast } from 'sonner'
 
 export default function MessagingUI() {

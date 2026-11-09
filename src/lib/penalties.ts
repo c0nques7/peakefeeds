@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/generated/prisma/client';
 
 // How long the strike penalties last
 export const TIMEOUT_MS = 24 * 60 * 60 * 1000;     // STRIKE_1_TIMEOUT: 24h mute

@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { signMediaUrl } from "@/lib/b2";
 import { getPostPermissions } from "@/lib/permissions";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/generated/prisma/client";
 import { PostCard } from "@/components/PostCard";
 import CreatePostForm from "@/components/posts/CreatePostForm"; 
 import { SubscribeButton } from "@/components/SubscribeButton";

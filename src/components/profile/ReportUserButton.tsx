@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Flag } from 'lucide-react';
 import ReportModal from '../moderation/ReportModal';
-import { ReportTargetType } from '@prisma/client';
+import { ReportTargetType } from '@/generated/prisma/browser';
 import { buttonClasses } from '@/components/ui';
 
 interface ReportUserButtonProps {

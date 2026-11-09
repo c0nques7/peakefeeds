@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { resolveReport, toggleLockContent } from "@/actions/admin-moderation";
-import { PenaltyType } from "@prisma/client";
+import { PenaltyType } from "@/generated/prisma/browser";
 import { Check, AlertTriangle, Loader2, ShieldAlert, Lock, Unlock, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";

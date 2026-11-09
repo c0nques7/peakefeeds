@@ -11,7 +11,7 @@ import {
   UserRole, 
   NotificationType,
   Report as PrismaReport // Alias the type to avoid collision with DOM Report
-} from '@prisma/client';
+} from '@/generated/prisma/client';
 
 const SubmitReportSchema = z.object({
   targetId: z.string().min(1),

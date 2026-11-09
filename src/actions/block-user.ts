@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { UserRole, Prisma } from '@prisma/client';
+import { UserRole, Prisma } from '@/generated/prisma/client';
 
 const BlockUserSchema = z.object({
   userIdToBlock: z.string().min(1),

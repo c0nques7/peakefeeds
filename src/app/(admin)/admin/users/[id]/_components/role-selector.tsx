@@ -1,6 +1,6 @@
 "use client";
 
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/generated/prisma/browser";
 import { updateUserRole } from "@/actions/admin-user-detail"; // 🟢 Uses absolute path, so this is safe
 import { useState, useTransition } from "react";
 import { Check, Loader2 } from "lucide-react";

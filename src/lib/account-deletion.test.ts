@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { ChannelRole, UserRole } from '@prisma/client';
+import { ChannelRole, UserRole } from '@/generated/prisma/client';
 import * as argon2 from 'argon2';
 
 // Integration tests against the local database for "Download my data" and account deletion.

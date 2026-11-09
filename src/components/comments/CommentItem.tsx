@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import clsx from 'clsx'
 import ReportModal from '../moderation/ReportModal'
 import LockedOverlay from '../moderation/LockedOverlay'
-import { ReportTargetType } from '@prisma/client'
+import { ReportTargetType } from '@/generated/prisma/browser'
 import { Flag } from 'lucide-react'
 import { MOD_TAG } from '@/lib/constants'
 

@@ -31,6 +31,7 @@ CI (`.github/workflows/ci.yml`) runs all of these on every pull request.
 - `src/actions/` – server actions (all writes go through these)
 - `src/lib/` – auth, permissions (`permissions.ts`, `interaction-guard.ts`), feeds, B2 storage, email
 - `src/components/` – UI, with shared primitives in `src/components/ui/`
-- `prisma/` – schema and migrations
+- `prisma/` – schema and migrations; CLI settings (database URL, seed) are in `prisma.config.ts`
+- `src/generated/prisma/` – the Prisma client, generated on `npm install` and not committed. Import it from `@/generated/prisma/client` on the server and `@/generated/prisma/browser` in client components (enums and types only)
 
 More detail (moderation, permissions, testing, Google sign-in): [DEVELOPER.md](DEVELOPER.md).

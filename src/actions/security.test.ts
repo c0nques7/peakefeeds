@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/generated/prisma/client';
 
 // Integration tests against the local database: they prove the queries themselves
 // keep secrets out and reject callers who aren't allowed.

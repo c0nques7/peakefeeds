@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ChannelRole, UserRole } from '@prisma/client';
+import { ChannelRole, UserRole } from '@/generated/prisma/client';
 import { getPostPermissions } from './permissions';
 
 const post = (extra: Partial<{ authorId: string; isVerified: boolean; creatorId: string }> = {}) => ({

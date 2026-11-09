@@ -7,7 +7,7 @@ import Link from 'next/link' // 🆕 Import Link
 import { getTicketAction, createTicketAction } from '@/actions/support' 
 import { ExternalLink, Ticket, MessageCircle, Send, X, HelpCircle } from 'lucide-react' // 🆕 Icons
 import styles from './HelpBot.module.css'
-import { SupportStatus } from '@prisma/client'
+import { SupportStatus } from '@/generated/prisma/browser'
 
 
 // Type Definitions
