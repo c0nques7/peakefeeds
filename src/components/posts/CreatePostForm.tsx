@@ -7,7 +7,7 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom'; 
 
 // UI Components
-import { Loader2, User, Wallet, PlayCircle, ShieldOff, ShieldCheck, ArrowRight, Eye, Lock, Image as ImageIcon, Video as VideoIcon, X } from 'lucide-react';
+import { Loader2, User, Wallet, ShieldOff, ShieldCheck, ArrowRight, Eye, Image as ImageIcon, Video as VideoIcon, X } from 'lucide-react';
 import { toast } from 'sonner'; 
 
 // Actions & Utils
@@ -18,15 +18,13 @@ import { VerificationMethod } from '@/lib/types';
 import { validateFile, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from '@/lib/storage-utils';
 
 // Hooks
-import { useAdMediator } from '@/hooks/useAdMediator';
 import { useLinkPreview } from '@/hooks/useLinkPreview'; 
 
 // Components
-import { AdPlayerOverlay } from '@/components/ads/AdPlayerOverlay';
 import PostPreview from './PostPreview'; 
 import { Button } from '@/components/ui';
 
-const POST_LABEL: Record<string, string> = { WALLET: 'Post verified', AD: 'Post sponsored', SKIP: 'Post unverified' };
+const POST_LABEL: Record<string, string> = { WALLET: 'Post verified', SKIP: 'Post unverified' };
 
 interface CreatePostFormProps {
     channelId: string;
@@ -50,9 +48,6 @@ export default function CreatePostForm({
 }: CreatePostFormProps) {
   const router = useRouter(); 
   
-  // Sponsored (ad-verified) posts stay off until the ad proof can be checked server-side
-  const sponsorEnabled = false;
-
   // 1. Web3 Hooks
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
@@ -61,16 +56,6 @@ export default function CreatePostForm({
   // 2. Hydration Fix
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-
-  // 3. AdTech Hook
-  const { 
-      startVerification, 
-      selectAdFlow, 
-      selectQuestFlow, 
-      status: adStatus, 
-      currentProvider, 
-      resetAdState 
-  } = useAdMediator();
 
   // 3. Link Preview Hook
   const [content, setContent] = useState("");
@@ -91,7 +76,6 @@ export default function CreatePostForm({
   const [signature, setSignature] = useState<string | null>(null);
   const [postHash, setPostHash] = useState<string | null>(null);
   const [postSalt, setPostSalt] = useState<string | null>(null);
-  const [adProofToken, setAdProofToken] = useState<string | null>(null);
 
   // 7. Media State
   const [uploading, setUploading] = useState(false);
@@ -105,7 +89,7 @@ export default function CreatePostForm({
 
   // 8. Verification Confirmation
   const [showVerifyWarning, setShowVerifyWarning] = useState(false);
-  const [pendingVerifyChoice, setPendingVerifyChoice] = useState<'WALLET' | 'AD' | null>(null);
+  const [pendingVerifyChoice, setPendingVerifyChoice] = useState<'WALLET' | null>(null);
 
   // --- Effects ---
   useEffect(() => {
@@ -119,7 +103,6 @@ export default function CreatePostForm({
       setPostHash(null); 
       setMethod('NONE'); 
       setSignature(null);
-      setAdProofToken(null);
     }
   }, [content]);
 
@@ -130,7 +113,6 @@ export default function CreatePostForm({
         setIsExpanded(false); 
         setMethod('NONE'); 
         setSignature(null);
-        setAdProofToken(null);
         setMediaUrl(null);
         setMediaType(null);
         setMediaPreview(null);
@@ -234,7 +216,7 @@ export default function CreatePostForm({
   };
 
   // --- Verification Logic ---
-  const handleVerifyClick = useCallback(async (choice: 'WALLET' | 'AD') => {
+  const handleVerifyClick = useCallback(async (choice: 'WALLET') => {
     if (!content.trim()) { toast.warning("Please enter content first."); return; }
     setPendingVerifyChoice(choice);
     setShowVerifyWarning(true);
@@ -262,23 +244,6 @@ export default function CreatePostForm({
     setMethod(choice);
 
     try {
-      if (choice === 'AD') {
-          const proofToken = await startVerification('peake-ad-container', { 
-              userId: address!, 
-              contentHash: postHash 
-          });
-
-          if (!proofToken) {
-              setMethod('NONE');
-              setIsPreparing(false);
-              return; 
-          }
-          setAdProofToken(proofToken);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          resetAdState();
-          toast.success("Sponsorship Verified! Signing content now...");
-      }
-
       const hashToSign = postHash as `0x${string}`;
       const sig = await signMessageAsync({ message: { raw: hashToSign } });
       
@@ -289,7 +254,7 @@ export default function CreatePostForm({
       }
 
       setSignature(sig);
-      toast.success(choice === 'AD' ? "Sponsored Post Ready!" : "Content Signed Successfully");
+      toast.success("Content Signed Successfully");
       
     } catch (e: any) {
       console.error(e);
@@ -302,27 +267,17 @@ export default function CreatePostForm({
       }
       setMethod('NONE');
       setSignature(null);
-      setAdProofToken(null);
-      resetAdState(); 
     } finally {
       setIsPreparing(false);
       setPendingVerifyChoice(null);
     }
-  }, [pendingVerifyChoice, postHash, address, isConnected, signMessageAsync, startVerification, resetAdState, router, username, linkedWallet]);
+  }, [pendingVerifyChoice, postHash, address, isConnected, signMessageAsync, router, username, linkedWallet]);
 
   const isPostReady = content.trim() && (method === 'SKIP' || signature);
   const isButtonDisabled = isPending || isPreparing || !isPostReady || uploading;
 
   return (
     <>
-      <AdPlayerOverlay 
-          status={adStatus} 
-          provider={currentProvider} 
-          onSelectVideo={selectAdFlow}  
-          onSelectQuest={selectQuestFlow} 
-          onCancel={() => { resetAdState(); setMethod('NONE'); setIsPreparing(false); }} 
-      />
-
       {/* Verification Warning Modal */}
       {showVerifyWarning && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
@@ -404,7 +359,7 @@ export default function CreatePostForm({
                       rows={isExpanded || mediaPreview ? 3 : 1}
                       placeholder="Share your truth..." 
                       name="content"
-                      readOnly={method === 'WALLET' || method === 'AD'}
+                      readOnly={method === 'WALLET'}
                       className="w-full border-none focus:ring-0 resize-none p-2 text-lg bg-transparent placeholder-gray-500/50 focus:outline-none transition-all read-only:opacity-70"
                       style={{ color: 'var(--text-primary)' }}
                       onClick={() => setIsExpanded(true)}
@@ -415,7 +370,6 @@ export default function CreatePostForm({
                   <input type="hidden" name="salt" value={postSalt || ''} />
                   <input type="hidden" name="signature" value={signature || ''} />
                   <input type="hidden" name="verificationMethod" value={method} />
-                  <input type="hidden" name="adProofToken" value={adProofToken || ''} />
                   <input type="hidden" name="mediaUrl" value={mediaUrl || ''} />
                   <input type="hidden" name="mediaType" value={mediaType || ''} />
 
@@ -523,7 +477,7 @@ export default function CreatePostForm({
               <>
                 <div className="mt-4 pt-3 border-t border-[var(--glass-border)]">
                   <h4 className="text-xs font-semibold mb-3 text-[var(--text-secondary)] uppercase tracking-wide">Verification Method</h4>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     
                     {/* OPTION 1: WALLET */}
                     <button type="button" onClick={() => handleVerifyClick('WALLET')} disabled={isPreparing || method === 'SKIP'}
@@ -533,28 +487,8 @@ export default function CreatePostForm({
                       {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null}
                     </button>
 
-                    {/* OPTION 2: SPONSOR (disabled until ad proofs are verified) */}
-                    <button 
-                      type="button" 
-                      onClick={() => sponsorEnabled && handleVerifyClick('AD')} 
-                      disabled={!sponsorEnabled || isPreparing || method === 'SKIP'}
-                      className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group relative
-                        ${!sponsorEnabled 
-                            ? 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] cursor-not-allowed opacity-60' // Disabled
-                            : method === 'AD' 
-                                ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' // Active
-                                : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]' // Inactive
-                        }`}
-                    >
-                      {!sponsorEnabled ? <Lock size={18} className="opacity-50" /> : <PlayCircle size={18} />}
-                      <span className="mt-1">{!sponsorEnabled ? 'Coming Soon' : 'Sponsor Gas'}</span>
-
-                      {/* Status Indicators */}
-                      {mounted && sponsorEnabled && method === 'AD' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : (mounted && sponsorEnabled && signature && method === 'AD' ? <ShieldCheck size={12} className='mt-1 text-[var(--status-success)]' /> : null)}
-                    </button>
-
-                    {/* OPTION 3: SKIP */}
-                    <button type="button" onClick={() => { setMethod('SKIP'); setSignature(null); setAdProofToken(null); }} disabled={isPreparing}
+                    {/* OPTION 2: SKIP */}
+                    <button type="button" onClick={() => { setMethod('SKIP'); setSignature(null); }} disabled={isPreparing}
                       className={`p-3 rounded-[var(--radius-control)] transition-all border text-xs flex flex-col items-center group ${method === 'SKIP' ? 'bg-[var(--status-info-bg)] border-[var(--accent-primary)] text-[var(--accent-primary)]' : 'bg-[var(--glass-card)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-card-hover)]'}`}>
                       <ShieldOff size={18} />
                       <span className="mt-1">Unverified</span>

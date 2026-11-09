@@ -1,5 +1,5 @@
 // Define the allowed verification methods here
-export type VerificationMethod = 'NONE' | 'WALLET' | 'AD' | 'SKIP';
+export type VerificationMethod = 'NONE' | 'WALLET' | 'SKIP';
 
 // You can also add other shared interfaces here later
 export interface PostData {
