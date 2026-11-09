@@ -5,6 +5,8 @@
 //    `pg` waits forever by default.
 //  - connection_limit -> max: one connection per serverless instance on Neon's pooled endpoint
 //    (hosts ending in "-pooler") when running on Vercel, so instances don't exhaust the pooler.
+//  - sslmode=require/prefer/verify-ca -> verify-full: what `pg` 8 already does with them, made
+//    explicit so it stops printing a deprecation warning on every cold start (pg 9 changes them).
 // Prisma-only URL parameters (pgbouncer, connection_limit, connect_timeout, pool_timeout) are
 // removed from the URL because `pg` doesn't understand them.
 const PRISMA_ONLY_PARAMS = ['pgbouncer', 'connection_limit', 'connect_timeout', 'pool_timeout'];
@@ -33,8 +35,12 @@ export function poolSettings(
   const limit = Number(parsed.searchParams.get('connection_limit')) || undefined;
   const isPooler = parsed.hostname.split('.')[0].endsWith('-pooler');
 
-  const changed = PRISMA_ONLY_PARAMS.some((key) => parsed.searchParams.has(key));
+  let changed = PRISMA_ONLY_PARAMS.some((key) => parsed.searchParams.has(key));
   for (const key of PRISMA_ONLY_PARAMS) parsed.searchParams.delete(key);
+  if (['prefer', 'require', 'verify-ca'].includes(parsed.searchParams.get('sslmode') ?? '')) {
+    parsed.searchParams.set('sslmode', 'verify-full');
+    changed = true;
+  }
 
   const settings: PoolSettings = {
     connectionString: changed ? parsed.toString() : url,

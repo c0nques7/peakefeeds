@@ -8,7 +8,7 @@ describe('poolSettings', () => {
     const settings = poolSettings(pooler, true)!;
     expect(settings.max).toBe(1);
     expect(settings.connectionTimeoutMillis).toBe(15000);
-    expect(settings.connectionString).toBe(pooler);
+    expect(new URL(settings.connectionString).searchParams.get('sslmode')).toBe('verify-full');
   });
 
   it('leaves the pool size to pg off Vercel', () => {
@@ -22,7 +22,7 @@ describe('poolSettings', () => {
     expect(settings.connectionTimeoutMillis).toBe(30000);
     expect(settings.max).toBe(3);
     const url = new URL(settings.connectionString);
-    expect(url.searchParams.get('sslmode')).toBe('require');
+    expect(url.searchParams.get('sslmode')).toBe('verify-full');
     expect(url.searchParams.has('pgbouncer')).toBe(false);
     expect(url.searchParams.has('connect_timeout')).toBe(false);
     expect(url.searchParams.has('connection_limit')).toBe(false);
@@ -31,7 +31,7 @@ describe('poolSettings', () => {
   });
 
   it('keeps direct and local URLs as they are', () => {
-    const direct = 'postgresql://u:p@ep-old-morning-abc.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require';
+    const direct = 'postgresql://u:p@ep-old-morning-abc.c-2.us-east-1.aws.neon.tech/neondb?sslmode=verify-full';
     const local = 'postgresql://peakeuser:peakepassword@localhost:5432/peakefeeds_test';
     expect(poolSettings(direct, true)).toEqual({ connectionString: direct, connectionTimeoutMillis: 15000 });
     expect(poolSettings(local, true)).toEqual({ connectionString: local, connectionTimeoutMillis: 15000 });
