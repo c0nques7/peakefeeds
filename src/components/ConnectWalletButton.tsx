@@ -70,7 +70,7 @@ export function ConnectWalletButton() {
   if (isConnected && address) {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex h-10 items-center gap-2 px-3 rounded-[var(--radius-control)] bg-[var(--status-success-bg)] text-[var(--status-success)] text-sm font-semibold font-mono">
+        <span className="inline-flex h-10 items-center gap-2 px-3 rounded-(--radius-control) bg-(--status-success-bg) text-(--status-success) text-sm font-semibold font-mono">
           <ShieldCheck size={16} aria-hidden="true" />
           {address.slice(0, 6)}…{address.slice(-4)}
         </span>

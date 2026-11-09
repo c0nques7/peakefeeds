@@ -8,11 +8,11 @@ export default function SupportPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 flex items-center gap-3">
-            <MessageSquare className="text-[var(--accent-primary)]" size={32} />
+          <h1 className="text-3xl font-bold text-(--text-primary) mb-2 flex items-center gap-3">
+            <MessageSquare className="text-(--accent-primary)" size={32} />
             Support Queue
           </h1>
-          <p className="text-[var(--text-muted)]">
+          <p className="text-(--text-muted)">
             Manage live chat tickets, assignments, and escalations.
           </p>
         </div>

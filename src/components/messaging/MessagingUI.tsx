@@ -90,26 +90,26 @@ export default function MessagingUI() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-13rem)] min-h-[420px] lg:h-[calc(100dvh-9rem)] lg:max-h-[760px] w-full border border-[var(--glass-border)] rounded-[var(--radius-card)] overflow-hidden bg-[var(--glass-card)] shadow-[var(--glass-shadow)]">
+    <div className="flex h-[calc(100dvh-13rem)] min-h-[420px] lg:h-[calc(100dvh-9rem)] lg:max-h-[760px] w-full border border-(--glass-border) rounded-(--radius-card) overflow-hidden bg-(--glass-card) shadow-(--glass-shadow)">
       
       {/* --- LEFT PANE: INBOX LIST --- */}
       <div className={clsx(
-        "w-full md:w-1/3 border-r border-[var(--glass-border)] flex flex-col transition-all duration-300",
+        "w-full md:w-1/3 border-r border-(--glass-border) flex flex-col transition-all duration-300",
         mobileView === 'CHAT' ? "hidden md:flex" : "flex"
       )}>
-         <div className="p-3 border-b border-[var(--glass-border)]">
+         <div className="p-3 border-b border-(--glass-border)">
             <div className="relative">
-                <Search className="absolute left-3 top-2.5 text-[var(--text-muted)]" size={16} />
+                <Search className="absolute left-3 top-2.5 text-(--text-muted)" size={16} />
                 <input aria-label="Search inbox" 
                   placeholder="Search inbox..." 
-                  className="w-full bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+                  className="w-full bg-(--glass-card) border border-(--glass-border) rounded-full py-2 pl-10 pr-4 text-sm focus:outline-hidden focus:border-(--accent-primary) transition-colors"
                 />
             </div>
          </div>
 
          <div className="flex-1 overflow-y-auto custom-scrollbar">
             {conversations?.length === 0 ? (
-                <div className="p-8 text-center text-[var(--text-muted)] text-sm">
+                <div className="p-8 text-center text-(--text-muted) text-sm">
                     No conversations yet. <br/> Visit a profile to start chatting.
                 </div>
             ) : (
@@ -123,12 +123,12 @@ export default function MessagingUI() {
                            key={convo.id}
                            onClick={() => handleSelectConversation(convo.id)}
                            className={clsx(
-                             "p-4 border-b border-[var(--glass-border)] cursor-pointer transition-colors hover:bg-[var(--glass-card-hover)]",
-                             isSelected && "bg-[var(--accent-primary)]/10 border-l-4 border-l-[var(--accent-primary)]"
+                             "p-4 border-b border-(--glass-border) cursor-pointer transition-colors hover:bg-(--glass-card-hover)",
+                             isSelected && "bg-(--accent-primary)/10 border-l-4 border-l-(--accent-primary)"
                            )}
                         >
                             <div className="flex gap-3">
-                                <div className="w-10 h-10 rounded-full bg-[var(--accent-secondary)] flex-shrink-0 flex items-center justify-center overflow-hidden">
+                                <div className="w-10 h-10 rounded-full bg-(--accent-secondary) shrink-0 flex items-center justify-center overflow-hidden">
                                     {otherUser.image ? (
                                         <img src={otherUser.image} alt={otherUser.username} className="w-full h-full object-cover" />
                                     ) : (
@@ -137,12 +137,12 @@ export default function MessagingUI() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-1">
-                                        <span className="font-bold text-[var(--text-primary)] truncate">{otherUser.username}</span>
-                                        <span className="text-[10px] text-[var(--text-muted)]">
+                                        <span className="font-bold text-(--text-primary) truncate">{otherUser.username}</span>
+                                        <span className="text-[10px] text-(--text-muted)">
                                             {lastMsg ? formatDistanceToNow(new Date(lastMsg.createdAt), { addSuffix: false }) : ''}
                                         </span>
                                     </div>
-                                    <p className={clsx("text-sm truncate", isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]")}>
+                                    <p className={clsx("text-sm truncate", isSelected ? "text-(--text-primary)" : "text-(--text-muted)")}>
                                         {lastMsg ? lastMsg.content : <span className="italic">Draft</span>}
                                     </p>
                                 </div>
@@ -156,16 +156,16 @@ export default function MessagingUI() {
 
       {/* --- RIGHT PANE: CHAT WINDOW --- */}
       <div className={clsx(
-        "w-full md:w-2/3 flex flex-col bg-[var(--bg-app)]/30 dark:bg-black/20",
+        "w-full md:w-2/3 flex flex-col bg-(--bg-app)/30 dark:bg-black/20",
         mobileView === 'LIST' ? "hidden md:flex" : "flex"
       )}>
          {selectedConvoId ? (
             <>
                 {/* Header */}
-                <div className="p-4 border-b border-[var(--glass-border)] flex items-center gap-3 bg-[var(--glass-card-hover)] backdrop-blur-sm">
+                <div className="p-4 border-b border-(--glass-border) flex items-center gap-3 bg-(--glass-card-hover) backdrop-blur-xs">
                     <button 
                       onClick={() => setMobileView('LIST')} 
-                      className="md:hidden p-2 -ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      className="md:hidden p-2 -ml-2 text-(--text-muted) hover:text-(--text-primary)"
                     >
                         <ArrowLeft size={20} />
                     </button>
@@ -175,10 +175,10 @@ export default function MessagingUI() {
                         const otherUser = getOtherParticipant(participants)
                         return (
                             <div className="flex items-center gap-3">
-                                 <div className="w-8 h-8 rounded-full bg-[var(--accent-secondary)] flex items-center justify-center overflow-hidden">
+                                 <div className="w-8 h-8 rounded-full bg-(--accent-secondary) flex items-center justify-center overflow-hidden">
                                     {otherUser.image ? <img src={otherUser.image} className="w-full h-full object-cover" /> : <UserIcon size={16} className="text-white"/>}
                                  </div>
-                                 <span className="font-bold text-lg text-[var(--text-primary)]">{otherUser.username}</span>
+                                 <span className="font-bold text-lg text-(--text-primary)">{otherUser.username}</span>
                             </div>
                         )
                     })()}
@@ -187,7 +187,7 @@ export default function MessagingUI() {
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                     {messages?.length === 0 && (
-                        <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] opacity-50">
+                        <div className="h-full flex flex-col items-center justify-center text-(--text-muted) opacity-50">
                             <p>This is the start of your conversation.</p>
                         </div>
                     )}
@@ -202,14 +202,14 @@ export default function MessagingUI() {
                                 
                                 {/* Staff Badge */}
                                 {!isMe && isStaff && (
-                                    <span className="flex items-center gap-1 text-[10px] font-bold text-[var(--status-info)] uppercase tracking-widest mb-1 ml-1">
+                                    <span className="flex items-center gap-1 text-[10px] font-bold text-(--status-info) uppercase tracking-widest mb-1 ml-1">
                                         <ShieldAlert size={10} /> Peake Staff
                                     </span>
                                 )}
 
                                 {/* Bot Badge */}
                                 {!isMe && isBot && (
-                                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 ml-1">
+                                    <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest mb-1 ml-1">
                                         Automated System
                                     </span>
                                 )}
@@ -218,7 +218,7 @@ export default function MessagingUI() {
                                     {!isMe && (
                                         <button 
                                             onClick={() => { setMessageToReport(msg.id); setReportModalOpen(true); }}
-                                            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 p-2 text-[var(--text-muted)] hover:text-[var(--status-error)] transition-all"
+                                            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 p-2 text-(--text-muted) hover:text-(--status-error) transition-all"
                                             title="Report message" aria-label="Report message"
                                         >
                                             <Flag size={14} />
@@ -227,26 +227,26 @@ export default function MessagingUI() {
                                     {isMe && (
                                         <button 
                                             onClick={() => handleDelete(msg.id, msg.type)}
-                                            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 p-2 text-[var(--text-muted)] hover:text-[var(--status-error)] transition-all"
+                                            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 p-2 text-(--text-muted) hover:text-(--status-error) transition-all"
                                             title="Delete message" aria-label="Delete message"
                                         >
                                             <Trash2 size={14} />
                                         </button>
                                     )}
                                     <div className={clsx(
-                                        "p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
+                                        "p-3 rounded-2xl text-sm leading-relaxed shadow-xs",
                                         isMe 
-                                          ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)] rounded-tr-sm" 
+                                          ? "bg-(--btn-primary) text-(--btn-primary-text) rounded-tr-sm" 
                                           : isStaff
-                                          ? "bg-[var(--status-info-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] rounded-tl-sm"
+                                          ? "bg-(--status-info-bg) border border-(--glass-border) text-(--text-primary) rounded-tl-sm"
                                           : isBot
-                                          ? "bg-[var(--table-header-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] italic rounded-tl-sm"
-                                          : "bg-[var(--glass-card)] border border-[var(--glass-border)] text-[var(--text-primary)] rounded-tl-sm"
+                                          ? "bg-(--table-header-bg) border border-(--glass-border) text-(--text-secondary) italic rounded-tl-sm"
+                                          : "bg-(--glass-card) border border-(--glass-border) text-(--text-primary) rounded-tl-sm"
                                     )}>
                                         {msg.content}
                                     </div>
                                 </div>
-                                <span className={clsx("text-[10px] text-[var(--text-muted)] mt-1", isMe ? "mr-1" : "ml-1")}>
+                                <span className={clsx("text-[10px] text-(--text-muted) mt-1", isMe ? "mr-1" : "ml-1")}>
                                    {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
                                 </span>
                             </div>
@@ -256,19 +256,19 @@ export default function MessagingUI() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-[var(--glass-border)] bg-[var(--glass-card-hover)]">
+                <div className="p-4 border-t border-(--glass-border) bg-(--glass-card-hover)">
                     <div className="flex gap-2">
                         <input aria-label="Write a message" 
                            value={inputText}
                            onChange={(e) => setInputText(e.target.value)}
                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                            placeholder="Write a message..."
-                           className="flex-1 bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-full px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+                           className="flex-1 bg-(--glass-card) border border-(--glass-border) rounded-full px-4 py-3 text-sm focus:outline-hidden focus:border-(--accent-primary) transition-colors"
                         />
                         <button 
                            onClick={handleSend}
                            disabled={!inputText.trim()}
-                           className="w-11 h-11 rounded-full bg-[var(--btn-primary)] flex items-center justify-center text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                           className="w-11 h-11 rounded-full bg-(--btn-primary) flex items-center justify-center text-(--btn-primary-text) hover:bg-(--btn-primary-hover) transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Send size={18} />
                         </button>
@@ -276,8 +276,8 @@ export default function MessagingUI() {
                 </div>
             </>
          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] opacity-50 p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-[var(--glass-card-hover)] flex items-center justify-center mb-4">
+            <div className="h-full flex flex-col items-center justify-center text-(--text-muted) opacity-50 p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-(--glass-card-hover) flex items-center justify-center mb-4">
                     <Send size={32} />
                 </div>
                 <h3 className="text-lg font-bold">Your Messages</h3>

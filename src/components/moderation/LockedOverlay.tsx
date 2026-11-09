@@ -19,7 +19,7 @@ export default function LockedOverlay({
     return (
       <button 
         onClick={() => setIsVisible(true)}
-        className="absolute top-2 right-2 z-[45] p-2 bg-amber-500/20 hover:bg-amber-500/40 text-amber-500 rounded-full backdrop-blur-sm transition-all border border-amber-500/30 group"
+        className="absolute top-2 right-2 z-45 p-2 bg-amber-500/20 hover:bg-amber-500/40 text-amber-500 rounded-full backdrop-blur-xs transition-all border border-amber-500/30 group"
         title="Show Review Status"
       >
         <ShieldAlert size={16} className="group-hover:scale-110 transition-transform" />
@@ -29,7 +29,7 @@ export default function LockedOverlay({
 
   return (
     <div className={clsx(
-      "absolute inset-0 z-[40] flex items-center justify-center p-6 text-center backdrop-blur-md bg-black/60 transition-all duration-300 rounded-2xl",
+      "absolute inset-0 z-40 flex items-center justify-center p-6 text-center backdrop-blur-md bg-black/60 transition-all duration-300 rounded-2xl",
       className
     )}>
       <div className="bg-zinc-900/95 border border-amber-500/30 rounded-2xl p-6 shadow-2xl max-w-sm animate-in zoom-in-95 duration-200">

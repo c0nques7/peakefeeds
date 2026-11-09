@@ -16,8 +16,8 @@ export default async function ConfirmAgePage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Enter your date of birth</h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">We only keep whether you meet our age requirement, not the date itself.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">Enter your date of birth</h1>
+        <p className="mt-1 text-sm text-(--text-muted)">We only keep whether you meet our age requirement, not the date itself.</p>
       </div>
       <ConfirmAgeForm />
     </>

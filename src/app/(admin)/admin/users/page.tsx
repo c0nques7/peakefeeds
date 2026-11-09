@@ -24,8 +24,8 @@ export default async function AdminUsersPage({
       {/* HEADER & FILTERS */}
       <div className="flex flex-col md:flex-row gap-4 justify-between md:items-end">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">User Registry</h1>
-          <p className="text-[var(--text-muted)]">Manage roles, permissions, and bans.</p>
+          <h1 className="text-2xl font-bold text-(--text-primary)">User Registry</h1>
+          <p className="text-(--text-muted)">Manage roles, permissions, and bans.</p>
         </div>
 
         {/* Action Area: Create Button + Search Form */}
@@ -39,19 +39,19 @@ export default async function AdminUsersPage({
             {/* Search & Filter Form (Responsive Layout from Script A) */}
             <form className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
               <div className="relative group w-full md:w-auto">
-                <Search className="absolute left-3 top-2.5 text-[var(--text-muted)] group-focus-within:text-[var(--accent-primary)]" size={18} />
+                <Search className="absolute left-3 top-2.5 text-(--text-muted) group-focus-within:text-(--accent-primary)" size={18} />
                 <input
                   name="q"
                   defaultValue={query}
                   placeholder="Search users..."
-                  className="pl-10 pr-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] w-full md:w-64 transition-all"
+                  className="pl-10 pr-4 py-2 bg-(--glass-panel) border border-(--glass-border) rounded-lg text-(--text-primary) placeholder:text-(--text-muted) focus:outline-hidden focus:border-(--accent-primary) w-full md:w-64 transition-all"
                 />
               </div>
               
               <select 
                 name="role" 
                 defaultValue={role}
-                className="px-4 py-2 bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] appearance-none cursor-pointer w-full md:w-auto"
+                className="px-4 py-2 bg-(--glass-panel) border border-(--glass-border) rounded-lg text-(--text-primary) focus:outline-hidden focus:border-(--accent-primary) appearance-none cursor-pointer w-full md:w-auto"
               >
                 <option value="ALL">All Roles</option>
                 {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
@@ -75,14 +75,14 @@ export default async function AdminUsersPage({
               <th className={`p-4 ${styles.tableHeader} text-right`}>Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--glass-border)]">
+          <tbody className="divide-y divide-(--glass-border)">
             {users.map((user) => (
               <tr key={user.id} className={styles.tableRow}>
                 {/* Identity */}
                 <td className="p-4">
                   <div className="flex flex-col">
-                    <span className="font-medium text-[var(--text-primary)]">@{user.username || "Anon"}</span>
-                    <span className="text-xs text-[var(--text-muted)] font-mono">{user.email}</span>
+                    <span className="font-medium text-(--text-primary)">@{user.username || "Anon"}</span>
+                    <span className="text-xs text-(--text-muted) font-mono">{user.email}</span>
                   </div>
                 </td>
 
@@ -93,14 +93,14 @@ export default async function AdminUsersPage({
                     ${user.role === 'ADMIN' ? styles.badgeRed : 
                       user.role === 'MODERATOR' ? styles.badgeGold : 
                       user.role === 'BUSINESS' ? styles.badgeBlue : 
-                      'bg-[var(--glass-card-hover)] text-[var(--text-secondary)] border-[var(--glass-border)]'}
+                      'bg-(--glass-card-hover) text-(--text-secondary) border-(--glass-border)'}
                   `}>
                     {user.role}
                   </span>
                 </td>
 
                 {/* Stats (Hidden on Mobile) */}
-                <td className="p-4 text-sm text-[var(--text-muted)] hidden md:table-cell">
+                <td className="p-4 text-sm text-(--text-muted) hidden md:table-cell">
                   <div>{user._count.posts} Posts</div>
                   <div className="text-xs opacity-70">Joined {new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
                 </td>
@@ -119,7 +119,7 @@ export default async function AdminUsersPage({
                     )}
                     
                     {user._count.reportsAgainst > 0 && (
-                      <span className="text-xs text-[var(--status-warning)] font-mono ml-2 flex items-center gap-1">
+                      <span className="text-xs text-(--status-warning) font-mono ml-2 flex items-center gap-1">
                         <Shield size={12} /> {user._count.reportsAgainst} Reports
                       </span>
                     )}
@@ -130,7 +130,7 @@ export default async function AdminUsersPage({
                 <td className="p-4 text-right">
                   <Link 
                     href={`/admin/users/${user.id}`}
-                    className="text-sm font-medium text-[var(--accent-primary)] hover:text-[var(--text-primary)] transition-colors"
+                    className="text-sm font-medium text-(--accent-primary) hover:text-(--text-primary) transition-colors"
                   >
                     Manage
                   </Link>
@@ -141,7 +141,7 @@ export default async function AdminUsersPage({
         </table>
         
         {users.length === 0 && (
-          <div className="p-12 text-center text-[var(--text-muted)]">
+          <div className="p-12 text-center text-(--text-muted)">
              <Filter size={48} className="mx-auto mb-4 opacity-20" />
              <p>No users found matching filters.</p>
           </div>
@@ -149,14 +149,14 @@ export default async function AdminUsersPage({
       </div>
 
       {/* PAGINATION */}
-      <div className="flex justify-between items-center text-sm text-[var(--text-muted)]">
+      <div className="flex justify-between items-center text-sm text-(--text-muted)">
         <span>Page {page} of {totalPages}</span>
         <div className="flex gap-2">
            {page > 1 && (
-             <Link href={`?page=${page - 1}&q=${query}&role=${role}`} className="px-4 py-2 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] transition-colors">Previous</Link>
+             <Link href={`?page=${page - 1}&q=${query}&role=${role}`} className="px-4 py-2 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) transition-colors">Previous</Link>
            )}
            {page < totalPages && (
-             <Link href={`?page=${page + 1}&q=${query}&role=${role}`} className="px-4 py-2 rounded-lg bg-[var(--glass-panel)] hover:bg-[var(--glass-card-hover)] transition-colors">Next</Link>
+             <Link href={`?page=${page + 1}&q=${query}&role=${role}`} className="px-4 py-2 rounded-lg bg-(--glass-panel) hover:bg-(--glass-card-hover) transition-colors">Next</Link>
            )}
         </div>
       </div>

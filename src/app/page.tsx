@@ -45,7 +45,7 @@ function WaitlistForm() {
             <form onSubmit={handleSubmit}>
                 <div className="relative group flex items-center">
                     <div className={styles.inputGroup}>
-                        <div className="pl-2 text-[var(--text-muted)] group-focus-within:text-[var(--accent-primary)] transition-colors">
+                        <div className="pl-2 text-(--text-muted) group-focus-within:text-(--accent-primary) transition-colors">
                             <Mail size={20} />
                         </div>
                         <input
@@ -69,7 +69,7 @@ function WaitlistForm() {
                 </div>
                 
                 {message && (
-                    <div className={`mt-3 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2 ${status === 'success' ? 'text-[var(--status-success)]' : 'text-[var(--status-error)]'}`}>
+                    <div className={`mt-3 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2 ${status === 'success' ? 'text-(--status-success)' : 'text-(--status-error)'}`}>
                         {status === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
                         {message}
                     </div>
@@ -77,10 +77,10 @@ function WaitlistForm() {
             </form>
 
             <div className="mt-6 flex items-center gap-4 text-sm pl-2">
-                <span className="text-[var(--text-muted)]">Already have an account?</span>
+                <span className="text-(--text-muted)">Already have an account?</span>
                 <Link 
                     href="/signin" 
-                    className="flex items-center gap-2 font-bold text-[var(--accent-primary)] hover:underline hover:text-[var(--accent-secondary)] transition-colors"
+                    className="flex items-center gap-2 font-bold text-(--accent-primary) hover:underline hover:text-(--accent-secondary) transition-colors"
                 >
                     <LogIn size={16} />
                     Member Login
@@ -100,19 +100,19 @@ function DonationFooter() {
 
     return (
         <div className="w-full flex flex-col items-center gap-3">
-            <p className="text-sm font-medium text-[var(--text-muted)]">
+            <p className="text-sm font-medium text-(--text-muted)">
                 Built by independent developers. Support the project:
             </p>
             <button
                 onClick={handleCopy}
                 aria-label={copied ? "Wallet address copied" : `Copy the project's wallet address ${DEV_WALLET}`}
-                className="group flex items-center gap-3 px-4 h-10 rounded-[var(--radius-pill)] bg-[var(--glass-card)] border border-[var(--glass-border)] hover:border-[var(--accent-primary)] transition-colors"
+                className="group flex items-center gap-3 px-4 h-10 rounded-(--radius-pill) bg-(--glass-card) border border-(--glass-border) hover:border-(--accent-primary) transition-colors"
             >
-                <span className="font-mono text-xs sm:text-sm text-[var(--text-secondary)]">
+                <span className="font-mono text-xs sm:text-sm text-(--text-secondary)">
                     {DEV_WALLET.slice(0, 6)}…{DEV_WALLET.slice(-4)}
                 </span>
-                {copied ? <Check size={14} className="text-[var(--status-success)]" aria-hidden="true" /> : <Copy size={14} className="opacity-60 group-hover:opacity-100 transition-opacity" aria-hidden="true" />}
-                <span className="text-xs text-[var(--text-muted)]">{copied ? 'Copied' : 'Copy'}</span>
+                {copied ? <Check size={14} className="text-(--status-success)" aria-hidden="true" /> : <Copy size={14} className="opacity-60 group-hover:opacity-100 transition-opacity" aria-hidden="true" />}
+                <span className="text-xs text-(--text-muted)">{copied ? 'Copied' : 'Copy'}</span>
             </button>
         </div>
     );
@@ -217,10 +217,10 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className={styles.footer}>
         <DonationFooter />
-        <div className="text-[var(--text-muted)] text-xs mt-8 flex flex-wrap justify-center gap-x-3 gap-y-1">
+        <div className="text-(--text-muted) text-xs mt-8 flex flex-wrap justify-center gap-x-3 gap-y-1">
             <span>© {new Date().getFullYear()} PeakeFeeds</span>
-            <Link href="/terms" className="hover:text-[var(--text-primary)]">Terms</Link>
-            <Link href="/privacy" className="hover:text-[var(--text-primary)]">Privacy</Link>
+            <Link href="/terms" className="hover:text-(--text-primary)">Terms</Link>
+            <Link href="/privacy" className="hover:text-(--text-primary)">Privacy</Link>
         </div>
       </footer>
     </div>

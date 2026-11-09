@@ -48,8 +48,8 @@ export function OEmbedPlayer({ url, className, fallback }: OEmbedPlayerProps) {
 
   if (loading) {
     return (
-      <div className={clsx("w-full h-32 flex items-center justify-center bg-black/5 rounded-xl border border-[var(--glass-border)]", className)}>
-        <Loader2 className="animate-spin text-[var(--text-muted)]" />
+      <div className={clsx("w-full h-32 flex items-center justify-center bg-black/5 rounded-xl border border-(--glass-border)", className)}>
+        <Loader2 className="animate-spin text-(--text-muted)" />
       </div>
     );
   }

@@ -196,7 +196,7 @@ export default function SupportQueue() {
       case 'HIGH': return "text-orange-500 border-orange-500/50 bg-orange-500/10";
       case 'MEDIUM': return "text-yellow-500 border-yellow-500/50 bg-yellow-500/10";
       case 'LOW': return "text-blue-400 border-blue-500/50 bg-blue-500/10";
-      default: return "text-[var(--text-muted)] border-white/10";
+      default: return "text-(--text-muted) border-white/10";
     }
   }
 
@@ -204,22 +204,22 @@ export default function SupportQueue() {
     <div className={clsx(styles.glassPanel, "h-[calc(100vh-200px)] flex flex-col overflow-hidden")}>
       
       {/* Search & Filters Bar */}
-      <div className="p-4 border-b border-[var(--glass-border)] bg-black/5 flex flex-wrap gap-4 items-center">
+      <div className="p-4 border-b border-(--glass-border) bg-black/5 flex flex-wrap gap-4 items-center">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted)" size={16} />
           <input 
             type="text" 
             placeholder="Search tickets..."
-            className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+            className="w-full bg-(--input-bg) border border-(--glass-border) rounded-lg pl-10 pr-4 py-2 text-sm text-(--text-primary) focus:outline-hidden focus:border-(--accent-primary) transition-colors"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1 md:pb-0">
-          <Filter size={16} className="text-[var(--text-muted)] flex-shrink-0" />
+          <Filter size={16} className="text-(--text-muted) shrink-0" />
           <select 
-            className="bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
+            className="bg-(--input-bg) border border-(--glass-border) rounded-lg px-3 py-2 text-sm text-(--text-primary) focus:outline-hidden"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
@@ -231,7 +231,7 @@ export default function SupportQueue() {
           </select>
 
           <select 
-            className="bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
+            className="bg-(--input-bg) border border-(--glass-border) rounded-lg px-3 py-2 text-sm text-(--text-primary) focus:outline-hidden"
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
           >
@@ -248,11 +248,11 @@ export default function SupportQueue() {
         
         {/* Ticket List (Leftmost) */}
         <div className={clsx(
-          "border-r border-[var(--glass-border)] overflow-y-auto bg-[var(--glass-card-hover)] w-full lg:w-1/4 transition-all",
+          "border-r border-(--glass-border) overflow-y-auto bg-(--glass-card-hover) w-full lg:w-1/4 transition-all",
           selectedTicketId ? "hidden lg:block" : "block"
         )}>
           {filteredTickets.length === 0 ? (
-            <div className="p-8 text-center text-[var(--text-muted)]">
+            <div className="p-8 text-center text-(--text-muted)">
               <p className="text-sm">No tickets found.</p>
             </div>
           ) : (
@@ -261,26 +261,26 @@ export default function SupportQueue() {
                 key={ticket.id}
                 onClick={() => setSelectedTicketId(ticket.id)}
                 className={clsx(
-                  "p-4 border-b border-[var(--glass-border)] cursor-pointer transition-colors hover:bg-black/5 relative",
+                  "p-4 border-b border-(--glass-border) cursor-pointer transition-colors hover:bg-black/5 relative",
                   selectedTicketId === ticket.id ? "bg-black/10" : "opacity-90 dark:opacity-70"
                 )}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-mono text-[10px] text-[var(--text-muted)]">#{ticket.id.slice(-8)}</span>
-                  <span className={clsx("text-[10px] px-1.5 py-0.5 rounded border font-bold uppercase", getPriorityColor(ticket.priority))}>
+                  <span className="font-mono text-[10px] text-(--text-muted)">#{ticket.id.slice(-8)}</span>
+                  <span className={clsx("text-[10px] px-1.5 py-0.5 rounded-sm border font-bold uppercase", getPriorityColor(ticket.priority))}>
                     {ticket.priority}
                   </span>
                 </div>
-                <p className="text-sm text-[var(--text-primary)] font-medium line-clamp-1 mb-1">
+                <p className="text-sm text-(--text-primary) font-medium line-clamp-1 mb-1">
                   {ticket.messages[ticket.messages.length - 1]?.text}
                 </p>
                 <div className="flex justify-between items-center mt-2">
-                  <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)]">
+                  <div className="flex items-center gap-2 text-[10px] text-(--text-muted)">
                     <Clock size={10} />
                     <span>{ticket.updatedAt ? formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true }) : 'Just now'}</span>
                   </div>
                   {ticket.assignee && (
-                    <div className="flex items-center gap-1 text-[10px] text-[var(--accent-primary)]">
+                    <div className="flex items-center gap-1 text-[10px] text-(--accent-primary)">
                       <UserIcon size={10} />
                       <span>{ticket.assignee.username}</span>
                     </div>
@@ -293,7 +293,7 @@ export default function SupportQueue() {
 
         {/* Workspace (Active Ticket View) */}
         <div className={clsx(
-          "bg-[var(--glass-card-hover)] relative w-full lg:flex-1 flex overflow-hidden",
+          "bg-(--glass-card-hover) relative w-full lg:flex-1 flex overflow-hidden",
           selectedTicketId ? "flex" : "hidden lg:flex"
         )}>
           {currentTicket ? (
@@ -301,16 +301,16 @@ export default function SupportQueue() {
               {/* Main Workspace Feed (Messaging) */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-[var(--glass-border)] flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-[var(--glass-card)]">
+                <div className="p-4 border-b border-(--glass-border) flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-(--glass-card)">
                   <div className="flex gap-4 items-center">
-                    <button onClick={() => setSelectedTicketId(null)} className="lg:hidden p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] mr-2"><ArrowLeft size={20}/></button>
+                    <button onClick={() => setSelectedTicketId(null)} className="lg:hidden p-1 text-(--text-muted) hover:text-(--text-primary) mr-2"><ArrowLeft size={20}/></button>
                     <div className="flex gap-2 items-center">
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Status</label>
+                        <label className="block text-[10px] uppercase tracking-wider text-(--text-muted) mb-1">Status</label>
                         <select 
                           value={currentTicket.status}
                           onChange={(e) => handleUpdateStatus(e.target.value as SupportStatus)}
-                          className="bg-[var(--glass-card-hover)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-[var(--text-primary)]"
+                          className="bg-(--glass-card-hover) border border-(--glass-border) rounded-sm px-2 py-1 text-xs text-(--text-primary)"
                         >
                           <option value="OPEN">Open</option>
                           <option value="IN_PROGRESS">In Progress</option>
@@ -319,11 +319,11 @@ export default function SupportQueue() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Priority</label>
+                        <label className="block text-[10px] uppercase tracking-wider text-(--text-muted) mb-1">Priority</label>
                         <select 
                           value={currentTicket.priority}
                           onChange={(e) => handleUpdatePriority(e.target.value as SupportPriority)}
-                          className={clsx("bg-[var(--glass-card-hover)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs font-bold", getPriorityColor(currentTicket.priority))}
+                          className={clsx("bg-(--glass-card-hover) border border-(--glass-border) rounded-sm px-2 py-1 text-xs font-bold", getPriorityColor(currentTicket.priority))}
                         >
                           <option value="LOW">Low</option>
                           <option value="MEDIUM">Medium</option>
@@ -332,11 +332,11 @@ export default function SupportQueue() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Assignee</label>
+                        <label className="block text-[10px] uppercase tracking-wider text-(--text-muted) mb-1">Assignee</label>
                         <select 
                           value={currentTicket.assigneeId || ''}
                           onChange={(e) => handleAssign(e.target.value || null)}
-                          className="bg-[var(--glass-card-hover)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-[var(--text-primary)] max-w-[100px]"
+                          className="bg-(--glass-card-hover) border border-(--glass-border) rounded-sm px-2 py-1 text-xs text-(--text-primary) max-w-[100px]"
                         >
                           <option value="">Unassigned</option>
                           {staff.map(s => (
@@ -392,14 +392,14 @@ export default function SupportQueue() {
                           // User-Facing Note Style
                           isUserFacingNote ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-100 rounded-xl rounded-tr-sm" :
                           // Bot Style
-                          isBot ? "bg-[var(--glass-card-hover)] text-[var(--text-secondary)] border border-[var(--glass-border)] italic rounded-2xl rounded-tl-sm" :
+                          isBot ? "bg-(--glass-card-hover) text-(--text-secondary) border border-(--glass-border) italic rounded-2xl rounded-tl-sm" :
                           // User Style
-                          "bg-[var(--glass-card)] text-[var(--text-primary)] border border-[var(--glass-border)] rounded-2xl rounded-tl-sm shadow-sm"
+                          "bg-(--glass-card) text-(--text-primary) border border-(--glass-border) rounded-2xl rounded-tl-sm shadow-xs"
                         )}>
                            {msg.text}
                         </div>
                         
-                        <span className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-mono px-1">
+                        <span className="text-[10px] text-(--text-muted) mt-1 uppercase font-mono px-1">
                           {msg.sender} • {formatDistanceToNow(msg.timestamp, { addSuffix: true })}
                         </span>
                       </div>
@@ -408,7 +408,7 @@ export default function SupportQueue() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 bg-[var(--input-bg)] border-t border-[var(--glass-border)]">
+                <div className="p-4 bg-(--input-bg) border-t border-(--glass-border)">
                   <div className="flex items-center gap-4 mb-3">
                     <button 
                       onClick={() => { setIsDM(false); setIsInternalNote(true); }}
@@ -416,7 +416,7 @@ export default function SupportQueue() {
                         "text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all border flex items-center gap-2", 
                         !isDM && isInternalNote 
                           ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.1)]" 
-                          : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5"
+                          : "border-transparent text-(--text-muted) hover:text-(--text-primary) hover:bg-black/5"
                       )}
                     >
                       <Lock size={12} /> Internal Note
@@ -427,7 +427,7 @@ export default function SupportQueue() {
                         "text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all border flex items-center gap-2", 
                         !isDM && !isInternalNote 
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]" 
-                          : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5"
+                          : "border-transparent text-(--text-muted) hover:text-(--text-primary) hover:bg-black/5"
                       )}
                     >
                       <Eye size={12} /> Public Note
@@ -439,10 +439,10 @@ export default function SupportQueue() {
                       className={clsx(
                         "text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all border flex items-center gap-2", 
                         !isAssigned 
-                          ? "opacity-30 cursor-not-allowed border-transparent text-[var(--text-muted)]"
+                          ? "opacity-30 cursor-not-allowed border-transparent text-(--text-muted)"
                           : isDM 
                              ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.1)]" 
-                             : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5"
+                             : "border-transparent text-(--text-muted) hover:text-(--text-primary) hover:bg-black/5"
                       )}
                     >
                       {isAssigned ? <Send size={12} /> : <AlertCircle size={12} />} 
@@ -452,7 +452,7 @@ export default function SupportQueue() {
                   <div className="flex gap-2">
                     <input 
                       className={clsx(
-                        "flex-1 bg-[var(--glass-card-hover)] border rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none transition-all placeholder:text-[var(--text-muted)] dark:placeholder:text-white/20",
+                        "flex-1 bg-(--glass-card-hover) border rounded-xl px-4 py-3 text-sm text-(--text-primary) focus:outline-hidden transition-all placeholder:text-(--text-muted) dark:placeholder:text-white/20",
                         isDM 
                           ? "border-blue-500/30 focus:border-blue-500" 
                           : isInternalNote
@@ -484,42 +484,42 @@ export default function SupportQueue() {
               </div>
 
               {/* Workspace Inner Sidebar (Internal Notes & User Details) */}
-              <div className="w-72 border-l border-[var(--glass-border)] bg-[var(--glass-card-hover)] flex flex-col overflow-hidden shrink-0">
-                <div className="p-4 border-b border-[var(--glass-border)] flex items-center justify-between">
-                   <h4 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Ticket Context</h4>
+              <div className="w-72 border-l border-(--glass-border) bg-(--glass-card-hover) flex flex-col overflow-hidden shrink-0">
+                <div className="p-4 border-b border-(--glass-border) flex items-center justify-between">
+                   <h4 className="text-xs font-bold text-(--text-muted) uppercase tracking-widest">Ticket Context</h4>
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
                    {/* 1. USER DETAILS */}
                    <div>
-                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-[var(--text-muted)] mb-3">
+                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-(--text-muted) mb-3">
                         <UserPlus size={12} /> User Profile
                       </label>
-                      <div className="p-3 bg-[var(--glass-card-hover)] rounded-lg border border-[var(--glass-border)] space-y-3">
+                      <div className="p-3 bg-(--glass-card-hover) rounded-lg border border-(--glass-border) space-y-3">
                         {currentTicket.user ? (
                           <>
                             <div>
-                              <p className="text-xs font-bold text-[var(--text-primary)]">{currentTicket.user.name || 'Unnamed User'}</p>
-                              <p className="text-[10px] text-[var(--text-muted)]">@{currentTicket.user.username}</p>
+                              <p className="text-xs font-bold text-(--text-primary)">{currentTicket.user.name || 'Unnamed User'}</p>
+                              <p className="text-[10px] text-(--text-muted)">@{currentTicket.user.username}</p>
                             </div>
                             
                             {currentTicket.user.email && (
                               <div>
-                                <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Email</p>
-                                <p className="text-[10px] text-[var(--text-secondary)] font-mono break-all">{currentTicket.user.email}</p>
+                                <p className="text-[9px] uppercase tracking-wider text-(--text-muted) mb-0.5">Email</p>
+                                <p className="text-[10px] text-(--text-secondary) font-mono break-all">{currentTicket.user.email}</p>
                               </div>
                             )}
 
                             {currentTicket.user.walletAddress && (
                               <div>
-                                <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Wallet</p>
-                                <p className="text-[10px] text-[var(--status-success)] font-mono break-all">{currentTicket.user.walletAddress}</p>
+                                <p className="text-[9px] uppercase tracking-wider text-(--text-muted) mb-0.5">Wallet</p>
+                                <p className="text-[10px] text-(--status-success) font-mono break-all">{currentTicket.user.walletAddress}</p>
                               </div>
                             )}
 
                             <div>
-                               <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Joined</p>
-                               <p className="text-[10px] text-[var(--text-muted)]">
+                               <p className="text-[9px] uppercase tracking-wider text-(--text-muted) mb-0.5">Joined</p>
+                               <p className="text-[10px] text-(--text-muted)">
                                  {new Date(currentTicket.user.createdAt).toLocaleDateString()} 
                                  <span className="opacity-50 ml-1">({formatDistanceToNow(new Date(currentTicket.user.createdAt), { addSuffix: true })})</span>
                                </p>
@@ -527,26 +527,26 @@ export default function SupportQueue() {
                           </>
                         ) : (
                           <div>
-                            <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Guest User</p>
-                            <p className="text-[10px] text-[var(--text-muted)]">No registered account associated with this ticket.</p>
+                            <p className="text-xs font-bold text-(--text-primary) mb-1">Guest User</p>
+                            <p className="text-[10px] text-(--text-muted)">No registered account associated with this ticket.</p>
                           </div>
                         )}
                       </div>
                    </div>
 
                    {/* 2. STAFF DISCUSSION LOG */}
-                   <div className="pt-4 border-t border-[var(--glass-border)]">
-                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-[var(--text-muted)] mb-3">
+                   <div className="pt-4 border-t border-(--glass-border)">
+                      <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-(--text-muted) mb-3">
                         <MoreVertical size={12} /> Staff Discussion Log
                       </label>
                       <div className="space-y-3 mt-3">
                          {internalNoteFeed.length === 0 ? (
-                            <p className="text-[10px] text-[var(--text-muted)] italic">No staff notes yet.</p>
+                            <p className="text-[10px] text-(--text-muted) italic">No staff notes yet.</p>
                          ) : (
                             internalNoteFeed.map((note, idx) => (
-                               <div key={idx} className="p-3 bg-[var(--glass-card-hover)] border border-[var(--glass-border)] rounded-lg text-xs">
-                                  <p className="text-[var(--text-secondary)] leading-relaxed">{note.text}</p>
-                                  <div className="mt-2 flex justify-between items-center text-[9px] text-[var(--text-muted)] font-mono">
+                               <div key={idx} className="p-3 bg-(--glass-card-hover) border border-(--glass-border) rounded-lg text-xs">
+                                  <p className="text-(--text-secondary) leading-relaxed">{note.text}</p>
+                                  <div className="mt-2 flex justify-between items-center text-[9px] text-(--text-muted) font-mono">
                                      <span>{note.senderInfo?.username ? `@${note.senderInfo.username}` : 'Staff Note'}</span>
                                      <span>{formatDistanceToNow(note.timestamp, { addSuffix: true })}</span>
                                   </div>
@@ -559,7 +559,7 @@ export default function SupportQueue() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-muted)] opacity-30">
+            <div className="flex-1 flex flex-col items-center justify-center text-(--text-muted) opacity-30">
               <MessageSquare size={64} className="mb-4 stroke-[1px]" />
               <p className="text-lg font-light tracking-wide">Select a ticket from the queue</p>
             </div>

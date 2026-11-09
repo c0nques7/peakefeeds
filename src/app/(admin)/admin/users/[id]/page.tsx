@@ -28,7 +28,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <Link 
         href="/admin/users" 
-        className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+        className="flex items-center gap-2 text-(--text-muted) hover:text-(--text-primary) transition-colors"
       >
         <ArrowLeft size={16} /> Back to Registry
       </Link>
@@ -36,15 +36,15 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-[var(--glass-panel)] flex items-center justify-center text-3xl font-bold text-[var(--accent-primary)] border border-[var(--glass-border)]">
+          <div className="w-20 h-20 rounded-full bg-(--glass-panel) flex items-center justify-center text-3xl font-bold text-(--accent-primary) border border-(--glass-border)">
             {user.username?.[0]?.toUpperCase() || "?"}
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+            <h1 className="text-3xl font-bold text-(--text-primary)">
               {user.name ? `${user.name} (@${user.username})` : `@${user.username || "Anonymous"}`}
             </h1>
-            <div className="flex items-center gap-2 mt-2 text-xs font-mono text-[var(--text-muted)]">
-              <span className="px-2 py-0.5 rounded bg-[var(--glass-panel)] border border-[var(--glass-border)]">
+            <div className="flex items-center gap-2 mt-2 text-xs font-mono text-(--text-muted)">
+              <span className="px-2 py-0.5 rounded-sm bg-(--glass-panel) border border-(--glass-border)">
                 ID: {user.id}
               </span>
               <span>Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
@@ -64,14 +64,14 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           
           {/* Permissions Card */}
           <div className={styles.glassPanel}>
-            <div className="p-4 border-b border-[var(--glass-border)]">
-              <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <Shield size={18} className="text-[var(--accent-primary)]" />
+            <div className="p-4 border-b border-(--glass-border)">
+              <h3 className="font-bold text-(--text-primary) flex items-center gap-2">
+                <Shield size={18} className="text-(--accent-primary)" />
                 Permissions
               </h3>
             </div>
             <div className="p-6">
-              <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Global Role</label>
+              <label className="block text-sm font-medium text-(--text-muted) mb-2">Global Role</label>
               <UserRoleSelector userId={user.id} currentRole={user.role} />
             </div>
           </div>
@@ -81,8 +81,8 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
           {/* Security & Access Card */}
           <div className={styles.glassPanel}>
-            <div className="p-4 border-b border-[var(--glass-border)]">
-              <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <div className="p-4 border-b border-(--glass-border)">
+              <h3 className="font-bold text-(--text-primary) flex items-center gap-2">
                 <Lock size={18} className="text-blue-400" />
                 Security & Access
               </h3>
@@ -90,19 +90,19 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
             <div className="p-4 space-y-4">
                {/* 1. Account Status (Ban Button) */}
                <div className="space-y-2">
-                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Account Status</label>
+                 <label className="text-xs font-bold text-(--text-muted) uppercase">Account Status</label>
                  <BanButton userId={user.id} isBanned={user.isBanned} />
                </div>
 
                {/* 2. Password Reset */}
-               <div className="space-y-2 pt-2 border-t border-[var(--glass-border)]">
-                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase">Recovery</label>
+               <div className="space-y-2 pt-2 border-t border-(--glass-border)">
+                 <label className="text-xs font-bold text-(--text-muted) uppercase">Recovery</label>
                  <ResetPasswordButton userId={user.id} />
                </div>
 
                {/* 2. 🟢 Manual Email Triggers (Debug Tools) */}
-               <div className="space-y-2 pt-2 border-t border-[var(--glass-border)]">
-                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase flex items-center gap-2">
+               <div className="space-y-2 pt-2 border-t border-(--glass-border)">
+                 <label className="text-xs font-bold text-(--text-muted) uppercase flex items-center gap-2">
                     <Mail size={12} /> Email Tools (Debug)
                  </label>
                  <EmailTriggers userId={user.id} />
@@ -112,20 +112,20 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
           {/* Risk Profile Card */}
           <div className={styles.glassPanel}>
-            <div className="p-4 border-b border-[var(--glass-border)]">
-              <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <div className="p-4 border-b border-(--glass-border)">
+              <h3 className="font-bold text-(--text-primary) flex items-center gap-2">
                 <AlertTriangle size={18} className="text-orange-400" />
                 Risk Profile
               </h3>
             </div>
             <div className="p-6 space-y-4">
                <div className="flex justify-between items-center">
-                 <span className="text-sm text-[var(--text-muted)]">Reports Against</span>
-                 <span className="text-[var(--text-primary)] font-mono">{user._count.reportsAgainst}</span>
+                 <span className="text-sm text-(--text-muted)">Reports Against</span>
+                 <span className="text-(--text-primary) font-mono">{user._count.reportsAgainst}</span>
                </div>
                <div className="flex justify-between items-center">
-                 <span className="text-sm text-[var(--text-muted)]">Active Strikes</span>
-                 <span className="text-[var(--text-primary)] font-mono">{user.strikeCount}</span>
+                 <span className="text-sm text-(--text-muted)">Active Strikes</span>
+                 <span className="text-(--text-primary) font-mono">{user.strikeCount}</span>
                </div>
             </div>
           </div>
@@ -136,29 +136,29 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           <ActivityLog activity={activity as any} />
 
           <div className={styles.glassPanel}>
-            <div className="p-4 border-b border-[var(--glass-border)]">
-              <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <div className="p-4 border-b border-(--glass-border)">
+              <h3 className="font-bold text-(--text-primary) flex items-center gap-2">
                 <Calendar size={18} className="text-blue-400" />
                 Penalty History
               </h3>
             </div>
             <div className="p-0">
               {user.penaltiesReceived.length === 0 ? (
-                <div className="p-8 text-center text-[var(--text-muted)]">
+                <div className="p-8 text-center text-(--text-muted)">
                   <p>Clean record. No penalties found.</p>
                 </div>
               ) : (
                 <table className="w-full text-left">
-                  <thead className="bg-[var(--glass-panel)] text-xs uppercase text-[var(--text-muted)]">
+                  <thead className="bg-(--glass-panel) text-xs uppercase text-(--text-muted)">
                     <tr>
                       <th className="p-4">Type</th>
                       <th className="p-4">Reason</th>
                       <th className="p-4">Date</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--glass-border)]">
+                  <tbody className="divide-y divide-(--glass-border)">
                     {user.penaltiesReceived.map((p) => (
-                      <tr key={p.id} className="hover:bg-[var(--glass-card-hover)]">
+                      <tr key={p.id} className="hover:bg-(--glass-card-hover)">
                         <td className="p-4">
                           <span className={`text-xs font-bold px-2 py-1 rounded border 
                             ${p.type === 'PERMANENT_BAN' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 
@@ -166,8 +166,8 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
                             {p.type}
                           </span>
                         </td>
-                        <td className="p-4 text-sm text-[var(--text-muted)]">{p.reason}</td>
-                        <td className="p-4 text-sm text-[var(--text-muted)] whitespace-nowrap">
+                        <td className="p-4 text-sm text-(--text-muted)">{p.reason}</td>
+                        <td className="p-4 text-sm text-(--text-muted) whitespace-nowrap">
                           {new Date(p.createdAt).toLocaleDateString()}
                         </td>
                       </tr>

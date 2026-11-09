@@ -34,7 +34,7 @@ function formatTextWithLinks(text: string, previewUrl?: string | null) {
   return parts.map((part, i) => {
     if (part.match(urlRegex)) {
         if (previewUrl && part.includes(previewUrl)) return null; 
-        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline break-all relative z-10" onClick={(e) => e.stopPropagation()}>{part}</a>;
+        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-(--accent-primary) hover:underline break-all relative z-10" onClick={(e) => e.stopPropagation()}>{part}</a>;
     }
     return part;
   });
@@ -62,7 +62,7 @@ const RoleBadge = ({ role }: { role: string }) => {
 const ModBadge = ({ channelRole }: { channelRole: string | null }) => {
     if (!channelRole || (channelRole !== 'MODERATOR' && channelRole !== 'OWNER')) return null;
     return (
-        <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded ml-2 align-middle tracking-tighter">
+        <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-sm ml-2 align-middle tracking-tighter">
             {MOD_TAG}
         </span>
     );
@@ -390,7 +390,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
                         </Link>
                         <RoleBadge role={post.author.role} />
                         <ModBadge channelRole={post.author.channelRole} />
-                        {isDemo && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-md text-[var(--accent-primary)] bg-[var(--glass-card)] border border-[var(--glass-border)]">DEMO</span>}
+                        {isDemo && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-md text-(--accent-primary) bg-(--glass-card) border border-(--glass-border)">DEMO</span>}
                     </div>
                     <div className={styles.timestamp}>
                        <ClientTimestamp date={post.createdAt} />
@@ -409,28 +409,28 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
             </div>
             
             <div className="relative">
-                <button onClick={() => setShowMenu(!showMenu)} aria-label="Post options" aria-expanded={showMenu} aria-haspopup="menu" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-full hover:bg-white/5 transition-colors">
+                <button onClick={() => setShowMenu(!showMenu)} aria-label="Post options" aria-expanded={showMenu} aria-haspopup="menu" className="text-(--text-muted) hover:text-(--text-primary) p-1 rounded-full hover:bg-white/5 transition-colors">
                     {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <MoreHorizontal size={18} />}
                 </button>
                 {showMenu && !isDemo && (
-                     <div className="absolute right-0 top-8 w-40 bg-[var(--glass-card)] border border-[var(--glass-border)] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
+                     <div className="absolute right-0 top-8 w-40 bg-(--glass-card) border border-(--glass-border) rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
                         {canEdit && (
-                            <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-[var(--accent-primary)]/10 text-[var(--text-primary)] flex items-center gap-2 border-b border-[var(--glass-border)]">
+                            <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-(--accent-primary)/10 text-(--text-primary) flex items-center gap-2 border-b border-(--glass-border)">
                                 <Edit2 size={12} /> Edit Post
                             </button>
                         )}
                         {!post.isVerified && canDelete && (
-                            <button onClick={() => handleDeletePost()} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-[var(--glass-border)]">
+                            <button onClick={() => handleDeletePost()} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-(--glass-border)">
                                 <Trash2 size={12} /> Delete Post
                             </button>
                         )}
                         {post.isVerified && (
-                            <div className="px-4 py-2 text-[10px] text-[var(--text-muted)] italic border-b border-[var(--glass-border)] bg-amber-500/5">
+                            <div className="px-4 py-2 text-[10px] text-(--text-muted) italic border-b border-(--glass-border) bg-amber-500/5">
                                 Verified content cannot be edited or deleted.
                             </div>
                         )}
                         {post.isVerified && canDelete && (
-                            <button onClick={() => { handleDeletePost(); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-[var(--glass-border)]">
+                            <button onClick={() => { handleDeletePost(); setShowMenu(false); }} className="px-4 py-2 text-left text-xs hover:bg-red-500/10 text-red-400 flex items-center gap-2 border-b border-(--glass-border)">
                                 <Trash2 size={12} /> Remove (staff)
                             </button>
                         )}
@@ -439,7 +439,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
                                 <Flag size={12} /> Report Post
                             </button>
                         )}
-                        <button onClick={() => setShowMenu(false)} className="px-4 py-2 text-left text-xs hover:bg-[var(--glass-card-hover)] text-[var(--text-secondary)]">
+                        <button onClick={() => setShowMenu(false)} className="px-4 py-2 text-left text-xs hover:bg-(--glass-card-hover) text-(--text-secondary)">
                             Close
                         </button>
                      </div>
@@ -454,21 +454,21 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
                       <textarea aria-label="Edit post" 
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full bg-[var(--glass-panel)] border border-[var(--glass-border)] rounded-xl p-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-all resize-none min-h-[100px]"
+                          className="w-full bg-(--glass-panel) border border-(--glass-border) rounded-xl p-3 text-sm text-(--text-primary) focus:outline-hidden focus:border-(--accent-primary) transition-all resize-none min-h-[100px]"
                           placeholder="Edit your post..."
                           autoFocus
                       />
                       <div className="flex justify-end gap-2">
                           <button 
                               onClick={() => setIsEditing(false)}
-                              className="px-4 py-1.5 rounded-full text-xs font-bold text-[var(--text-muted)] hover:text-white transition-colors"
+                              className="px-4 py-1.5 rounded-full text-xs font-bold text-(--text-muted) hover:text-white transition-colors"
                           >
                               Cancel
                           </button>
                           <button 
                               onClick={handleEditPost}
                               disabled={isSavingEdit || !editContent.trim()}
-                              className="px-4 py-1.5 rounded-full bg-[var(--btn-primary)] text-[var(--btn-primary-text)] text-xs font-bold hover:bg-[var(--btn-primary-hover)] transition-all flex items-center gap-2"
+                              className="px-4 py-1.5 rounded-full bg-(--btn-primary) text-(--btn-primary-text) text-xs font-bold hover:bg-(--btn-primary-hover) transition-all flex items-center gap-2"
                           >
                               {isSavingEdit ? <Loader2 size={12} className="animate-spin" /> : "Save Changes"}
                           </button>
@@ -484,7 +484,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
           {hasEmbed && <PostEmbed url={mediaUrl} fallbackData={post} forcedType={post.type?.toLowerCase()} />}
 
           {/* ACTIONS FOOTER */}
-          <div className="flex flex-col gap-3 pt-3 border-t border-[var(--glass-border)] mt-auto">
+          <div className="flex flex-col gap-3 pt-3 border-t border-(--glass-border) mt-auto">
              <div className={styles.actionBar} style={{borderTop: 'none', marginTop: 0, paddingTop: 0, width: '100%', justifySelf: 'center'}}>
                  <div className="flex gap-6">
                     <button onClick={() => handleReaction('LIKE')} aria-label={`Like (${likesCount})`} aria-pressed={reaction === 'LIKE'} className={clsx(styles.actionBtn, reaction === 'LIKE' && styles.liked)}>
@@ -514,7 +514,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
           <div className={clsx(styles.commentsPanel, showComments && styles.commentsOpen)} inert={!showComments}>
               <div className={styles.panelHeader}>
                   <span className="font-bold text-sm">Comments ({commentsCount})</span>
-                  <button onClick={() => setShowComments(false)} aria-label="Close comments" className="text-[var(--text-muted)] hover:text-white"><X size={18} aria-hidden="true" /></button>
+                  <button onClick={() => setShowComments(false)} aria-label="Close comments" className="text-(--text-muted) hover:text-white"><X size={18} aria-hidden="true" /></button>
               </div>
               
               <div className={styles.commentsList}>
@@ -530,7 +530,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
                         onDelete={handleDeleteComment}
                         onEdit={handleEditComment}
                     />
-                )) : <div className="text-center text-[var(--text-muted)] text-xs mt-8">No comments yet.</div>}
+                )) : <div className="text-center text-(--text-muted) text-xs mt-8">No comments yet.</div>}
               </div>
 
               <div className={styles.inputArea}>
@@ -554,7 +554,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
         <div className={clsx(styles.cardBack, isDemo && "h-full")} inert={!isFlipped}>
              <button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
-                <ShieldCheck size={48} className={clsx("mb-4", post.isVerified ? "text-emerald-400" : "text-[var(--text-muted)]")} />
+                <ShieldCheck size={48} className={clsx("mb-4", post.isVerified ? "text-emerald-400" : "text-(--text-muted)")} />
                 <h3 className={styles.verifyTitle}>{post.isVerified ? "On-Chain Verification" : "Unverified Content"}</h3>
                 <p className={styles.verifyText}>{post.isVerified ? "This content has been cryptographically signed and timestamped on the Optimism blockchain." : "This content lives off-chain and has not been cryptographically verified."}</p>
                 {post.contentHash && <div className={styles.hashBox}><span className={styles.hashLabel}>Content Hash (SHA-256)</span><span className={styles.hashValue}>{post.contentHash}</span></div>}

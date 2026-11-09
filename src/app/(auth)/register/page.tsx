@@ -76,14 +76,14 @@ export default function RegisterPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Create an account</h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
+        <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">Create an account</h1>
+        <p className="mt-1 text-sm text-(--text-muted)">
           PeakeFeeds is in private beta, so you&apos;ll need an invite code.
         </p>
       </div>
 
       {error && (
-        <div role="alert" className="flex items-center gap-2 p-3 mb-5 rounded-[var(--radius-control)] bg-[var(--status-error-bg)] text-[var(--status-error)] text-sm">
+        <div role="alert" className="flex items-center gap-2 p-3 mb-5 rounded-(--radius-control) bg-(--status-error-bg) text-(--status-error) text-sm">
           <AlertCircle size={16} aria-hidden="true" />
           <span>{error}</span>
         </div>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
             value={formData.inviteCode}
             onChange={handleChange}
             className="[&_input]:font-mono [&_input]:uppercase [&_input]:tracking-widest"
-            hint={<>No code yet? <Link href="/" className="underline hover:text-[var(--text-primary)]">Join the waitlist</Link>.</>}
+            hint={<>No code yet? <Link href="/" className="underline hover:text-(--text-primary)">Join the waitlist</Link>.</>}
           />
 
           <Button size="lg" fullWidth onClick={continueFromCode}>
@@ -112,7 +112,7 @@ export default function RegisterPage() {
 
         {/* --- STEP 2: GOOGLE OR EMAIL --- */}
         <div className={step === 2 ? 'flex flex-col gap-4' : 'hidden'}>
-           <div className="flex items-center gap-2 p-2.5 rounded-[var(--radius-control)] bg-[var(--status-success-bg)] text-[var(--status-success)] text-xs">
+           <div className="flex items-center gap-2 p-2.5 rounded-(--radius-control) bg-(--status-success-bg) text-(--status-success) text-xs">
                 <CheckCircle size={14} aria-hidden="true" />
                 <span className="font-mono">Invite code {formData.inviteCode.toUpperCase()}</span>
                 <button type="button" onClick={() => setStep(1)} className="ml-auto underline">Change</button>
@@ -140,10 +140,10 @@ export default function RegisterPage() {
 
       </form>
 
-      <div className="mt-6 text-center text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-5">
+      <div className="mt-6 text-center text-sm text-(--text-muted) border-t border-(--glass-border) pt-5">
         <p>
           Already have an account?{" "}
-          <Link href="/login" className="text-[var(--accent-primary)] font-bold hover:underline">
+          <Link href="/login" className="text-(--accent-primary) font-bold hover:underline">
             Log in
           </Link>
         </p>

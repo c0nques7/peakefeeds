@@ -53,10 +53,10 @@ export function GoogleSignIn({ label = 'Continue with Google', callbackUrl = '/h
         {busy ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <GoogleMark />}
         {label}
       </button>
-      <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]" role="separator">
-        <span className="h-px flex-1 bg-[var(--glass-border)]" />
+      <div className="flex items-center gap-3 text-xs text-(--text-muted)" role="separator">
+        <span className="h-px flex-1 bg-(--glass-border)" />
         or
-        <span className="h-px flex-1 bg-[var(--glass-border)]" />
+        <span className="h-px flex-1 bg-(--glass-border)" />
       </div>
     </>
   );

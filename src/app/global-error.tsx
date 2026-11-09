@@ -7,15 +7,15 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
   return (
     <html lang="en">
       <body>
-        <main className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[var(--bg-app)] px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">PeakeFeeds hit a problem</h1>
-          <p className="max-w-md text-[var(--text-muted)]">
+        <main className="min-h-screen flex flex-col items-center justify-center gap-4 bg-(--bg-app) px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold text-(--text-primary)">PeakeFeeds hit a problem</h1>
+          <p className="max-w-md text-(--text-muted)">
             Something went wrong loading the site. Try again, or come back in a moment.
           </p>
-          {error.digest && <p className="text-xs text-[var(--text-muted)]">Reference: {error.digest}</p>}
+          {error.digest && <p className="text-xs text-(--text-muted)">Reference: {error.digest}</p>}
           <button
             onClick={() => retry()}
-            className="rounded-[var(--radius-control)] bg-[var(--accent-primary)] px-4 py-2 font-semibold text-[var(--btn-primary-text)]"
+            className="rounded-(--radius-control) bg-(--accent-primary) px-4 py-2 font-semibold text-(--btn-primary-text)"
           >
             Try again
           </button>

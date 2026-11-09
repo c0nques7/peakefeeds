@@ -153,7 +153,7 @@ export default function HelpBot() {
                 <div className={styles.headerText}>
                   <span className={styles.botName}>Help Bot</span>
                   <span className={styles.status}>
-                    {ticketData ? <span className="text-[var(--status-success)]">● Ticket Active</span> : 'Online'}
+                    {ticketData ? <span className="text-(--status-success)">● Ticket Active</span> : 'Online'}
                   </span>
                 </div>
             </div>
@@ -162,28 +162,28 @@ export default function HelpBot() {
         
         {/* 🟢 CONDITIONAL BODY: If Ticket exists, show Redirect Card */}
         {ticketData ? (
-             <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[var(--bg-app)]">
-                <div className="w-16 h-16 bg-[var(--status-success-bg)] text-[var(--status-success)] rounded-full flex items-center justify-center mb-4 shadow-sm animate-in zoom-in duration-300">
+             <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-(--bg-app)">
+                <div className="w-16 h-16 bg-(--status-success-bg) text-(--status-success) rounded-full flex items-center justify-center mb-4 shadow-xs animate-in zoom-in duration-300">
                     <Ticket size={32} />
                 </div>
                 
-                <h3 className="font-bold text-lg text-[var(--text-primary)] mb-2">Ticket #{ticketData.id.slice(-4)} Created</h3>
+                <h3 className="font-bold text-lg text-(--text-primary) mb-2">Ticket #{ticketData.id.slice(-4)} Created</h3>
                 
-                <p className="text-sm text-[var(--text-muted)] mb-6 leading-relaxed max-w-[240px]">
+                <p className="text-sm text-(--text-muted) mb-6 leading-relaxed max-w-[240px]">
                     An agent has been notified. Please continue this conversation in your unified inbox.
                 </p>
 
                 <Link 
                     href="/messages" 
                     onClick={() => setIsOpen(false)}
-                    className="w-full py-3 px-4 bg-[var(--btn-primary)] hover:bg-[var(--btn-primary-hover)] text-[var(--btn-primary-text)] rounded-[var(--radius-control)] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                    className="w-full py-3 px-4 bg-(--btn-primary) hover:bg-(--btn-primary-hover) text-(--btn-primary-text) rounded-(--radius-control) font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
                 >
                     <span>Go to Messages</span>
                     <ExternalLink size={16} />
                 </Link>
 
-                <div className="mt-6 pt-4 border-t border-[var(--glass-border)] w-full text-xs text-[var(--text-muted)]">
-                     Status: <span className="font-mono text-[var(--status-success)] font-bold uppercase">{ticketData.status}</span>
+                <div className="mt-6 pt-4 border-t border-(--glass-border) w-full text-xs text-(--text-muted)">
+                     Status: <span className="font-mono text-(--status-success) font-bold uppercase">{ticketData.status}</span>
                 </div>
             </div>
         ) : (

@@ -46,17 +46,17 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
   return (
     <div className="space-y-4">
       {/* TOOLBAR */}
-      <div className="flex justify-between items-center bg-[var(--glass-panel)] p-4 rounded-xl border border-[var(--glass-border)]">
-        <div className="text-sm text-[var(--text-muted)]">
-          <span className="font-bold text-[var(--text-primary)]">{selected.length}</span> users selected
+      <div className="flex justify-between items-center bg-(--glass-panel) p-4 rounded-xl border border-(--glass-border)">
+        <div className="text-sm text-(--text-muted)">
+          <span className="font-bold text-(--text-primary)">{selected.length}</span> users selected
         </div>
         <button
           onClick={handleActivate}
           disabled={selected.length === 0 || isPending}
           className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${
             selected.length > 0 
-              ? "bg-[var(--btn-primary)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]" 
-              : "bg-[var(--glass-card-hover)] text-[var(--text-muted)] cursor-not-allowed"
+              ? "bg-(--btn-primary) text-(--btn-primary-text) hover:bg-(--btn-primary-hover)" 
+              : "bg-(--glass-card-hover) text-(--text-muted) cursor-not-allowed"
           }`}
         >
           {isPending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
@@ -71,7 +71,7 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
             <thead>
               <tr>
                 <th className={`p-4 ${styles.tableHeader} w-12 text-center`}>
-                  <button onClick={toggleAll} className="hover:text-[var(--text-primary)] transition-colors">
+                  <button onClick={toggleAll} className="hover:text-(--text-primary) transition-colors">
                     {selected.length === initialData.length && initialData.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
                   </button>
                 </th>
@@ -80,28 +80,28 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
                 <th className={`p-4 ${styles.tableHeader}`}>Attribution</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--glass-border)]">
+            <tbody className="divide-y divide-(--glass-border)">
               {initialData.map((user) => (
                 <tr key={user.id} className={styles.tableRow}>
                   <td className="p-4 text-center">
                     <button 
                       onClick={() => toggleSelect(user.id)} 
-                      className={`${selected.includes(user.id) ? "text-[var(--accent-primary)]" : "text-[var(--text-muted)]"} hover:text-[var(--text-primary)] transition-colors`}
+                      className={`${selected.includes(user.id) ? "text-(--accent-primary)" : "text-(--text-muted)"} hover:text-(--text-primary) transition-colors`}
                     >
                       {selected.includes(user.id) ? <CheckSquare size={18} /> : <Square size={18} />}
                     </button>
                   </td>
-                  <td className="p-4 text-[var(--text-primary)] font-mono text-sm">{user.email}</td>
-                  <td className="p-4 text-[var(--text-muted)] text-sm">
+                  <td className="p-4 text-(--text-primary) font-mono text-sm">{user.email}</td>
+                  <td className="p-4 text-(--text-muted) text-sm">
                     {new Date(user.joinedAt).toLocaleDateString()} <span className="text-xs opacity-50">({new Date(user.joinedAt).toLocaleTimeString()})</span>
                   </td>
                   <td className="p-4">
                     {user.source ? (
-                      <span className="px-2 py-1 rounded-md bg-[var(--glass-card-hover)] text-xs text-[var(--text-secondary)] border border-[var(--glass-border)]">
+                      <span className="px-2 py-1 rounded-md bg-(--glass-card-hover) text-xs text-(--text-secondary) border border-(--glass-border)">
                         {user.source}
                       </span>
                     ) : (
-                      <span className="text-xs text-[var(--text-muted)] italic">Direct</span>
+                      <span className="text-xs text-(--text-muted) italic">Direct</span>
                     )}
                   </td>
                 </tr>
@@ -109,7 +109,7 @@ export function WaitlistTable({ initialData }: { initialData: WaitlistUser[] }) 
               
               {initialData.length === 0 && (
                   <tr>
-                      <td colSpan={4} className="p-8 text-center text-[var(--text-muted)]">
+                      <td colSpan={4} className="p-8 text-center text-(--text-muted)">
                           No pending users found. The waitlist is clear!
                       </td>
                   </tr>

@@ -11,7 +11,7 @@ import { Button, ButtonLink, TextField } from "@/components/ui";
 // useSearchParams needs a Suspense boundary for the page to be prerendered
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<Loader2 className="mx-auto animate-spin text-[var(--text-muted)]" aria-label="Loading" />}>
+    <Suspense fallback={<Loader2 className="mx-auto animate-spin text-(--text-muted)" aria-label="Loading" />}>
       <ResetPasswordForm />
     </Suspense>
   );
@@ -29,8 +29,8 @@ function ResetPasswordForm() {
     return (
       <>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">This link doesn&apos;t work</h1>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
+          <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">This link doesn&apos;t work</h1>
+          <p className="mt-1 text-sm text-(--text-muted)">
             The reset link is incomplete. Links from the email work once; request a new one if this one was already used.
           </p>
         </div>
@@ -53,8 +53,8 @@ function ResetPasswordForm() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Choose a new password</h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)] break-all">For {email}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">Choose a new password</h1>
+        <p className="mt-1 text-sm text-(--text-muted) break-all">For {email}</p>
       </div>
 
       <form action={handleSubmit} className="flex flex-col gap-4">
@@ -62,7 +62,7 @@ function ResetPasswordForm() {
         <TextField id="confirm" name="confirm" type="password" label="Confirm new password" autoComplete="new-password" required minLength={8} />
 
         {error && (
-          <div role="alert" className="flex items-center gap-2 p-3 rounded-[var(--radius-control)] bg-[var(--status-error-bg)] text-[var(--status-error)] text-sm">
+          <div role="alert" className="flex items-center gap-2 p-3 rounded-(--radius-control) bg-(--status-error-bg) text-(--status-error) text-sm">
             <AlertCircle size={16} aria-hidden="true" />
             <span>{error}</span>
           </div>
@@ -73,8 +73,8 @@ function ResetPasswordForm() {
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-5">
-        <Link href="/login" className="text-[var(--accent-primary)] font-bold hover:underline">Back to log in</Link>
+      <div className="mt-6 text-center text-sm text-(--text-muted) border-t border-(--glass-border) pt-5">
+        <Link href="/login" className="text-(--accent-primary) font-bold hover:underline">Back to log in</Link>
       </div>
     </>
   );

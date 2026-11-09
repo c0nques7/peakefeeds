@@ -21,19 +21,19 @@ export function NotificationFeed({ fullPage = false }: { fullPage?: boolean }) {
       {/* Header: the full page already has its own title, so it only shows the unread count and action */}
       <div className={fullPage ? "flex items-center justify-between mb-3 min-h-8" : "flex items-center justify-between mb-4 px-2"}>
         {fullPage ? (
-          <span className="text-sm text-[var(--text-muted)]">{unreadCount > 0 ? `${unreadCount} unread` : ''}</span>
+          <span className="text-sm text-(--text-muted)">{unreadCount > 0 ? `${unreadCount} unread` : ''}</span>
         ) : (
-          <h2 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
-            <Bell size={18} className={unreadCount > 0 ? "text-[var(--accent-primary)]" : ""} aria-hidden="true" />
+          <h2 className="text-lg font-bold flex items-center gap-2 text-(--text-primary)">
+            <Bell size={18} className={unreadCount > 0 ? "text-(--accent-primary)" : ""} aria-hidden="true" />
             Activity
-            {unreadCount > 0 && <span className="bg-[var(--btn-primary)] text-[var(--btn-primary-text)] text-[10px] px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
+            {unreadCount > 0 && <span className="bg-(--btn-primary) text-(--btn-primary-text) text-[10px] px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
           </h2>
         )}
 
         {unreadCount > 0 && (
           <button 
             onClick={async () => { await markAllRead(); mutate(); }} 
-            className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-primary)] flex items-center gap-1 transition-colors"
+            className="text-xs text-(--text-muted) hover:text-(--accent-primary) flex items-center gap-1 transition-colors"
           >
             <CheckCheck size={14} /> Mark all read
           </button>
@@ -42,7 +42,7 @@ export function NotificationFeed({ fullPage = false }: { fullPage?: boolean }) {
 
       {/* Loading State */}
       {isLoading && notifications.length === 0 && (
-        <div className="flex justify-center p-8 text-[var(--text-muted)]">
+        <div className="flex justify-center p-8 text-(--text-muted)">
             <Loader2 className="animate-spin" />
         </div>
       )}
@@ -62,7 +62,7 @@ export function NotificationFeed({ fullPage = false }: { fullPage?: boolean }) {
                 description="When someone replies, reacts or messages you, it shows up here."
               />
             ) : (
-              <div className="text-center py-8 text-[var(--text-muted)] text-sm">
+              <div className="text-center py-8 text-(--text-muted) text-sm">
                 No recent activity.
               </div>
             )
@@ -72,7 +72,7 @@ export function NotificationFeed({ fullPage = false }: { fullPage?: boolean }) {
 
       {/* Footer Link (Only shown in sidebar widget) */}
       {!fullPage && hasNotifications && (
-        <Link href="/notifications" className="block text-center text-xs font-bold text-[var(--text-muted)] hover:text-[var(--accent-primary)] mt-4 py-2 border-t border-[var(--glass-border)] transition-colors">
+        <Link href="/notifications" className="block text-center text-xs font-bold text-(--text-muted) hover:text-(--accent-primary) mt-4 py-2 border-t border-(--glass-border) transition-colors">
           View Full History
         </Link>
       )}

@@ -50,7 +50,7 @@ export function DeleteAccountCard({ hasPassword, blocker }: { hasPassword: boole
             </Button>
           )}
         />
-        {blocker && <p className="mt-3 text-sm text-[var(--text-muted)]">{blocker}</p>}
+        {blocker && <p className="mt-3 text-sm text-(--text-muted)">{blocker}</p>}
 
         {confirming && !blocker && (
           <form onSubmit={submit} className="mt-4 flex flex-col gap-4">

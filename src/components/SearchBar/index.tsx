@@ -190,7 +190,7 @@ export function SearchBar() {
                     className={styles.searchInput}
                     autoComplete="off" 
                 />
-                {isLoading && <Loader2 size={18} className="animate-spin text-[var(--text-muted)]" />}
+                {isLoading && <Loader2 size={18} className="animate-spin text-(--text-muted)" />}
             </div>
 
             {/* Dropdown Results */}
@@ -215,15 +215,15 @@ export function SearchBar() {
                                         })}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-[var(--glass-border)] overflow-hidden flex items-center justify-center">
-                                                {user.image ? <img src={user.image} className="w-full h-full object-cover" alt="" /> : <UserIcon size={14} className="text-[var(--text-muted)]" />}
+                                            <div className="w-8 h-8 rounded-full bg-(--glass-border) overflow-hidden flex items-center justify-center">
+                                                {user.image ? <img src={user.image} className="w-full h-full object-cover" alt="" /> : <UserIcon size={14} className="text-(--text-muted)" />}
                                             </div>
                                             <div className="flex flex-col text-left">
                                                 <span className={styles.channelName}>@{user.username}</span>
                                                 {user.name && <span className={styles.channelSlug}>{user.name}</span>}
                                             </div>
                                         </div>
-                                        <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                                        <ChevronRight size={16} className="text-(--text-muted)" />
                                     </Link>
                                 );
                             })}
@@ -252,7 +252,7 @@ export function SearchBar() {
                                             <span className={styles.channelName}>{channel.name}</span>
                                             <span className={styles.channelSlug}>/c/{channel.slug}</span>
                                         </div>
-                                        <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                                        <ChevronRight size={16} className="text-(--text-muted)" />
                                     </Link>
                                 );
                             })}
@@ -271,17 +271,17 @@ export function SearchBar() {
                                 })}
                              >
                                 <div className="flex items-center gap-3">
-                                    <PlusCircle size={20} className="text-[var(--accent-primary)]" />
+                                    <PlusCircle size={20} className="text-(--accent-primary)" />
                                     <div className="flex flex-col text-left">
-                                        <span className="font-semibold text-[var(--text-primary)]">
+                                        <span className="font-semibold text-(--text-primary)">
                                             Create channel &quot;{query}&quot;
                                         </span>
-                                        <span className="text-xs text-[var(--text-muted)]">
+                                        <span className="text-xs text-(--text-muted)">
                                             Launch a new truth channel
                                         </span>
                                     </div>
                                 </div>
-                                <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                                <ChevronRight size={16} className="text-(--text-muted)" />
                              </Link>
                         </div>
                     )}

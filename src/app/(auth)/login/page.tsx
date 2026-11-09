@@ -85,10 +85,10 @@ export default function LoginPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+        <h1 className="text-2xl font-bold tracking-tight text-(--text-primary)">
           {showTwoFactor ? "Enter your code" : "Log in"}
         </h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
+        <p className="mt-1 text-sm text-(--text-muted)">
           {showTwoFactor
             ? "Enter the 6-digit code from your authenticator app."
             : "Welcome back. Log in to see your feed."}
@@ -96,7 +96,7 @@ export default function LoginPage() {
       </div>
 
       {error && (
-        <div role="alert" className="flex items-center gap-2 p-3 mb-5 rounded-[var(--radius-control)] bg-[var(--status-error-bg)] text-[var(--status-error)] text-sm">
+        <div role="alert" className="flex items-center gap-2 p-3 mb-5 rounded-(--radius-control) bg-(--status-error-bg) text-(--status-error) text-sm">
           <AlertCircle size={16} aria-hidden="true" />
           <span>{error}</span>
         </div>
@@ -127,7 +127,7 @@ export default function LoginPage() {
               />
               <Link
                 href="/forgot-password"
-                className="self-end text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                className="self-end text-xs text-(--text-muted) hover:text-(--text-primary) transition-colors"
               >
                 Forgot password?
               </Link>
@@ -150,7 +150,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setShowTwoFactor(false); setTwoFactorCode(""); setError(""); }}
-              className="self-end text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              className="self-end text-xs text-(--text-muted) hover:text-(--text-primary) transition-colors"
             >
               Back to login
             </button>
@@ -163,10 +163,10 @@ export default function LoginPage() {
       </form>
 
       {!showTwoFactor && (
-        <div className="mt-6 text-center text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-5">
+        <div className="mt-6 text-center text-sm text-(--text-muted) border-t border-(--glass-border) pt-5">
           <p>
             Need an account?{" "}
-            <Link href="/register" className="text-[var(--accent-primary)] font-bold hover:underline">
+            <Link href="/register" className="text-(--accent-primary) font-bold hover:underline">
               Create one
             </Link>
           </p>

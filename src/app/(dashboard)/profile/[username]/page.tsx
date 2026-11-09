@@ -24,9 +24,9 @@ interface ProfilePageProps {
 
 // --- SUB-COMPONENTS ---
 const StatBadge = ({ count, label }: { count: number, label: string }) => (
-    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[var(--glass-card)] border border-[var(--glass-border)] shadow-sm">
-        <span className="text-2xl font-bold text-[var(--accent-primary)]">{count}</span>
-        <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mt-1">{label}</span>
+    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-(--glass-card) border border-(--glass-border) shadow-xs">
+        <span className="text-2xl font-bold text-(--accent-primary)">{count}</span>
+        <span className="text-xs font-medium text-(--text-muted) uppercase tracking-wider mt-1">{label}</span>
     </div>
 );
 
@@ -36,11 +36,11 @@ const ProfileTabs = ({ activeTab, username, postCount, channelCount }:
     { activeTab: ActiveTabType, username: string, postCount: number, channelCount: number }) => {
     
     const baseClass = "flex items-center gap-2 px-6 py-3 border-b-2 transition-all text-sm font-medium";
-    const activeClass = "border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold";
-    const inactiveClass = "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-card-hover)]";
+    const activeClass = "border-(--accent-primary) text-(--accent-primary) font-bold";
+    const inactiveClass = "border-transparent text-(--text-muted) hover:text-(--text-primary) hover:bg-(--glass-card-hover)";
 
     return (
-        <nav className="flex w-full border-b border-[var(--glass-border)] mb-6">
+        <nav className="flex w-full border-b border-(--glass-border) mb-6">
             <Link 
                 href={`/profile/${username}?tab=posts`} 
                 className={`${baseClass} ${activeTab === 'posts' ? activeClass : inactiveClass} flex-1 justify-center`}
@@ -136,12 +136,12 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
             </div>
 
             {/* PROFILE HEADER */}
-            <header className="mb-6 rounded-[var(--radius-card)] p-6 sm:p-8 text-center relative overflow-hidden bg-[var(--glass-card)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
+            <header className="mb-6 rounded-(--radius-card) p-6 sm:p-8 text-center relative overflow-hidden bg-(--glass-card) border border-(--glass-border) shadow-(--glass-shadow)">
                 
                 {profile.isLocked && <LockedOverlay message="This Account is Under Review by PeakeFeeds Admins. Interaction with this user is temporarily disabled." />}
                 
                 <div className="relative z-10">
-                    <div className="w-24 h-24 mx-auto rounded-full mb-4 flex items-center justify-center text-4xl font-bold bg-[var(--accent-secondary)] text-white ring-4 ring-[var(--bg-app)] overflow-hidden">
+                    <div className="w-24 h-24 mx-auto rounded-full mb-4 flex items-center justify-center text-4xl font-bold bg-(--accent-secondary) text-white ring-4 ring-(--bg-app) overflow-hidden">
                         {profile.image ? (
                             <img src={profile.image} alt={profile.username || 'User'} className="w-full h-full object-cover" />
                         ) : (
@@ -149,11 +149,11 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                         )}
                     </div>
 
-                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1 text-[var(--text-primary)] break-all">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1 text-(--text-primary) break-all">
                         @{profile.username}
                     </h1>
                     
-                    <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)] mb-6">
+                    <div className="flex items-center justify-center gap-2 text-sm text-(--text-muted) mb-6">
                         <Calendar size={14} aria-hidden="true" />
                         <span>Joined {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                     </div>
@@ -164,8 +164,8 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                             <ConnectWalletButton />
                         ) : (
                             <>
-                                <span className="inline-flex h-10 items-center gap-2 px-3 text-sm font-medium text-[var(--text-muted)]">
-                                    <ShieldCheck size={16} aria-hidden="true" className={profile.walletAddress ? "text-[var(--status-success)]" : ""} />
+                                <span className="inline-flex h-10 items-center gap-2 px-3 text-sm font-medium text-(--text-muted)">
+                                    <ShieldCheck size={16} aria-hidden="true" className={profile.walletAddress ? "text-(--status-success)" : ""} />
                                     {profile.walletAddress ? 'Wallet verified' : 'No wallet linked'}
                                 </span>
                                 
@@ -217,14 +217,14 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                                 <Link 
                                     key={channel.id} 
                                     href={`/channels/${channel.slug}`} 
-                                    className="group block p-5 rounded-[var(--radius-card)] bg-[var(--glass-card)] border border-[var(--glass-border)] hover:border-[var(--accent-primary)] transition-colors"
+                                    className="group block p-5 rounded-(--radius-card) bg-(--glass-card) border border-(--glass-border) hover:border-(--accent-primary) transition-colors"
                                 >
                                     <div className="flex justify-between items-start mb-2">
-                                        <h4 className="font-bold text-lg text-[var(--text-primary)]">{channel.name}</h4>
-                                        <Users size={18} className="text-[var(--text-muted)]" />
+                                        <h4 className="font-bold text-lg text-(--text-primary)">{channel.name}</h4>
+                                        <Users size={18} className="text-(--text-muted)" />
                                     </div>
-                                    <p className="text-sm text-[var(--text-muted)] mb-4">/c/{channel.slug}</p>
-                                    <div className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--glass-panel)] w-fit text-[var(--text-muted)] transition-colors">
+                                    <p className="text-sm text-(--text-muted) mb-4">/c/{channel.slug}</p>
+                                    <div className="text-xs font-bold px-3 py-1 rounded-full bg-(--glass-panel) w-fit text-(--text-muted) transition-colors">
                                         {channel._count.subscribers} {channel._count.subscribers === 1 ? 'Verifier' : 'Verifiers'}
                                     </div>
                                 </Link>

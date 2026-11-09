@@ -23,9 +23,9 @@ function FieldShell({ id, label, hint, error, hideLabel, className, children }: 
       </label>
       {children}
       {error ? (
-        <p id={`${id}-error`} className="text-xs text-[var(--status-error)]">{error}</p>
+        <p id={`${id}-error`} className="text-xs text-(--status-error)">{error}</p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-xs text-[var(--text-muted)]">{hint}</p>
+        <p id={`${id}-hint`} className="text-xs text-(--text-muted)">{hint}</p>
       ) : null}
     </div>
   );

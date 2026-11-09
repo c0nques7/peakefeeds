@@ -37,30 +37,30 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
         <button 
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          className="absolute top-4 right-4 text-(--text-muted) hover:text-(--text-primary) transition-colors"
         >
           <X size={20} aria-hidden="true" />
         </button>
 
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--status-error-bg)] mb-3 text-[var(--status-error)]">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--status-error-bg) mb-3 text-(--status-error)">
             <AlertTriangle size={24} aria-hidden="true" />
           </div>
-          <h2 id="delete-post-title" className="text-xl font-bold text-[var(--text-primary)]">Delete this post?</h2>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <h2 id="delete-post-title" className="text-xl font-bold text-(--text-primary)">Delete this post?</h2>
+          <p className="text-(--text-muted) text-sm mt-1">
             You are deleting content authored by another user. Please specify a reason for this action.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="delete-post-reason" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Reason (required)</label>
+            <label htmlFor="delete-post-reason" className="block text-sm font-medium text-(--text-secondary) mb-2">Reason (required)</label>
             <select 
               id="delete-post-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
-              className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--status-error)] transition-colors appearance-none"
+              className="w-full bg-(--input-bg) border border-(--glass-border) rounded-(--radius-control) px-4 py-3 text-sm text-(--text-primary) focus:outline-hidden focus:border-(--status-error) transition-colors appearance-none"
             >
               <option value="" disabled>Select a reason...</option>
               {DELETION_REASONS.map((r) => (
@@ -70,14 +70,14 @@ export default function DeletePostModal({ isOpen, onClose, onConfirm, isDeleting
           </div>
 
           <div>
-            <label htmlFor="delete-post-note" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Internal note (optional)</label>
+            <label htmlFor="delete-post-note" className="block text-sm font-medium text-(--text-secondary) mb-2">Internal note (optional)</label>
             <textarea 
               id="delete-post-note"
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               rows={3}
               placeholder="Additional context for the log..."
-              className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-[var(--radius-control)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--status-error)] transition-colors resize-none"
+              className="w-full bg-(--input-bg) border border-(--glass-border) rounded-(--radius-control) px-4 py-3 text-sm text-(--text-primary) focus:outline-hidden focus:border-(--status-error) transition-colors resize-none"
             />
           </div>
 
