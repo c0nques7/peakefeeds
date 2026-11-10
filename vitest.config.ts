@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -26,6 +26,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // The contract has its own toolchain and tests (cd contracts && npm test)
+    exclude: [...configDefaults.exclude, 'contracts/**'],
     env,
     // The integration tests share one database and some read global rows (e.g. every staff
     // account), so test files run one at a time to keep them from racing each other

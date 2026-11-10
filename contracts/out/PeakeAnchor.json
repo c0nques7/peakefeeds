@@ -1,0 +1,39 @@
+{
+  "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "author",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "contentHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "Anchored",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "contentHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "anchor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080604052348015600e575f5ffd5b5060b680601a5f395ff3fe6080604052348015600e575f5ffd5b50600436106026575f3560e01c8063eecdf92714602a575b5f5ffd5b60396035366004606a565b603b565b005b604051819033907fee1610244dfc4b116b1433dd4459fd7b1d3d2bf737a05fc3f6d8f173005d7147905f90a350565b5f602082840312156079575f5ffd5b503591905056fea26469706673582212208aaa8cde7a86be3a9e457b0602f89348d3ba1cede9d552a367a14c9e33f9a50964736f6c634300081e0033",
+  "deployedBytecode": "0x6080604052348015600e575f5ffd5b50600436106026575f3560e01c8063eecdf92714602a575b5f5ffd5b60396035366004606a565b603b565b005b604051819033907fee1610244dfc4b116b1433dd4459fd7b1d3d2bf737a05fc3f6d8f173005d7147905f90a350565b5f602082840312156079575f5ffd5b503591905056fea26469706673582212208aaa8cde7a86be3a9e457b0602f89348d3ba1cede9d552a367a14c9e33f9a50964736f6c634300081e0033"
+}
