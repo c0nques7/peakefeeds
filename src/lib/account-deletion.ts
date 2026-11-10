@@ -3,9 +3,8 @@ import { prisma } from '@/lib/db';
 import { deleteFileByName, fileNameFromUrl } from '@/lib/b2';
 import { clearAccountStatusCache } from '@/lib/penalties';
 
-// Deleting an account removes it and everything it made straight away: posts (verified ones too;
-// only the fingerprint already recorded on the blockchain stays), comments, reactions, messages,
-// support tickets, uploads and moderation records. The Privacy page promises nothing is kept
+// Deleting an account removes it and everything it made straight away: posts (verified ones too),
+// comments, reactions, messages, support tickets, uploads and moderation records. The Privacy page promises nothing is kept
 // more than 30 days after deletion, which leaves room for database backups to roll over.
 //
 // Two things are kept for other people: channels the account created pass to their next

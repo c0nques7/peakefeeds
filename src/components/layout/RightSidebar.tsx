@@ -119,7 +119,7 @@ export async function RightSidebar() {
 
             {/* --- FOOTER --- */}
             <div className="px-4 text-[10px] text-(--text-muted) text-center leading-relaxed">
-                 © {new Date().getFullYear()} PeakeFeeds. Built on Optimism.
+                 © {new Date().getFullYear()} PeakeFeeds.
                  <div className="flex gap-2 justify-center mt-1">
                      <Link href="/privacy" className="hover:text-(--text-primary)">Privacy</Link>
                      <span>•</span>

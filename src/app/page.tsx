@@ -125,7 +125,7 @@ export default function LandingPage() {
   // MOCK DATA
   const demoPost = {
     id: "hero-demo",
-    content: "The algorithm is broken.\n\nYou are looking at a verified thought. It wasn't curated by a black box. It was cryptographically signed on Optimism. #TheTruthLayer",
+    content: "The algorithm is broken.\n\nYou are looking at a verified thought. It wasn't picked for you by a black box. Its author signed it with their wallet, so you can check who wrote it and that it hasn't changed. #TheTruthLayer",
     createdAt: new Date().toISOString(),
     type: "TEXT",
     mediaUrl: null, 
@@ -165,19 +165,15 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={`${styles.heroContent} animate-in slide-in-from-left-10 duration-700 fade-in`}>
-          <div className={styles.optimismBadge}>
-            <span className={styles.pingEffect}><span className={styles.pingDot}></span><span className={styles.dot}></span></span>
-            <span>Built on Optimism</span>
-          </div>
-
           <h1 className={styles.title}>
             The <span className={styles.gradientText}>Truth Layer</span><br />
             is finally here.
           </h1>
 
           <p className={styles.subtitle}>
-            The algorithm broke the truth. We built the engine to fix it. 
-            Experience the first social protocol with the speed of Optimism and the security of Ethereum.
+            The algorithm broke the truth. PeakeFeeds is a feed with no algorithm: posts from the channels you
+            follow, newest first. Sign a post with your wallet and anyone can check who wrote it and that it
+            hasn&apos;t been changed.
           </p>
 
           <Suspense fallback={<div className="h-14 w-full bg-gray-100 animate-pulse rounded-2xl" />}>
@@ -199,18 +195,18 @@ export default function LandingPage() {
       <section className={styles.features}>
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Hexagon size={28} /></div>
-          <h3 className={styles.featureTitle}>Verifiable Speed</h3>
-          <p className={styles.featureText}>We operate at the speed of the Superchain. Posts are verified instantly costing fractions of a penny.</p>
+          <h3 className={styles.featureTitle}>Signed by the Author</h3>
+          <p className={styles.featureText}>Verify a post and your wallet signs a fingerprint of it. It costs nothing, takes one signature, and the post is locked as written.</p>
         </div>
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><ShieldCheck size={28} /></div>
-          <h3 className={styles.featureTitle}>The Anti-Bot Layer</h3>
-          <p className={styles.featureText}>AI trains on noise. We filter for signal. Our cryptographic handshake ensures you interact with humans.</p>
+          <h3 className={styles.featureTitle}>No Algorithm</h3>
+          <p className={styles.featureText}>Nothing is ranked, boosted or hidden to keep you scrolling. You see what the channels you follow post, in the order it was posted.</p>
         </div>
         <div className={styles.featureCard}>
           <div className={styles.iconWrapper}><Layers size={28} /></div>
-          <h3 className={styles.featureTitle}>Ownership by Default</h3>
-          <p className={styles.featureText}>You own your graph. You own your words. No platform can de-platform your history.</p>
+          <h3 className={styles.featureTitle}>Your Words, Your Proof</h3>
+          <p className={styles.featureText}>You keep ownership of what you post. A signed post carries proof that it came from your wallet, so nobody can quietly rewrite it.</p>
         </div>
       </section>
 

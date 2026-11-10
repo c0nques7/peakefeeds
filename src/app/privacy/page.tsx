@@ -25,12 +25,12 @@ export default function PrivacyPage() {
         <li><strong>Waitlist sign-ups:</strong> the email address you give us when you ask for access.</li>
       </ul>
 
-      <h2>Verified posts are public and permanent</h2>
+      <h2>Verified posts are public and linked to your wallet</h2>
       <p>
-        When you verify a post, your wallet signs a fingerprint of it. That signature and fingerprint are recorded on a
-        public blockchain, can be checked by anyone, and can&apos;t be removed by us or anyone else, even after you
-        delete your account (the post itself is deleted). Only verify what you&apos;re happy to have linked to your
-        wallet permanently.
+        When you verify a post, your wallet signs a fingerprint of it. We store that signature and fingerprint with the
+        post, and anyone who can see the post can check that your wallet signed it. Verified posts can&apos;t be edited,
+        and you can only remove one by deleting your account. Only verify what you&apos;re happy to have linked to
+        your wallet.
       </p>
 
       <h2>Services we use</h2>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
       <h2>How long we keep your data</h2>
       <ul>
         <li>We keep your data for as long as you have an account.</li>
-        <li>When you delete your account, we remove it and everything you posted, sent or uploaded straight away. Copies in our backups and our providers&apos; logs are gone within 30 days. The only exception is the blockchain record of verified posts, described above.</li>
+        <li>When you delete your account, we remove it and everything you posted, sent or uploaded straight away. Copies in our backups and our providers&apos; logs are gone within 30 days.</li>
         <li>Waitlist email addresses are kept until you join or ask us to remove yours.</li>
       </ul>
 

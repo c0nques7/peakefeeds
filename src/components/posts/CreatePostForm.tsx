@@ -290,7 +290,7 @@ export default function CreatePostForm({
 
             <h3 id="finality-title" className="text-xl font-bold text-(--text-primary) text-center mb-2">Verified posts are permanent</h3>
             <p className="text-(--text-secondary) text-sm text-center leading-relaxed mb-6">
-              Verified posts are cryptographically signed and anchored to the blockchain. 
+              Verified posts are signed by your wallet, so anyone can check who wrote them. 
               <span className="text-(--status-warning) font-bold block mt-2">
                 Once published, this content cannot be edited or deleted.
               </span>
