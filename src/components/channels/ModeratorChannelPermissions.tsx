@@ -115,7 +115,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
   return (
     <div className="bg-(--glass-card) border border-(--glass-border) rounded-2xl overflow-hidden shadow-xl">
       <div className="p-6 border-b border-(--glass-border) bg-white/5">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+        <h3 className="text-lg font-bold text-(--text-primary) flex items-center gap-2">
           <Shield className="text-(--accent-primary)" size={20} />
           Channel Permissions
         </h3>
@@ -156,7 +156,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-white">@{p.user.username}</span>
+                        <span className="text-sm font-bold text-(--text-primary)">@{p.user.username}</span>
                         {p.user.role === 'ADMIN' && (
                           <span className="text-[9px] text-red-400 font-bold uppercase">Global Admin</span>
                         )}
@@ -168,7 +168,7 @@ export default function ModeratorChannelPermissions({ channelId }: ModeratorChan
                       value={p.role}
                       onChange={(e) => handleUpdate(p.userId, { role: e.target.value as ChannelRole })}
                       disabled={isPending || p.role === 'OWNER'}
-                      className="bg-(--glass-panel) border border-(--glass-border) text-xs text-white rounded-lg px-2 py-1 focus:outline-hidden focus:border-(--accent-primary) transition-all disabled:opacity-50"
+                      className="bg-(--glass-panel) border border-(--glass-border) text-xs text-(--text-primary) rounded-lg px-2 py-1 focus:outline-hidden focus:border-(--accent-primary) transition-all disabled:opacity-50"
                     >
                       <option value="MEMBER">Member</option>
                       <option value="MODERATOR">Moderator</option>

@@ -111,7 +111,7 @@ export default function PostPreview({
              </div>
           )}
 
-          <div className="flex items-center justify-between pt-3 border-t border-(--glass-border) mt-auto">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 pt-3 border-t border-(--glass-border) mt-auto">
              <div className={styles.actionBar} style={{borderTop: 'none', marginTop: 0, paddingTop: 0}}>
                  <button className={styles.actionBtn} disabled><Heart size={18} /> <span>0</span></button>
                  <button className={styles.actionBtn} disabled><MessageCircle size={18} /> <span>0</span></button>
