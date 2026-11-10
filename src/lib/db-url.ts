@@ -3,8 +3,12 @@
 // so these are set in code. Values already in the URL win.
 //  - connect_timeout -> connectionTimeoutMillis (15s): give a suspended Neon compute time to wake.
 //    `pg` waits forever by default.
-//  - connection_limit -> max: one connection per serverless instance on Neon's pooled endpoint
-//    (hosts ending in "-pooler") when running on Vercel, so instances don't exhaust the pooler.
+//  - connection_limit -> max: a small pool (VERCEL_POOL_MAX) per serverless instance on Neon's
+//    pooled endpoint (hosts ending in "-pooler") when running on Vercel. Not 1: a page render runs
+//    several queries at once (each findMany with relations is several statements, plus the
+//    sidebars), and Vercel sends concurrent requests to the same instance, so a one-connection pool
+//    queues all of them behind each other (2-6x slower pages, and pool-wait timeouts under load).
+//    Neon's pooler (PgBouncer) takes thousands of client connections, so a few per instance is safe.
 //  - sslmode=require/prefer/verify-ca -> verify-full: what `pg` 8 already does with them, made
 //    explicit so it stops printing a deprecation warning on every cold start (pg 9 changes them).
 // Prisma-only URL parameters (pgbouncer, connection_limit, connect_timeout, pool_timeout) are
@@ -18,6 +22,7 @@ export interface PoolSettings {
 }
 
 const DEFAULT_CONNECT_TIMEOUT_SECONDS = 15;
+export const VERCEL_POOL_MAX = 5;
 
 export function poolSettings(
   url: string | undefined,
@@ -46,7 +51,7 @@ export function poolSettings(
     connectionString: changed ? parsed.toString() : url,
     connectionTimeoutMillis: timeout * 1000,
   };
-  const max = limit ?? (isPooler && onVercel ? 1 : undefined);
+  const max = limit ?? (isPooler && onVercel ? VERCEL_POOL_MAX : undefined);
   if (max) settings.max = max;
   return settings;
 }

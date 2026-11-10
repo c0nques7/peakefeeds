@@ -106,6 +106,9 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
   
   // Comment State
   const [showComments, setShowComments] = useState(false) 
+  // The comment list is built on first open and kept after, so a feed of 20 cards doesn't render
+  // up to 50 hidden comments each on load
+  const [commentsMounted, setCommentsMounted] = useState(false)
   const [commentText, setCommentText] = useState("")
   const [isSendingComment, setIsSendingComment] = useState(false)
   
@@ -129,7 +132,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
   const [reportModalOpen, setReportModalOpen] = useState(false)
 
   // Derived State
-  const commentTree = useMemo(() => buildCommentTree(localComments), [localComments]);
+  const commentTree = useMemo(() => (commentsMounted ? buildCommentTree(localComments) : []), [commentsMounted, localComments]);
   const channelSlug = post.channel?.slug || 'home';
   // Computed on the server by getPostPermissions; callers without it only get the author's own rights
   const isOwnUnverified = !!currentUserId && currentUserId === post.author.id && !post.isVerified;
@@ -495,7 +498,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
                         <HeartCrack size={18} aria-hidden="true" fill={reaction === 'DISLIKE' ? "currentColor" : "none"} />
                         <span>{dislikesCount}</span>
                     </button>
-                    <button onClick={() => setShowComments(true)} aria-label={`Comments (${commentsCount})`} className={styles.actionBtn}>
+                    <button onClick={() => { setCommentsMounted(true); setShowComments(true); }} aria-label={`Comments (${commentsCount})`} className={styles.actionBtn}>
                         <MessageCircle size={18} aria-hidden="true" />
                         <span>{commentsCount}</span>
                     </button>
@@ -518,7 +521,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
               </div>
               
               <div className={styles.commentsList}>
-                {commentTree.length > 0 ? commentTree.map((c: any, index: number) => (
+                {!commentsMounted ? null : commentTree.length > 0 ? commentTree.map((c: any, index: number) => (
                     <CommentItem 
                         key={c.id || `fallback-${index}`} 
                         comment={c} 

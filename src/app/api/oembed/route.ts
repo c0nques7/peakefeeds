@@ -1,6 +1,9 @@
 // app/api/oembed/route.ts
 import { NextResponse } from 'next/server';
 
+// Successful lookups only; errors stay uncached so a provider hiccup isn't remembered
+const OEMBED_CACHE = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const targetUrl = searchParams.get('url');
@@ -25,7 +28,9 @@ export async function GET(request: Request) {
 
     try {
       const data = await response.json();
-      return NextResponse.json(data);
+      // Embeds rarely change: cache them on Vercel's CDN (and briefly in the browser) so each card
+      // doesn't wait on Spotify/TikTok/Reddit/SoundCloud every time a feed is opened
+      return NextResponse.json(data, { headers: { 'Cache-Control': OEMBED_CACHE } });
     } catch (err) {
       console.error('oEmbed JSON parse error for', oembedUrl, err);
       return NextResponse.json({ error: 'Invalid oEmbed response' }, { status: 502 });
