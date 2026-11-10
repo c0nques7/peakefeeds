@@ -293,13 +293,14 @@ export default function SupportQueue() {
 
         {/* Workspace (Active Ticket View) */}
         <div className={clsx(
-          "bg-(--glass-card-hover) relative w-full lg:flex-1 flex overflow-hidden",
+          // On phones the conversation fills the panel and the ticket context sits below it (scroll down)
+          "bg-(--glass-card-hover) relative w-full lg:flex-1 flex-col lg:flex-row overflow-y-auto lg:overflow-hidden",
           selectedTicketId ? "flex" : "hidden lg:flex"
         )}>
           {currentTicket ? (
             <>
               {/* Main Workspace Feed (Messaging) */}
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="h-full shrink-0 lg:h-auto lg:shrink lg:flex-1 lg:min-w-0 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="p-4 border-b border-(--glass-border) flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-(--glass-card)">
                   <div className="flex gap-4 items-center">
@@ -484,7 +485,7 @@ export default function SupportQueue() {
               </div>
 
               {/* Workspace Inner Sidebar (Internal Notes & User Details) */}
-              <div className="w-72 border-l border-(--glass-border) bg-(--glass-card-hover) flex flex-col overflow-hidden shrink-0">
+              <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-(--glass-border) bg-(--glass-card-hover) flex flex-col lg:overflow-hidden shrink-0">
                 <div className="p-4 border-b border-(--glass-border) flex items-center justify-between">
                    <h4 className="text-xs font-bold text-(--text-muted) uppercase tracking-widest">Ticket Context</h4>
                 </div>

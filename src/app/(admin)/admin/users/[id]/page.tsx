@@ -35,16 +35,16 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-(--glass-panel) flex items-center justify-center text-3xl font-bold text-(--accent-primary) border border-(--glass-border)">
+        <div className="flex items-center gap-4 min-w-0 max-w-full">
+          <div className="w-14 h-14 md:w-20 md:h-20 shrink-0 rounded-full bg-(--glass-panel) flex items-center justify-center text-2xl md:text-3xl font-bold text-(--accent-primary) border border-(--glass-border)">
             {user.username?.[0]?.toUpperCase() || "?"}
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-(--text-primary)">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-3xl font-bold text-(--text-primary) wrap-anywhere">
               {user.name ? `${user.name} (@${user.username})` : `@${user.username || "Anonymous"}`}
             </h1>
-            <div className="flex items-center gap-2 mt-2 text-xs font-mono text-(--text-muted)">
-              <span className="px-2 py-0.5 rounded-sm bg-(--glass-panel) border border-(--glass-border)">
+            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs font-mono text-(--text-muted)">
+              <span className="px-2 py-0.5 rounded-sm break-all bg-(--glass-panel) border border-(--glass-border)">
                 ID: {user.id}
               </span>
               <span>Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
