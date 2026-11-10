@@ -1,5 +1,6 @@
 import { cookieStorage, createStorage, http } from 'wagmi'
-import { optimismSepolia, mainnet, sepolia } from 'wagmi/chains'
+import { optimism, optimismSepolia, mainnet, sepolia } from 'wagmi/chains'
+import type { AppKitNetwork } from '@reown/appkit/networks'
 import { createAppKit } from '@reown/appkit/react'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 
@@ -10,8 +11,9 @@ if (!projectId) {
   throw new Error('Project ID is not defined')
 }
 
-// 2. Configure Networks
-export const networks = [optimismSepolia, mainnet, sepolia]
+// 2. Configure Networks. Optimism comes first: verified posts are anchored there (src/lib/anchor.ts),
+// and OP Sepolia stays for testing against a testnet deployment.
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [optimism, optimismSepolia, mainnet, sepolia]
 
 // 3. Set up the Wagmi Adapter (replaces createConfig)
 export const wagmiAdapter = new WagmiAdapter({
@@ -27,7 +29,7 @@ export const wagmiAdapter = new WagmiAdapter({
 // This automatically handles the "Mobile vs Desktop" logic and QR codes
 export const appKit = createAppKit({
   adapters: [wagmiAdapter],
-  networks: [optimismSepolia, mainnet, sepolia],
+  networks,
   projectId,
   metadata: {
     name: 'Peake Feeds',

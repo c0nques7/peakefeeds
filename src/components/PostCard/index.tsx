@@ -25,6 +25,7 @@ import LockedOverlay from '../moderation/LockedOverlay'
 import DeletePostModal from '../posts/DeletePostModal'
 import { ReportTargetType } from '@/generated/prisma/browser'
 import { MOD_TAG } from '@/lib/constants'
+import { anchorTxUrl } from '@/lib/anchor'
 
 // --- HELPERS ---
 function formatTextWithLinks(text: string, previewUrl?: string | null) {
@@ -562,7 +563,7 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
                 <p className={styles.verifyText}>{post.isVerified ? "The author's wallet signed a fingerprint of this post. Anyone can check the signature, and the post can't be edited." : "This post wasn't signed by the author's wallet."}</p>
                 {post.contentHash && <div className={styles.hashBox}><span className={styles.hashLabel}>Content Hash (SHA-256)</span><span className={styles.hashValue}>{post.contentHash}</span></div>}
                 {post.signature && <div className={styles.hashBox}><span className={styles.hashLabel}>Author Signature</span><span className={styles.hashValue}>{post.signature}</span></div>}
-                {post.verificationTx && <a href={`https://optimistic.etherscan.io/tx/${post.verificationTx}`} target="_blank" rel="noopener noreferrer" className={styles.etherscanLink}>View Transaction <ExternalLink size={12} /></a>}
+                {post.verificationTx && <a href={anchorTxUrl(post.verificationTx)} target="_blank" rel="noopener noreferrer" className={styles.etherscanLink}>View Transaction <ExternalLink size={12} /></a>}
              </div>
         </div>
 

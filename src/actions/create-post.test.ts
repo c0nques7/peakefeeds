@@ -2,12 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createPost } from './create-post';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
+import { verifyAnchorTx } from '@/lib/anchor-verify';
+import { generateContentHash } from '@/lib/verification';
 
 // Mock dependencies
 vi.mock('@/lib/db', () => ({
   prisma: {
     post: {
       create: vi.fn(),
+      findFirst: vi.fn(),
     },
     channel: {
       findUnique: vi.fn(),
@@ -26,6 +29,10 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/metadata', () => ({
   fetchLinkMetadata: vi.fn().mockResolvedValue({ title: null, url: null }),
+}));
+
+vi.mock('@/lib/anchor-verify', () => ({
+  verifyAnchorTx: vi.fn(),
 }));
 
 vi.mock('@/lib/interaction-guard', () => ({
@@ -112,5 +119,69 @@ describe('createPost Action', () => {
     const state = await createPost({}, formData);
     expect(state.success).toBeFalsy();
     expect(prisma.post.create).not.toHaveBeenCalled();
+  });
+
+  describe('WALLET (anchored) posts', () => {
+    const wallet = '0x00000000000000000000000000000000000a11ce';
+    const salt = 'ab'.repeat(32);
+    const content = 'An anchored post';
+    const contentHash = generateContentHash(content, salt);
+    const tx = '0x' + 'Cd'.repeat(32);
+
+    const post = (extra: Record<string, string> = {}) => {
+      const formData = new FormData();
+      const fields = { content, channelId: 'channel-1', verificationMethod: 'WALLET', contentHash, salt, verificationTx: tx, ...extra };
+      for (const [k, v] of Object.entries(fields)) formData.append(k, v);
+      return createPost({}, formData);
+    };
+
+    beforeEach(() => {
+      vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1', walletAddress: wallet } } as never);
+      vi.mocked(prisma.channel.findUnique).mockResolvedValue({ slug: 'test' } as never);
+      vi.mocked(prisma.post.create).mockResolvedValue({ id: 'post1' } as never);
+      vi.mocked(prisma.post.findFirst).mockResolvedValue(null);
+      vi.mocked(verifyAnchorTx).mockResolvedValue({ ok: true });
+    });
+
+    it('saves a verified post with its anchor transaction', async () => {
+      const state = await post();
+      expect(state.success).toBe(true);
+      expect(verifyAnchorTx).toHaveBeenCalledWith({ txHash: tx.toLowerCase(), author: wallet, contentHash });
+      expect(prisma.post.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ isVerified: true, verificationTx: tx.toLowerCase(), contentHash, salt }),
+      });
+    });
+
+    it('refuses a post without an anchor transaction', async () => {
+      const state = await post({ verificationTx: '' });
+      expect(state.success).toBeFalsy();
+      expect(prisma.post.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a malformed transaction hash', async () => {
+      const state = await post({ verificationTx: '0x1234' });
+      expect(state.success).toBeFalsy();
+      expect(verifyAnchorTx).not.toHaveBeenCalled();
+    });
+
+    it("refuses content that doesn't match the anchored hash", async () => {
+      const state = await post({ content: 'Edited after anchoring' });
+      expect(state.message).toMatch(/integrity/);
+      expect(verifyAnchorTx).not.toHaveBeenCalled();
+    });
+
+    it('refuses a transaction another post already used', async () => {
+      vi.mocked(prisma.post.findFirst).mockResolvedValue({ id: 'older' } as never);
+      const state = await post();
+      expect(state.message).toMatch(/already used/);
+      expect(prisma.post.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses when the on-chain check fails', async () => {
+      vi.mocked(verifyAnchorTx).mockResolvedValue({ ok: false, error: 'nope' });
+      const state = await post();
+      expect(state.message).toBe('Verification failed: nope');
+      expect(prisma.post.create).not.toHaveBeenCalled();
+    });
   });
 });

@@ -57,6 +57,9 @@ One rule decides who may edit or delete a post: `getPostPermissions` in `src/lib
 - **Unverified Content**: The author, channel owner, channel moderators and site staff can edit; the author, channel owner, members with `canDeletePosts` and site staff can delete (anyone but the author gives a reason).
 - **Locked Content**: Staff can lock a channel, post, comment or account for review. Locked content shows a `LockedOverlay`; the server refuses new posts, comments and reactions on it (site staff excepted).
 
+## ⛓️ Verified Posts
+A verified post is anchored by its author: the composer hashes `content | salt`, the author's wallet calls `PeakeAnchor.anchor(hash)` on Optimism and pays the gas, and `createPost` saves the post only after `verifyAnchorTx` (`src/lib/anchor-verify.ts`) finds the matching `Anchored` event from the linked wallet. The tx hash goes in `Post.verificationTx`. Only the hash is on-chain; the salt stays in the database. Contract, tests and deployment: [contracts/README.md](contracts/README.md). Config: `NEXT_PUBLIC_ANCHOR_CHAIN_ID`, `NEXT_PUBLIC_ANCHOR_CONTRACT_ADDRESS`, `ANCHOR_RPC_URL` (see `.env.example`).
+
 ## 🔑 Google Sign-In
 Google sign-in is offered only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
 

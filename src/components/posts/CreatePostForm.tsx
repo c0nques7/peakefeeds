@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSignMessage, useAccount } from 'wagmi'; 
+import { useAccount, useBalance, useConfig, useSwitchChain, useWriteContract } from 'wagmi';
+import { waitForTransactionReceipt } from 'wagmi/actions';
 import { useActionState } from 'react'; 
 import { useFormStatus } from 'react-dom'; 
 
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 import { createPost, CreatePostState } from '@/actions/create-post'; 
 import { useLinkWallet } from '@/hooks/useLinkWallet';
 import { generateContentHash, generateSalt } from '@/lib/verification'; 
+import { anchorAbi, anchorChain, anchorContractAddress } from '@/lib/anchor';
 import { VerificationMethod } from '@/lib/types'; 
 import { validateFile, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from '@/lib/storage-utils';
 
@@ -49,9 +51,13 @@ export default function CreatePostForm({
   const router = useRouter(); 
   
   // 1. Web3 Hooks
-  const { address, isConnected } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { address, isConnected, chainId } = useAccount();
+  const wagmiConfig = useConfig();
+  const { mutateAsync: switchChain } = useSwitchChain();
+  const { mutateAsync: writeContract } = useWriteContract();
+  const { refetch: refetchBalance } = useBalance({ address, chainId: anchorChain.id, query: { enabled: false } });
   const linkWallet = useLinkWallet();
+  const formRef = useRef<HTMLFormElement>(null);
   
   // 2. Hydration Fix
   const [mounted, setMounted] = useState(false);
@@ -73,7 +79,8 @@ export default function CreatePostForm({
   const [method, setMethod] = useState<VerificationMethod>('NONE');
   
   // 6. Crypto State
-  const [signature, setSignature] = useState<string | null>(null);
+  // The author's own anchor transaction on Optimism; it replaces the old off-chain signature
+  const [verificationTx, setVerificationTx] = useState<`0x${string}` | null>(null);
   const [postHash, setPostHash] = useState<string | null>(null);
   const [postSalt, setPostSalt] = useState<string | null>(null);
 
@@ -102,7 +109,7 @@ export default function CreatePostForm({
       setPostSalt(null); 
       setPostHash(null); 
       setMethod('NONE'); 
-      setSignature(null);
+      setVerificationTx(null);
     }
   }, [content]);
 
@@ -112,7 +119,7 @@ export default function CreatePostForm({
         setContent(""); 
         setIsExpanded(false); 
         setMethod('NONE'); 
-        setSignature(null);
+        setVerificationTx(null);
         setMediaUrl(null);
         setMediaType(null);
         setMediaPreview(null);
@@ -240,40 +247,74 @@ export default function CreatePostForm({
         }
     }
 
+    if (!anchorContractAddress) {
+        toast.error("Verified posting isn't available yet.");
+        return;
+    }
+
     setIsPreparing(true);
     setMethod(choice);
 
     try {
-      const hashToSign = postHash as `0x${string}`;
-      const sig = await signMessageAsync({ message: { raw: hashToSign } });
-      
       // Verified posts need this wallet linked to the account; awaited so a failure stops here
-      if (address) {
-          const linked = await linkWallet(address);
-          if (!linked.success) throw new Error(`Wallet link failed: ${linked.error}`);
+      const linked = await linkWallet(address);
+      if (!linked.success) throw new Error(`Wallet link failed: ${linked.error}`);
+
+      // The author pays the gas, so stop early with a clear message when there's nothing to pay it with
+      const { data: balance } = await refetchBalance().catch(() => ({ data: undefined }));
+      if (balance && balance.value === BigInt(0)) {
+          throw new Error("NO_GAS");
       }
 
-      setSignature(sig);
-      toast.success("Content Signed Successfully");
-      
-    } catch (e: any) {
+      if (chainId !== anchorChain.id) {
+          await switchChain({ chainId: anchorChain.id });
+      }
+
+      const txHash = await writeContract({
+          address: anchorContractAddress,
+          abi: anchorAbi,
+          functionName: 'anchor',
+          args: [postHash as `0x${string}`],
+          chainId: anchorChain.id,
+      });
+      toast.info("Anchoring your post on Optimism…");
+
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { hash: txHash, chainId: anchorChain.id });
+      if (receipt.status !== 'success') throw new Error('TX_FAILED');
+
+      setVerificationTx(txHash);
+
+      // Publish straight away so an anchored post isn't left waiting on a second click
+      if (formRef.current) {
+          const formData = new FormData(formRef.current);
+          formData.set('verificationMethod', choice);
+          formData.set('verificationTx', txHash);
+          startTransition(() => formAction(formData));
+      }
+    } catch (e) {
       console.error(e);
-      if (e.message?.includes('User rejected')) {
-          toast.warning("Signature rejected.");
-      } else if (e.message?.startsWith('Wallet link failed')) {
-          toast.error(e.message);
+      const err = (e ?? {}) as { name?: string; shortMessage?: string; message?: string };
+      const message = err.shortMessage ?? err.message ?? '';
+      if (err.name === 'UserRejectedRequestError' || /user (rejected|denied)/i.test(message)) {
+          toast.warning("Transaction cancelled.");
+      } else if (message === 'NO_GAS' || /insufficient funds/i.test(message)) {
+          toast.error(`Your wallet needs a little ETH on ${anchorChain.name} to pay the gas (usually well under a cent).`);
+      } else if (message === 'TX_FAILED') {
+          toast.error("The anchor transaction failed. Nothing was posted.");
+      } else if (message.startsWith('Wallet link failed')) {
+          toast.error(message);
       } else {
           toast.error("Verification failed.");
       }
       setMethod('NONE');
-      setSignature(null);
+      setVerificationTx(null);
     } finally {
       setIsPreparing(false);
       setPendingVerifyChoice(null);
     }
-  }, [pendingVerifyChoice, postHash, address, isConnected, signMessageAsync, router, username, linkedWallet]);
+  }, [pendingVerifyChoice, postHash, address, isConnected, chainId, linkWallet, refetchBalance, switchChain, writeContract, wagmiConfig, formAction, linkedWallet]);
 
-  const isPostReady = content.trim() && (method === 'SKIP' || signature);
+  const isPostReady = content.trim() && (method === 'SKIP' || verificationTx);
   const isButtonDisabled = isPending || isPreparing || !isPostReady || uploading;
 
   return (
@@ -295,11 +336,14 @@ export default function CreatePostForm({
                 Once published, this content cannot be edited or deleted.
               </span>
               Please ensure you have reviewed your content thoroughly.
+              <span className="block mt-2 text-(--text-muted)">
+                Your wallet will send one transaction on {anchorChain.name}. You pay its gas, usually well under a cent.
+              </span>
             </p>
 
             <div className="flex flex-col gap-3">
               <Button onClick={confirmVerification} size="lg" fullWidth>
-                Continue and sign
+                Anchor and post
               </Button>
               <Button onClick={() => { setShowVerifyWarning(false); setPendingVerifyChoice(null); }} variant="secondary" size="lg" fullWidth>
                 Go back and review
@@ -333,7 +377,7 @@ export default function CreatePostForm({
              </button>
         )}
 
-        <form action={formAction}
+        <form ref={formRef} action={formAction}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -368,7 +412,7 @@ export default function CreatePostForm({
                   <input type="hidden" name="channelId" value={channelId} />
                   <input type="hidden" name="contentHash" value={postHash || ''} />
                   <input type="hidden" name="salt" value={postSalt || ''} />
-                  <input type="hidden" name="signature" value={signature || ''} />
+                  <input type="hidden" name="verificationTx" value={verificationTx || ''} />
                   <input type="hidden" name="verificationMethod" value={method} />
                   <input type="hidden" name="mediaUrl" value={mediaUrl || ''} />
                   <input type="hidden" name="mediaType" value={mediaType || ''} />
@@ -480,15 +524,15 @@ export default function CreatePostForm({
                   <div className="grid grid-cols-2 gap-3">
                     
                     {/* OPTION 1: WALLET */}
-                    <button type="button" onClick={() => handleVerifyClick('WALLET')} disabled={isPreparing || method === 'SKIP'}
+                    <button type="button" onClick={() => handleVerifyClick('WALLET')} disabled={isPreparing || method === 'SKIP' || !anchorContractAddress}
                       className={`p-3 rounded-(--radius-control) transition-all border text-xs flex flex-col items-center group ${method === 'WALLET' ? 'bg-(--status-info-bg) border-(--accent-primary) text-(--accent-primary)' : 'bg-(--glass-card) border-(--glass-border) text-(--text-muted) hover:bg-(--glass-card-hover)'}`}>
                       <Wallet size={18} />
                       <span className="mt-1">Pay Gas</span>
-                      {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && signature && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-(--status-success)' /> : null}
+                      {mounted && method === 'WALLET' && isPreparing ? <Loader2 size={12} className="animate-spin mt-1" /> : mounted && verificationTx && method === 'WALLET' ? <ShieldCheck size={12} className='mt-1 text-(--status-success)' /> : null}
                     </button>
 
                     {/* OPTION 2: SKIP */}
-                    <button type="button" onClick={() => { setMethod('SKIP'); setSignature(null); }} disabled={isPreparing}
+                    <button type="button" onClick={() => { setMethod('SKIP'); setVerificationTx(null); }} disabled={isPreparing}
                       className={`p-3 rounded-(--radius-control) transition-all border text-xs flex flex-col items-center group ${method === 'SKIP' ? 'bg-(--status-info-bg) border-(--accent-primary) text-(--accent-primary)' : 'bg-(--glass-card) border-(--glass-border) text-(--text-muted) hover:bg-(--glass-card-hover)'}`}>
                       <ShieldOff size={18} />
                       <span className="mt-1">Unverified</span>

@@ -5,7 +5,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config"; 
 import { prisma } from '@/lib/db'; 
 import { revalidatePath } from 'next/cache';
-import { generateContentHash, recoverSignerAddress } from "@/lib/verification"; 
+import { generateContentHash } from "@/lib/verification";
+import { isTxHash } from "@/lib/anchor";
+import { verifyAnchorTx } from "@/lib/anchor-verify";
 import { fetchLinkMetadata } from "@/lib/metadata"; 
 import { getInteractionBlockReason } from "@/lib/interaction-guard";
 import { fileNameFromUrl } from "@/lib/b2";
@@ -14,11 +16,11 @@ import { fileNameFromUrl } from "@/lib/b2";
 const FinalPostSchema = z.object({
   content: z.string().min(1).max(2000),
   channelId: z.string(),
-  // Verified (signed with the linked wallet) or unverified
+  // Verified (anchored on-chain by the linked wallet) or unverified
   verificationMethod: z.enum(['WALLET', 'SKIP']), 
   contentHash: z.string().nullable().optional(),
   salt: z.string().nullable().optional(),
-  signature: z.string().nullable().optional(),
+  verificationTx: z.string().refine(isTxHash, 'Invalid transaction hash.').transform(tx => tx.toLowerCase()).nullable().optional(),
   // Only files uploaded to our bucket; link previews live in the link* fields
   mediaUrl: z.string().refine(url => fileNameFromUrl(url) !== null, 'Media must be an uploaded file.').nullable().optional(),
   mediaType: z.enum(['IMAGE', 'VIDEO']).nullable().optional(),
@@ -61,7 +63,7 @@ export async function createPost(
     verificationMethod: formData.get('verificationMethod'),
     contentHash: getString('contentHash'),
     salt: getString('salt'),
-    signature: getString('signature'),
+    verificationTx: getString('verificationTx'),
     mediaUrl: getString('mediaUrl'),
     mediaType: getString('mediaType'),
   });
@@ -74,7 +76,7 @@ export async function createPost(
     };
   }
 
-  const { content, channelId, verificationMethod, contentHash, salt, signature, mediaUrl, mediaType } = validatedFields.data;
+  const { content, channelId, verificationMethod, contentHash, salt, verificationTx, mediaUrl, mediaType } = validatedFields.data;
 
   const blocked = await getInteractionBlockReason({ userId: session.user.id, action: 'post', channelId });
   if (blocked) return { message: blocked };
@@ -85,7 +87,7 @@ export async function createPost(
   }
 
   // Case: WALLET - Verification Logic
-  if (!contentHash || !salt || !signature) {
+  if (!contentHash || !salt || !verificationTx) {
       return { message: "Verification failed: Missing cryptographic data." };
   }
 
@@ -110,18 +112,18 @@ export async function createPost(
       return { message: "Verification failed: Content integrity compromised." };
   }
 
-  // B. Signature Check (Did THIS user sign it?)
-  const recoveredAddress = await recoverSignerAddress(contentHash, signature);
-  if (!recoveredAddress) {
-      return { message: "Verification failed: Invalid signature." };
+  // B. Anchor Check: the linked wallet anchored exactly this hash on-chain
+  if (await prisma.post.findFirst({ where: { verificationTx }, select: { id: true } })) {
+      return { message: "Verification failed: That transaction is already used by another post." };
   }
 
-  // C. Ownership Check (Does signature match profile?)
-  const sessionWallet = session.user.walletAddress.toLowerCase();
-  const signerWallet = recoveredAddress.toLowerCase();
-
-  if (signerWallet !== sessionWallet) {
-      return { message: "Verification failed: Signature wallet does not match profile wallet." };
+  const anchor = await verifyAnchorTx({
+      txHash: verificationTx as `0x${string}`,
+      author: session.user.walletAddress,
+      contentHash,
+  });
+  if (!anchor.ok) {
+      return { message: `Verification failed: ${anchor.error}` };
   }
 
   console.log("✅ All Verification Passed. Saving to DB...", { 
@@ -139,7 +141,7 @@ export async function createPost(
     isVerified: true,
     contentHash,
     salt,
-    signature,
+    verificationTx,
     verificationSource: 'WALLET',
     mediaUrl,
     mediaType
@@ -154,7 +156,7 @@ interface PostData {
     isVerified?: boolean;
     contentHash?: string;
     salt?: string;
-    signature?: string;
+    verificationTx?: string;
     verificationSource?: string;
     mediaUrl?: string | null;
     mediaType?: 'IMAGE' | 'VIDEO' | null;
@@ -184,7 +186,7 @@ async function savePost(data: PostData): Promise<CreatePostState> {
                 isVerified: data.isVerified || false,
                 contentHash: data.contentHash,
                 salt: data.salt,
-                signature: data.signature,
+                verificationTx: data.verificationTx,
                 verificationSource: data.verificationSource,
                 
                 // 2. SAVE DYNAMIC TYPE & METADATA
