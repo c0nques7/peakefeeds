@@ -44,7 +44,7 @@ export default function TermsPage() {
       <ul>
         <li>You keep ownership of what you post. You give PeakeFeeds permission to store and display it so the service works.</li>
         <li>You can edit or delete unverified posts.</li>
-        <li><strong>You can&apos;t edit or delete a verified post on its own.</strong> Once your wallet signs a post, it stays as it is. Deleting your account removes it, but the fingerprint recorded on the blockchain stays there.</li>
+        <li><strong>You can&apos;t edit or delete a verified post on its own.</strong> Once your wallet signs a post, it stays as it is. Deleting your account removes it.</li>
         <li>Channel owners and moderators can remove unverified posts in their channels. Our staff can remove any post, verified or not, that breaks these terms or the law.</li>
       </ul>
 

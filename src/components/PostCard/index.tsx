@@ -558,8 +558,8 @@ export function PostCard({ post, initialReaction, currentUserId: propUserId, isD
              <button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
                 <ShieldCheck size={48} className={clsx("mb-4", post.isVerified ? "text-emerald-400" : "text-(--text-muted)")} />
-                <h3 className={styles.verifyTitle}>{post.isVerified ? "On-Chain Verification" : "Unverified Content"}</h3>
-                <p className={styles.verifyText}>{post.isVerified ? "This content has been cryptographically signed and timestamped on the Optimism blockchain." : "This content lives off-chain and has not been cryptographically verified."}</p>
+                <h3 className={styles.verifyTitle}>{post.isVerified ? "Wallet-Signed" : "Unverified Content"}</h3>
+                <p className={styles.verifyText}>{post.isVerified ? "The author's wallet signed a fingerprint of this post. Anyone can check the signature, and the post can't be edited." : "This post wasn't signed by the author's wallet."}</p>
                 {post.contentHash && <div className={styles.hashBox}><span className={styles.hashLabel}>Content Hash (SHA-256)</span><span className={styles.hashValue}>{post.contentHash}</span></div>}
                 {post.signature && <div className={styles.hashBox}><span className={styles.hashLabel}>Author Signature</span><span className={styles.hashValue}>{post.signature}</span></div>}
                 {post.verificationTx && <a href={`https://optimistic.etherscan.io/tx/${post.verificationTx}`} target="_blank" rel="noopener noreferrer" className={styles.etherscanLink}>View Transaction <ExternalLink size={12} /></a>}

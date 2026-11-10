@@ -146,11 +146,11 @@ export default function PostPreview({
              <button type="button" onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className={styles.absoluteCloseBtn}><X size={20} /></button>
              <div className={styles.verificationContainer}>
                 <ShieldCheck size={48} className={clsx("mb-4", isVerified ? "text-emerald-400" : "text-(--text-muted)")} />
-                <h3 className={styles.verifyTitle}>{isVerified ? "On-Chain Verification" : "Unverified Content"}</h3>
+                <h3 className={styles.verifyTitle}>{isVerified ? "Wallet-Signed" : "Unverified Content"}</h3>
                 <p className={styles.verifyText}>
                     {isVerified 
-                        ? "This content will be cryptographically signed on Optimism."
-                        : "This content lives off-chain and is not verified."}
+                        ? "Your wallet will sign a fingerprint of this post. Anyone can check the signature, and the post can't be edited afterwards."
+                        : "This post won't be signed by your wallet. You can still edit or delete it later."}
                 </p>
              </div>
         </div>

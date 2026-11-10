@@ -37,7 +37,7 @@ export async function deletePost(postId: string, reason?: string, comments?: str
   if (!perms.canDelete) {
     return {
       error: post.isVerified
-        ? "Verified posts cannot be deleted as they are anchored to the blockchain."
+        ? "Verified posts can't be deleted because your wallet signed them."
         : "You do not have permission to delete this post."
     };
   }

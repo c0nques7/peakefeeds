@@ -66,26 +66,6 @@
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Badge */
-.optimismBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
-  background: rgba(30, 58, 138, 0.1); /* Navy tint */
-  border: 1px solid rgba(30, 58, 138, 0.2);
-  border-radius: 99px;
-  color: var(--grad-start); 
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 2rem;
-}
-
-.pingEffect { position: relative; display: flex; width: 8px; height: 8px; }
-.pingDot { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: currentColor; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
-.dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-@keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
 
 /* Typography */
 .title {
@@ -269,7 +249,6 @@
         align-items: center;
     }
 
-    .optimismBadge { margin-left: auto; margin-right: auto; }
 
     .title { font-size: 3rem; } 
     .subtitle { margin-bottom: 2rem; }

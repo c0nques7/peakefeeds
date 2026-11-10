@@ -37,7 +37,7 @@ describe('deleting a verified post', () => {
   it('is refused for its author, even when they own the channel', async () => {
     const id = await verifiedPost();
     loginAs(users.author);
-    expect(await deletePost(id, 'changed my mind')).toEqual({ error: expect.stringMatching(/Verified posts cannot be deleted/) });
+    expect(await deletePost(id, 'changed my mind')).toEqual({ error: expect.stringMatching(/Verified posts can't be deleted/) });
     expect(await prisma.post.count({ where: { id } })).toBe(1);
   });
 

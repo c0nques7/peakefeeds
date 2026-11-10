@@ -21,7 +21,7 @@ export type PostPermissions = {
 
 /**
  * The one rule for who may edit or delete a post, used by the edit/delete actions and the feed
- * view models alike. Verified posts are anchored on-chain: nobody edits them and only site staff
+ * view models alike. Verified posts are wallet-signed: nobody edits them and only site staff
  * may remove one. `membership` is the viewer's subscription to the post's channel.
  */
 export function getPostPermissions(
