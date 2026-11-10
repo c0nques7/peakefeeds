@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image'
-import { ExternalLink, Loader2, Music, Video, MessageCircle } from 'lucide-react'
+import { ExternalLink, Loader2, Music, Video, MessageCircle, Play } from 'lucide-react'
 import clsx from 'clsx'
 import { parseMediaUrl } from '@/lib/media-parser'
 import { OEmbedPlayer } from './OEmbedPlayer'
@@ -101,24 +101,49 @@ const VideoEmbed = ({ url }: { url: string }) => {
 };
 
 // --- 2.6 YOUTUBE RENDERER ---
-// The page's origin is only known in the browser. Reading it through useSyncExternalStore gives the
-// server-rendered HTML and the first client render the same (empty) value, so hydration matches;
-// the iframe is added right after.
+// Shows the video's thumbnail and loads the player only when it's clicked: every YouTube iframe
+// downloads about a megabyte of player script, so a feed with several of them loaded slowly.
+// The page's origin is only known in the browser; useSyncExternalStore gives the server render and
+// the first client render the same (empty) value, so hydration matches.
 const noopSubscribe = () => () => {};
 const useOrigin = () => useSyncExternalStore(noopSubscribe, () => window.location.origin, () => '');
 
 const YouTubeEmbed = ({ id }: { id: string }) => {
     const origin = useOrigin();
+    const [playing, setPlaying] = useState(false);
     return (
         <div className="w-full mt-3 relative z-10 rounded-xl overflow-hidden border border-(--glass-border) bg-black aspect-video">
-            {origin && <iframe
-                src={`https://www.youtube-nocookie.com/embed/${id}?origin=${origin}`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full z-10"
-            />}
+            {playing && origin ? (
+                <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&origin=${origin}`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full z-10"
+                />
+            ) : (
+                <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setPlaying(true); }}
+                    aria-label="Play YouTube video"
+                    className="group absolute inset-0 w-full h-full"
+                >
+                    <Image
+                        src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+                        unoptimized
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 600px"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="flex items-center justify-center w-16 h-11 rounded-xl bg-red-600/90 group-hover:bg-red-600 text-white shadow-lg transition-colors">
+                            <Play size={24} fill="currentColor" aria-hidden="true" />
+                        </span>
+                    </span>
+                </button>
+            )}
         </div>
     );
 };

@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { poolSettings } from './db-url';
+import { poolSettings, VERCEL_POOL_MAX } from './db-url';
 
 const pooler = 'postgresql://u:p@ep-old-morning-abc-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require';
 
 describe('poolSettings', () => {
-  it('limits pooled Neon connections to one per instance on Vercel', () => {
+  it('gives each Vercel instance a small pool on pooled Neon connections', () => {
     const settings = poolSettings(pooler, true)!;
-    expect(settings.max).toBe(1);
+    expect(settings.max).toBe(VERCEL_POOL_MAX);
+    expect(VERCEL_POOL_MAX).toBeGreaterThan(1);
     expect(settings.connectionTimeoutMillis).toBe(15000);
     expect(new URL(settings.connectionString).searchParams.get('sslmode')).toBe('verify-full');
   });
